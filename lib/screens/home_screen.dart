@@ -1,0 +1,311 @@
+import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:math';
+
+import '../services/services.dart';
+import '../services/authentication.dart';
+
+import 'package:together/components/buttons.dart';
+
+import 'settings_screen.dart';
+import 'lobby_screen.dart';
+
+class HomeScreen extends StatefulWidget {
+  HomeScreen({Key key, this.auth, this.userId, this.logoutCallback})
+      : super(key: key);
+
+  final BaseAuth auth;
+  final VoidCallback logoutCallback;
+  final String userId;
+
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  signOutCallback() async {
+    try {
+      await widget.auth.signOut();
+      widget.logoutCallback();
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'Together: Main Menu',
+        ),
+        actions: <Widget>[
+          IconButton(
+            icon: Icon(Icons.settings),
+            onPressed: () {
+              slideTransition(
+                context,
+                SettingsScreen(
+                  auth: widget.auth,
+                  logoutCallback: signOutCallback,
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            RaisedGradientButton(
+              child: Text(
+                'Create a game',
+                style: TextStyle(
+                  fontSize: 20,
+                  color: Colors.white,
+                ),
+              ),
+              height: 60,
+              width: 200,
+              gradient: LinearGradient(
+                colors: <Color>[
+                  Theme.of(context).primaryColor,
+                  Theme.of(context).accentColor,
+                ],
+              ),
+              onPressed: () {
+                showDialog<Null>(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return LobbyDialog(isJoin: false);
+                  },
+                );
+              },
+            ),
+            SizedBox(
+              height: 40,
+            ),
+            RaisedGradientButton(
+              child: Text(
+                'Join a game',
+                style: TextStyle(
+                  fontSize: 20,
+                  color: Colors.white,
+                ),
+              ),
+              height: 60,
+              width: 200,
+              gradient: LinearGradient(
+                colors: <Color>[
+                  Theme.of(context).primaryColor,
+                  Theme.of(context).accentColor,
+                ],
+              ),
+              onPressed: () {
+                showDialog<Null>(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return LobbyDialog(isJoin: true);
+                  },
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class LobbyDialog extends StatefulWidget {
+  LobbyDialog({this.isJoin});
+
+  final bool isJoin;
+
+  @override
+  _LobbyDialogState createState() => _LobbyDialogState();
+}
+
+class _LobbyDialogState extends State<LobbyDialog> {
+  TextEditingController _passwordController = new TextEditingController();
+  TextEditingController _roomCodeController = new TextEditingController();
+  // TODO: make default game choice in settings?
+  String _dropDownGame = 'The Hunt';
+  String _roomCode = '';
+  bool isFormError = false;
+  String formError = '';
+
+  getDefaultRules(String gameName) {
+    switch (gameName) {
+      case 'The Hunt': 
+        return {'locations': ['Casino', 'Pirate Ship', 'Coal Mine', 'University'], 'numSpies': 1,};
+        break;
+      case 'Abstract':
+        print('it is abstract');
+        break;
+    }
+  }
+
+  createGame(String game, String password) async {
+    final _rnd = Random();
+    final letters = 'ABCDEFGHJKMNPQRSTUVWXYZ';
+    String randLetter() => letters[_rnd.nextInt(letters.length)];
+    _roomCode = randLetter() + randLetter() + randLetter();
+
+    final userId = (await FirebaseAuth.instance.currentUser()).uid;
+
+    // define initial rules per game
+    Map<String, dynamic> defaultRules = getDefaultRules(game);
+
+    var result = await Firestore.instance.collection('sessions').add({
+      'game': game,
+      'rules': defaultRules,
+      'password': password,
+      'roomCode': _roomCode,
+      'playerIds': [userId],
+      'state': 'lobby',
+      'leader': userId,
+      'dateCreated': DateTime.now(),
+      'turnPlayerId': userId,
+    });
+    await Firestore.instance.collection('users').document(userId).updateData({'currentGame': result.documentID});
+    Navigator.of(context).pop();
+    slideTransition(
+      context,
+      LobbyScreen(
+        roomCode: _roomCode.toUpperCase(),
+        gameName: game,
+      ),
+    );
+  }
+
+  joinGame(String roomCode, String password) async {
+    roomCode = roomCode.toUpperCase();
+
+    await Firestore.instance
+      .collection('sessions')
+      .where('roomCode', isEqualTo: roomCode)
+      .getDocuments()
+      .then((event) async {
+    if (event.documents.isNotEmpty) {
+      // check password
+      var correctPassword = event.documents.single.data['password'];
+      if (correctPassword != '') {
+        print('requires password');
+        if (correctPassword != _passwordController.text) {
+          print('incorrect password');
+          setState(() {
+            isFormError = true;
+            formError = 'Incorrect password';
+          });
+        }
+      }
+      
+      // otherwise, append playerId to session and update player's currentGame
+      String sessionId = event.documents.single.documentID;
+      final userId = (await FirebaseAuth.instance.currentUser()).uid;
+      await Firestore.instance.collection('sessions').document(sessionId).updateData({'playerIds': FieldValue.arrayUnion([userId])});
+      await Firestore.instance.collection('users').document(userId).updateData({'currentGame': sessionId});
+
+      // only move to room if password is correct
+      if (!isFormError) {
+        Navigator.of(context).pop();
+        slideTransition(
+          context,
+          LobbyScreen(
+            roomCode: _roomCodeController.text.toUpperCase(),
+            gameName: event.documents.single.data['game'],
+          ),
+        );
+      }
+    } else {
+      // room doesn't exist
+      print('room doesn\'t exist');
+      setState(() {
+        isFormError = true;
+        formError = 'Room does not exist';
+      });
+    }
+    }).catchError((e) => print('error fetching data: $e'));
+    
+  }
+
+  leaveGame() async {
+    // remove player from session document, if there are no other players, delete document
+    // update player document's current game to none
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.isJoin ? 'Join a game' : 'Create a game'),
+      content: Container(
+        height: 140.0,
+        width: 100.0,
+        child: ListView(
+          children: <Widget>[
+            widget.isJoin ? Container() : DropdownButton<String>(
+              value: _dropDownGame,
+              iconSize: 24,
+              elevation: 16,
+              style: TextStyle(color: Theme.of(context).primaryColor),
+              underline: Container(
+                height: 2,
+                color: Theme.of(context).primaryColor,
+              ),
+              onChanged: (String newValue) {
+                setState(() {
+                  _dropDownGame = newValue;
+                });
+              },
+              items: <String>['The Hunt', 'Abstract', 'Banana Phone']
+                  .map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value, style: TextStyle(fontFamily: 'Balsamiq')),
+                );
+              }).toList(),
+            ),
+            widget.isJoin ? TextField(
+              onChanged: (s) {
+                setState(() {
+                  isFormError = false;
+                  formError = '';
+                });
+              },
+              controller: _roomCodeController,
+              decoration: InputDecoration(labelText: 'Room Code: '),
+            ) : Container(),
+            TextField(
+              onChanged: (s) {
+                setState(() {
+                  isFormError = false;
+                  formError = '';
+                });
+              },
+              controller: _passwordController,
+              decoration: InputDecoration(labelText: 'Password: '),
+            ),
+            SizedBox(height: 8),
+            isFormError ? Text(formError, style: TextStyle(color: Colors.red, fontSize: 14)) : Container(),
+          ],
+        ),
+      ),
+      actions: <Widget>[
+        FlatButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text("Cancel")),
+        // This button results in adding the contact to the database
+        FlatButton(
+            onPressed: () {
+              widget.isJoin ? joinGame(_roomCodeController.text, _passwordController.text) : createGame(_dropDownGame, _passwordController.text);
+            },
+            child: Text('Confirm'))
+      ],
+    );
+  }
+}
