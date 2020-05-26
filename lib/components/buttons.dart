@@ -6,21 +6,27 @@ class RaisedGradientButton extends StatelessWidget {
   final double height;
   final double width;
   final Function onPressed;
+  final bool borderHighlight;
 
-  const RaisedGradientButton({
-    Key key,
-    @required this.child,
-    this.gradient,
-    this.height = 100,
-    this.width = double.infinity,
-    this.onPressed,
-  }) : super(key: key);
+  const RaisedGradientButton(
+      {Key key,
+      @required this.child,
+      this.gradient,
+      this.height = 100,
+      this.width = double.infinity,
+      this.onPressed,
+      this.borderHighlight = false})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return RaisedButton(
       onPressed: onPressed,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(80.0)),
+      shape: RoundedRectangleBorder(
+          side: borderHighlight
+              ? BorderSide(width: 3, color: Colors.white)
+              : BorderSide.none,
+          borderRadius: BorderRadius.circular(80.0)),
       padding: const EdgeInsets.all(0.0),
       child: Ink(
         decoration: BoxDecoration(

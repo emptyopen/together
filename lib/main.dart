@@ -9,19 +9,20 @@ void main() => runApp(MyApp());
 // BIG: Add ability to change rules in lobby
 // Finish ability to kick
 // make lobby scrollable
-
-// next up: 
-// don't update game as leader when rejoining
 // Add turn system!!
 //   - Generate order of players and store it
 //   - Set turn player Id to first item in list
 //   - display cycle of player order
 //   - notice next to it with player's status
+// don't update game as leader when rejoining
+
+// next up: 
 
 // TODO: 
+// add rules to info box in the hunt
 // ensure creating new game that code is unique
-// ability leave a game (also delete session if last one out)
-// add ability to join current game (in case of crash, accidental) in main menu
+// ability to leave a game (also delete session if last one out) - dialog on back button (leave game or just go to main menu)
+// add ability to join current game (in case of crash, accidental) in main menu (3rd option if available)
 // React to getting kicked (timer check every 1 second to go back to lobby)
 // periodically check if player info isn't true? check current game and see if player is in it
 // BIG: add statistics for player accounts (number of games won, etc.)

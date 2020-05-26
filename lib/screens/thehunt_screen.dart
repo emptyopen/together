@@ -6,6 +6,7 @@ import 'package:together/components/buttons.dart';
 
 import 'package:together/components/misc.dart';
 import 'package:together/components/layouts.dart';
+import 'template/help_screen.dart';
 
 class TheHuntScreen extends StatefulWidget {
   TheHuntScreen({this.sessionId, this.userId, this.roomCode, this.isLeader});
@@ -104,13 +105,18 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
       location = document['huntLocation'];
     });
 
-    await Firestore.instance.collection('sessions').document(widget.sessionId).updateData({'setupComplete': true});
+    await Firestore.instance
+        .collection('sessions')
+        .document(widget.sessionId)
+        .updateData({'setupComplete': true});
   }
 
   updateTurn() async {
-    Map<String, dynamic> sessionData =
-        (await Firestore.instance.collection('sessions').document(widget.sessionId).get())
-            .data;
+    Map<String, dynamic> sessionData = (await Firestore.instance
+            .collection('sessions')
+            .document(widget.sessionId)
+            .get())
+        .data;
     var currActivePlayer = sessionData['turnPlayerId'];
     var allPlayers = sessionData['playerIds'];
     var activePlayerIndex = allPlayers.indexOf(currActivePlayer);
@@ -120,7 +126,10 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
     } else {
       nextActivePlayer = allPlayers[activePlayerIndex + 1];
     }
-    await Firestore.instance.collection('sessions').document(widget.sessionId).updateData({'turnPlayerId': nextActivePlayer});
+    await Firestore.instance
+        .collection('sessions')
+        .document(widget.sessionId)
+        .updateData({'turnPlayerId': nextActivePlayer});
   }
 
   fakeCallback() {}
@@ -170,7 +179,9 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
               builder: (context, snapshot) {
                 return Container(
                   width: 250,
-                  decoration: BoxDecoration(border: Border.all(), borderRadius: BorderRadius.circular(20)),
+                  decoration: BoxDecoration(
+                      border: Border.all(),
+                      borderRadius: BorderRadius.circular(20)),
                   padding: EdgeInsets.all(10),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -181,12 +192,12 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
                               style: TextStyle(
                                   fontSize: 20,
                                   color: Theme.of(context).primaryColor),
-                                  textAlign: TextAlign.center,
+                              textAlign: TextAlign.center,
                             )
                           : Text(
                               'It is ${snapshot.data['name']}\'s turn!',
                               style: TextStyle(fontSize: 20),
-                                  textAlign: TextAlign.center,
+                              textAlign: TextAlign.center,
                             ),
                       PageBreak(width: 80),
                       Column(children: names),
@@ -228,7 +239,15 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
             IconButton(
               icon: Icon(Icons.info),
               onPressed: () {
-                print('will open help');
+                // HapticFeedback.heavyImpact();
+                Navigator.of(context).push(
+                  PageRouteBuilder(
+                    opaque: false,
+                    pageBuilder: (BuildContext context, _, __) {
+                      return TheHuntScreenHelp();
+                    },
+                  ),
+                );
               },
             ),
           ],
@@ -361,5 +380,27 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
             ],
           ),
         ));
+  }
+}
+
+class TheHuntScreenHelp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return HelpScreen(
+      title: 'The Hunt: Rules',
+      information: [
+        '    The objectives of the game are simple:\n\n(1) If you ARE NOT a spy, you are a citizen trying to find the spy(ies). \n\n(2) If you ARE a spy, '
+            'you are trying to figure out where the location is.\n\n(3) Spies lose and win, together. Same for citizens.',
+        '    Players take turns asking questions to a player of their choice. The question can be anything, '
+            'and the answer can be anything.\n\n    Just keep in mind that vagueness can be suspicious!',
+            '    At any point, a player can accuse another player of being the spy.\n\n    '
+            'A verdict requires a unanimous vote, less the remaining number of spies.',
+            '    The game ends in two general ways:\n\n(1) A spy can reveal they are the spy at any time, and attempt to guess the location. '
+            'If they guess correctly, the spies win. If they guess incorrectly, the spies lose.'
+            '\n\n(2) If a player is unanimously accused and there is only one spy left, the citizens win. If there is more than one spy, '
+            'the accused (if a spy) gets a chance to guess the location before getting sentenced to silence (following #1 rules for winning).'
+      ],
+      buttonColor: Theme.of(context).primaryColor,
+    );
   }
 }
