@@ -6,7 +6,9 @@ import 'package:together/components/buttons.dart';
 
 import 'package:together/components/misc.dart';
 import 'package:together/components/layouts.dart';
+import 'package:together/services/services.dart';
 import 'template/help_screen.dart';
+import 'lobby_screen.dart';
 
 class TheHuntScreen extends StatefulWidget {
   TheHuntScreen({this.sessionId, this.userId, this.roomCode, this.isLeader});
@@ -23,6 +25,7 @@ class TheHuntScreen extends StatefulWidget {
 class _TheHuntScreenState extends State<TheHuntScreen> {
   String location;
   String role;
+  String gameName;
   List<dynamic> possibleLocations;
   List<dynamic> subList1;
   List<dynamic> subList2;
@@ -35,6 +38,28 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
     setUpGame();
   }
 
+  checkIfExit() async {
+    // run async func to check if game is back to lobby or deleted (main menu)
+    var data = (await Firestore.instance.collection('sessions').document(widget.sessionId).get()).data;
+    if (data == null) {
+      print('game was deleted');
+      // navigate to main menu
+      Navigator.of(context).pop();
+    } else if (data['state'] == 'lobby') {
+      // reset first player
+      String firstPlayer = data['playerIds'][0];
+      await Firestore.instance.collection('sessions').document(widget.sessionId).updateData({'turnPlayerId': firstPlayer});
+      // navigate to lobby
+      Navigator.of(context).pop();
+      slideTransition(
+          context,
+          LobbyScreen(
+            roomCode: widget.roomCode,
+          ),
+        );
+    } 
+  }
+
   setUpGame() async {
     Map<String, dynamic> session = (await Firestore.instance
             .collection('sessions')
@@ -42,6 +67,7 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
             .get())
         .data;
     setState(() {
+      gameName = session['gameName'];
       possibleLocations = session['rules']['locations'];
       subList2 = possibleLocations.sublist(0, possibleLocations.length ~/ 2);
       subList1 = possibleLocations.sublist(possibleLocations.length ~/ 2);
@@ -141,7 +167,9 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
             .where('roomCode', isEqualTo: widget.roomCode)
             .snapshots(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) {
+          // check if exit here, only on update
+          checkIfExit();
+          if (!snapshot.hasData || snapshot.data.documents.length == 0) {
             return Text(
               'No Data...',
             );
@@ -252,132 +280,161 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
             ),
           ],
         ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              getTurn(context),
-              SizedBox(height: 20),
-              FlatButton(
-                splashColor: Color.fromARGB(0, 1, 1, 1),
-                highlightColor: Color.fromARGB(0, 1, 1, 1),
-                onPressed: () {
-                  setState(() {
-                    roleIsVisible = !roleIsVisible;
-                  });
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(),
-                    borderRadius: BorderRadius.circular(20),
+        body: SingleChildScrollView(
+                  child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                SizedBox(height: 50),
+                getTurn(context),
+                SizedBox(height: 20),
+                FlatButton(
+                  splashColor: Color.fromARGB(0, 1, 1, 1),
+                  highlightColor: Color.fromARGB(0, 1, 1, 1),
+                  onPressed: () {
+                    setState(() {
+                      roleIsVisible = !roleIsVisible;
+                    });
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(),
+                      borderRadius: BorderRadius.circular(20),
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    padding: EdgeInsets.all(10),
+                    width: 250,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        Text(
+                          roleIsVisible
+                              ? '(Tap to hide role)'
+                              : 'Tap to show role',
+                          style: TextStyle(
+                              fontSize: roleIsVisible ? 16 : 20,
+                              color: roleIsVisible
+                                  ? Colors.grey[400]
+                                  : Colors.white),
+                        ),
+                        roleIsVisible
+                            ? SizedBox(
+                                height: 10,
+                              )
+                            : Container(),
+                        roleIsVisible && location != null && role != null
+                            ? role == 'spy'
+                                ? Column(
+                                    children: <Widget>[
+                                      Text(
+                                        'You are the spy!',
+                                        style: TextStyle(
+                                            fontSize: 22, color: Colors.white),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      Text(
+                                        '(Try and figure out the location!)',
+                                        style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey[300]),
+                                        textAlign: TextAlign.center,
+                                      )
+                                    ],
+                                  )
+                                : Column(
+                                    children: <Widget>[
+                                      Text(
+                                        'Location:',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Colors.grey[400],
+                                        ),
+                                      ),
+                                      Text(
+                                        '$location',
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      SizedBox(height: 10),
+                                      Text(
+                                        'Your role:',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Colors.grey[400],
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      Text(
+                                        '$role',
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          color: Colors.white,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ],
+                                  )
+                            : Container(),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20),
+                possibleLocations != null
+                    ? LocationBoard(
+                        subList1: subList1,
+                        subList2: subList2,
+                        strikethroughs: strikethroughs,
+                        callback: fakeCallback,
+                      )
+                    : Container(),
+                SizedBox(
+                  height: 20,
+                ),
+                Text(
+                  'Room Code:',
+                  style: TextStyle(
+                    fontSize: 16,
+                  ),
+                ),
+                PageBreak(width: 80),
+                Text(
+                  widget.roomCode,
+                  style: TextStyle(
+                    fontSize: 20,
                     color: Theme.of(context).primaryColor,
                   ),
-                  padding: EdgeInsets.all(10),
-                  width: 250,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Text(
-                        roleIsVisible
-                            ? '(Tap to hide role)'
-                            : 'Tap to show role',
-                        style: TextStyle(
-                            fontSize: roleIsVisible ? 16 : 20,
-                            color: roleIsVisible
-                                ? Colors.grey[400]
-                                : Colors.white),
-                      ),
-                      roleIsVisible
-                          ? SizedBox(
-                              height: 10,
-                            )
-                          : Container(),
-                      roleIsVisible && location != null && role != null
-                          ? role == 'spy'
-                              ? Column(
-                                  children: <Widget>[
-                                    Text(
-                                      'You are the spy!',
-                                      style: TextStyle(
-                                          fontSize: 22, color: Colors.white),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    Text(
-                                      '(Try and figure out the location!)',
-                                      style: TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.grey[300]),
-                                      textAlign: TextAlign.center,
-                                    )
-                                  ],
-                                )
-                              : Column(
-                                  children: <Widget>[
-                                    Text(
-                                      'Location:',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: Colors.grey[400],
-                                      ),
-                                    ),
-                                    Text(
-                                      '$location',
-                                      style: TextStyle(
-                                        fontSize: 20,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                    SizedBox(height: 10),
-                                    Text(
-                                      'Your role:',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: Colors.grey[400],
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    Text(
-                                      '$role',
-                                      style: TextStyle(
-                                        fontSize: 20,
-                                        color: Colors.white,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ],
-                                )
-                          : Container(),
+                ),
+                SizedBox(height: 30),
+                RaisedGradientButton(
+                  child: Text(
+                    'End game',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  onPressed: () {
+                    showDialog<Null>(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return EndGameDialog(
+                          sessionId: widget.sessionId,
+                        );
+                      },
+                    );
+                  },
+                  height: 40,
+                  width: 140,
+                  gradient: LinearGradient(
+                    colors: <Color>[
+                      Color.fromARGB(255, 255, 185, 0),
+                      Color.fromARGB(255, 255, 213, 0),
                     ],
                   ),
                 ),
-              ),
-              SizedBox(height: 30),
-              possibleLocations != null
-                  ? LocationBoard(
-                      subList1: subList1,
-                      subList2: subList2,
-                      strikethroughs: strikethroughs,
-                      callback: fakeCallback,
-                    )
-                  : Container(),
-              SizedBox(
-                height: 20,
-              ),
-              Text(
-                'Room Code:',
-                style: TextStyle(
-                  fontSize: 16,
-                ),
-              ),
-              PageBreak(width: 80),
-              Text(
-                widget.roomCode,
-                style: TextStyle(
-                  fontSize: 20,
-                  color: Theme.of(context).primaryColor,
-                ),
-              ),
-            ],
+                SizedBox(height: 80),
+              ],
+            ),
           ),
         ));
   }
@@ -393,14 +450,144 @@ class TheHuntScreenHelp extends StatelessWidget {
             'you are trying to figure out where the location is.\n\n(3) Spies lose and win, together. Same for citizens.',
         '    Players take turns asking questions to a player of their choice. The question can be anything, '
             'and the answer can be anything.\n\n    Just keep in mind that vagueness can be suspicious!',
-            '    At any point, a player can accuse another player of being the spy.\n\n    '
+        '    At any point, a player can accuse another player of being the spy.\n\n    '
             'A verdict requires a unanimous vote, less the remaining number of spies.',
-            '    The game ends in two general ways:\n\n(1) A spy can reveal they are the spy at any time, and attempt to guess the location. '
+        '    The game ends in two general ways:\n\n(1) A spy can reveal they are the spy at any time, and attempt to guess the location. '
             'If they guess correctly, the spies win. If they guess incorrectly, the spies lose.'
             '\n\n(2) If a player is unanimously accused and there is only one spy left, the citizens win. If there is more than one spy, '
             'the accused (if a spy) gets a chance to guess the location before getting sentenced to silence (following #1 rules for winning).'
       ],
       buttonColor: Theme.of(context).primaryColor,
+    );
+  }
+}
+
+class EndGameDialog extends StatefulWidget {
+  EndGameDialog({this.sessionId});
+
+  final String sessionId;
+
+  @override
+  _EndGameDialogState createState() => _EndGameDialogState();
+}
+
+class _EndGameDialogState extends State<EndGameDialog> {
+  String spiesOrCitizensWon = 'Spies';
+
+  endGame(bool isToLobby) async {
+    // leader can end game if someone won
+    // assign winner (add statistics)
+    // choice of lobby for another game or back to main menu
+    if (isToLobby) {
+      print('will end game and go to lobby');
+      // update session state to lobby - this automatically will trigger to lobby
+      await Firestore.instance.collection('sessions').document(widget.sessionId).updateData({'state': 'lobby'});
+      Navigator.of(context).pop();
+    } else {
+      await Firestore.instance.collection('sessions').document(widget.sessionId).delete();
+      Navigator.of(context).pop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    var width = MediaQuery.of(context).size.width;
+    return AlertDialog(
+      title: Text('End the game!'),
+      contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),
+      content: Container(
+        height: 180,
+        width: width * 0.95,
+        child: ListView(
+          children: <Widget>[
+            SizedBox(height: 20),
+            Text('Who won?'),
+            Container(
+              width: 80,
+              child: DropdownButton<String>(
+                isExpanded: true,
+                value: spiesOrCitizensWon,
+                iconSize: 24,
+                elevation: 16,
+                style: TextStyle(color: Theme.of(context).primaryColor),
+                underline: Container(
+                  height: 2,
+                  color: Theme.of(context).primaryColor,
+                ),
+                onChanged: (String newValue) {
+                  setState(() {
+                    spiesOrCitizensWon = newValue;
+                  });
+                },
+                items: <String>['Spies', 'Citizens']
+                    .map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child:
+                        Text(value, style: TextStyle(fontFamily: 'Balsamiq', fontSize: 18,)),
+                  );
+                }).toList(),
+              ),
+            ),
+            SizedBox(height: 10),
+            Text('End game and go back to:'),
+            SizedBox(height: 10),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: <Widget>[
+                Container(
+                  height: 50,
+                  width: 110,
+                  child: RaisedGradientButton(
+                    child: Text(
+                      'Lobby',
+                      style: TextStyle(fontSize: 18),
+                    ),
+                    gradient: LinearGradient(
+                      colors: <Color>[
+                        Color.fromARGB(255, 255, 185, 0),
+                        Color.fromARGB(255, 255, 213, 0),
+                      ],
+                    ),
+                    onPressed: () => endGame(true),
+                  ),
+                ),
+                Container(
+                  height: 50,
+                  width: 150,
+                  child: RaisedGradientButton(
+                    child: Text(
+                      'Main Menu',
+                      style: TextStyle(fontSize: 18),
+                    ),
+                    gradient: LinearGradient(
+                      colors: <Color>[
+                        Color.fromARGB(255, 255, 185, 0),
+                        Color.fromARGB(255, 255, 213, 0),
+                      ],
+                    ),
+                    onPressed: () => endGame(false),
+                  ),
+                ),
+              ],
+            )
+          ],
+        ),
+      ),
+      actions: <Widget>[
+        Container(
+          child: FlatButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: Text(
+              'Cancel',
+              style: TextStyle(fontSize: 16),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

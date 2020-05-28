@@ -11,10 +11,9 @@ import 'package:together/services/services.dart';
 import 'package:together/screens/thehunt_screen.dart';
 
 class LobbyScreen extends StatefulWidget {
-  LobbyScreen({Key key, this.roomCode, this.gameName}) : super(key: key);
+  LobbyScreen({Key key, this.roomCode}) : super(key: key);
 
   final String roomCode;
-  final String gameName;
 
   @override
   _LobbyScreenState createState() => _LobbyScreenState();
@@ -29,6 +28,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
   String sessionId;
   String userId;
   String leaderId;
+  String gameName;
   bool calledGameRoom = false;
 
   @override
@@ -86,6 +86,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
         // check if current user is leader
         setState(() {
           isLeader = documentData['leader'] == userId;
+          gameName = documentData['game'];
         });
       }
     }).catchError((e) => print('error fetching data: $e'));
@@ -181,7 +182,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
           } else {
             DocumentSnapshot items = snapshot.data.documents[0];
             var rules = items['rules'];
-            switch (widget.gameName) {
+            switch (gameName) {
               case 'The Hunt':
                 return Container(
                   width: 250,
@@ -292,7 +293,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          '${widget.gameName}: Lobby',
+          '${gameName}: Lobby',
         ),
       ),
       body: SingleChildScrollView(
@@ -374,7 +375,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                               context: context,
                               builder: (BuildContext context) {
                                 return EditRulesDialog(
-                                  game: widget.gameName,
+                                  game: gameName,
                                   sessionId: sessionId,
                                 );
                               },

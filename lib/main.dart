@@ -15,11 +15,16 @@ void main() => runApp(MyApp());
 //   - display cycle of player order
 //   - notice next to it with player's status
 // don't update game as leader when rejoining
+// add rules to info box in the hunt
+// add ability for leader to end the game, return to lobby (add stats to winner, etc) or kill game
 
 // next up: 
 
 // TODO: 
-// add rules to info box in the hunt
+// add credits screen for winners and losers (template)
+// when room is destroyed by host (or is removed for any other reason), make sure everyone resolves back to main menu (with snackbar)
+// when joining a game (and setting current game), check if current game exists. if so, remove player from game 
+// clean up games that are finished (might need backend service)
 // ensure creating new game that code is unique
 // ability to leave a game (also delete session if last one out) - dialog on back button (leave game or just go to main menu)
 // add ability to join current game (in case of crash, accidental) in main menu (3rd option if available)

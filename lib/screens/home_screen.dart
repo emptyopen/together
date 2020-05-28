@@ -176,7 +176,6 @@ class _LobbyDialogState extends State<LobbyDialog> {
       context,
       LobbyScreen(
         roomCode: _roomCode.toUpperCase(),
-        gameName: game,
       ),
     );
   }
@@ -216,7 +215,6 @@ class _LobbyDialogState extends State<LobbyDialog> {
           context,
           LobbyScreen(
             roomCode: _roomCodeController.text.toUpperCase(),
-            gameName: event.documents.single.data['game'],
           ),
         );
       }
