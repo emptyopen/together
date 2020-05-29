@@ -5,7 +5,6 @@ import 'dart:async';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'dart:collection';
 import 'dart:math';
-import 'dart:convert';
 
 import '../components/buttons.dart';
 import '../components/layouts.dart';
@@ -15,7 +14,6 @@ import 'package:together/constants/values.dart';
 import 'package:together/services/services.dart';
 import 'package:together/screens/thehunt_screen.dart';
 import 'package:together/screens/abstract_screen.dart';
-
 
 class LobbyScreen extends StatefulWidget {
   LobbyScreen({Key key, this.roomCode}) : super(key: key);
@@ -37,6 +35,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
   String leaderId;
   String gameName;
   bool calledGameRoom = false;
+  String startError = '';
 
   @override
   void initState() {
@@ -59,30 +58,28 @@ class _LobbyScreenState extends State<LobbyScreen> {
           });
           Navigator.of(context).pop();
           switch (gameName) {
-            case 'The Hunt': 
-
-          slideTransition(
-            context,
-            TheHuntScreen(
-              sessionId: sessionId,
-              userId: userId,
-              roomCode: widget.roomCode,
-              isLeader: isLeader,
-            ),
-          );
-          break;
-          case 'Abstract':
-
-          slideTransition(
-            context,
-            AbstractScreen(
-              sessionId: sessionId,
-              userId: userId,
-              roomCode: widget.roomCode,
-              isLeader: isLeader,
-            ),
-          );
-          break;
+            case 'The Hunt':
+              slideTransition(
+                context,
+                TheHuntScreen(
+                  sessionId: sessionId,
+                  userId: userId,
+                  roomCode: widget.roomCode,
+                  isLeader: isLeader,
+                ),
+              );
+              break;
+            case 'Abstract':
+              slideTransition(
+                context,
+                AbstractScreen(
+                  sessionId: sessionId,
+                  userId: userId,
+                  roomCode: widget.roomCode,
+                  isLeader: isLeader,
+                ),
+              );
+              break;
           }
         }
       }
@@ -141,29 +138,208 @@ class _LobbyScreenState extends State<LobbyScreen> {
         .then((event) async {
       if (event.documents.isNotEmpty) {
         String sessionId = event.documents.single.documentID;
-        var data = (await Firestore.instance.collection('sessions').document(sessionId).get()).data;
-        var boardSize = data['rules']['boardSize'];
-        List<RowList> words = [];
-
-        // hash set 
-        var hashSet = HashSet();
-        for (var i = 0; i < boardSize; i++) {
-          words.add(RowList());
-          for (var j = 0; j < boardSize; j++) {
-            Random _random = new Random();
-            String wordToAdd = abstractPossibleWords[_random.nextInt(abstractPossibleWords.length)];
-            while (hashSet.contains(wordToAdd)) {
-              wordToAdd = abstractPossibleWords[_random.nextInt(abstractPossibleWords.length)];
-            }
-            words[i].add(wordToAdd);
-          }
-        }
-        var serializedWords = [];
-        for (var i = 0; i < boardSize; i++) {
-          serializedWords.add(words[i].toJson());
-        }
+        var data = (await Firestore.instance
+                .collection('sessions')
+                .document(sessionId)
+                .get())
+            .data;
         var rules = data['rules'];
-        rules['words'] = serializedWords;
+
+        // initialize final values/rules for games
+        switch (gameName) {
+          case 'The Hunt':
+            // TODO: initialize all the stuff here
+            break;
+          case 'Abstract':
+            // TODO: !!!!!!!!!!!!!! only perform this once, set flag in session afterwards
+
+            // verify that there are sufficient number of players
+            if ((rules['numTeams'] == 2 && data['playerIds'].length < 4) ||
+                (rules['numTeams'] == 3 && data['playerIds'].length < 6)) {
+              print('insufficient players');
+              setState(() {
+                startError = 'Insufficient player';
+              });
+              return; // TODO: this might need to be a flag instead
+            }
+
+            // functions for getting random coordinates
+            Random _random = new Random();
+            List<int> randomCoords(int boardSize) {
+              return [_random.nextInt(boardSize), _random.nextInt(boardSize)];
+            }
+            List getWordCoords(
+                HashSet teamWordsHashSet, int boardSize, int numWords) {
+              List coordsList = [];
+              while (coordsList.length < numWords) {
+                List<int> coordsToAdd = randomCoords(boardSize);
+                while (teamWordsHashSet.contains(coordsToAdd)) {
+                  coordsToAdd = randomCoords(boardSize);
+                }
+                teamWordsHashSet.add(coordsToAdd);
+                coordsList
+                    .add(Coords(x: coordsToAdd[0], y: coordsToAdd[1]).toJson());
+              }
+              return coordsList;
+            }
+
+            // initialize board
+            // initialize words
+            var boardSize = 5;
+            if (rules['numTeams'] == 3) {
+              boardSize = 6;
+            }
+            List<RowList> words = [];
+            var wordsHashSet = HashSet();
+            for (var i = 0; i < boardSize; i++) {
+              words.add(RowList());
+              for (var j = 0; j < boardSize; j++) {
+                Random _random = new Random();
+                String wordToAdd = abstractPossibleWords[
+                    _random.nextInt(abstractPossibleWords.length)];
+                while (wordsHashSet.contains(wordToAdd)) {
+                  wordToAdd = abstractPossibleWords[
+                      _random.nextInt(abstractPossibleWords.length)];
+                }
+                wordsHashSet.add(wordToAdd);
+                words[i].add(wordToAdd);
+              }
+            }
+            // update colors for words for teams / death word
+            // 2 teams & 5x5=25: (9, 8) = 17, 7 neutral, 1 death
+            // 3 teams & 6x6=36: (10, 9, 8) = 27, 8 neutral, 1 death
+            var teamWordsHashSet = HashSet();
+            if (rules['numTeams'] == 2) {
+              var possibleCardsNeeded = [9, 8];
+              possibleCardsNeeded.shuffle();
+              for (var coords in getWordCoords(
+                  teamWordsHashSet, 5, possibleCardsNeeded[0])) {
+                words[coords['x']].rowWords[coords['y']]['color'] = 'green';
+              }
+              for (var coords in getWordCoords(
+                  teamWordsHashSet, 5, possibleCardsNeeded[1])) {
+                words[coords['x']].rowWords[coords['y']]['color'] = 'orange';
+              }
+              for (var coords in getWordCoords(teamWordsHashSet, 5, 1)) {
+                words[coords['x']].rowWords[coords['y']]['color'] = 'black';
+              }
+            } else {
+              var possibleCardsNeeded = [10, 9, 8];
+              possibleCardsNeeded.shuffle();
+              for (var coords in getWordCoords(
+                  teamWordsHashSet, 5, possibleCardsNeeded[0])) {
+                words[coords['x']].rowWords[coords['y']]['color'] = 'green';
+              }
+              for (var coords in getWordCoords(
+                  teamWordsHashSet, 5, possibleCardsNeeded[1])) {
+                words[coords['x']].rowWords[coords['y']]['color'] = 'orange';
+              }
+              for (var coords in getWordCoords(
+                  teamWordsHashSet, 5, possibleCardsNeeded[2])) {
+                words[coords['x']].rowWords[coords['y']]['color'] = 'purple';
+              }
+              for (var coords in getWordCoords(teamWordsHashSet, 5, 1)) {
+                words[coords['x']].rowWords[coords['y']]['color'] = 'black';
+              }
+            }
+            // set words
+            var serializedWords = [];
+            for (var i = 0; i < boardSize; i++) {
+              serializedWords.add(words[i].toJson());
+            }
+            rules['words'] = serializedWords;
+
+            // initialize who is on which teams, and spymasters
+            // update user documents with their team color and isTeamLeader
+            // TODO: might want fine grained control of teams in lobby
+            var players = data['playerIds'];
+            players.shuffle();
+            if (rules['numTeams'] == 2) {
+              // divide playerIds into 2 teams
+              rules['greenTeam'] = players.sublist(0, players.length ~/ 2);
+              for (var playerId in rules['greenTeam']) {
+                await Firestore.instance
+                    .collection('users')
+                    .document(playerId)
+                    .updateData({
+                  'abstractTeam': 'green',
+                  'abstractTeamLeader': '',
+                });
+              }
+              rules['greenLeader'] = players[0];
+              await Firestore.instance
+                  .collection('users')
+                  .document(rules['greenLeader'])
+                  .updateData({'abstractTeamLeader': 'green'});
+              rules['orangeTeam'] =
+                  players.sublist(players.length ~/ 2, players.length);
+              for (var playerId in rules['orangeTeam']) {
+                await Firestore.instance
+                    .collection('users')
+                    .document(playerId)
+                    .updateData({
+                  'abstractTeam': 'orange',
+                  'abstractTeamLeader': '',
+                });
+              }
+              rules['orangeLeader'] = players[players.length ~/ 2];
+              await Firestore.instance
+                  .collection('users')
+                  .document(rules['orangeLeader'])
+                  .updateData({'abstractTeamLeader': 'orange'});
+            } else {
+              // divide playerIds into 3 teams
+              rules['greenTeam'] = players.sublist(0, players.length ~/ 3);
+              for (var playerId in rules['greenTeam']) {
+                await Firestore.instance
+                    .collection('users')
+                    .document(playerId)
+                    .updateData({
+                  'abstractTeam': 'green',
+                  'abstractTeamLeader': '',
+                });
+              }
+              rules['greenLeader'] = players[0];
+              await Firestore.instance
+                  .collection('users')
+                  .document(rules['greenLeader'])
+                  .updateData({'abstractTeamLeader': 'green'});
+              rules['orangeTeam'] =
+                  players.sublist(players.length ~/ 3, players.length ~/ 3 * 2);
+              for (var playerId in rules['orangeTeam']) {
+                await Firestore.instance
+                    .collection('users')
+                    .document(playerId)
+                    .updateData({
+                  'abstractTeam': 'orange',
+                  'abstractTeamLeader': '',
+                });
+              }
+              rules['orangeLeader'] = players[players.length ~/ 3];
+              await Firestore.instance
+                  .collection('users')
+                  .document(rules['orangeLeader'])
+                  .updateData({'abstractTeamLeader': 'orange'});
+              rules['purpleTeam'] =
+                  players.sublist(players.length ~/ 3 * 2, players.length);
+              for (var playerId in rules['purpleTeam']) {
+                await Firestore.instance
+                    .collection('users')
+                    .document(playerId)
+                    .updateData({
+                  'abstractTeam': 'purple',
+                  'abstractTeamLeader': '',
+                });
+              }
+              rules['purpleLeader'] = players[players.length ~/ 3 * 2];
+              await Firestore.instance
+                  .collection('users')
+                  .document(rules['purpleLeader'])
+                  .updateData({'abstractTeamLeader': 'purple'});
+            }
+            break;
+        }
+
         await Firestore.instance
             .collection('sessions')
             .document(sessionId)
@@ -173,7 +349,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
           'startTime': DateTime.now().add(Duration(seconds: 5)),
         });
       }
-    });//.catchError((e) => print('error fetching data: $e'));
+    }).catchError((e) => print('error fetching data: $e'));
   }
 
   StreamBuilder<QuerySnapshot> _getCountdown(BuildContext context) {
@@ -247,7 +423,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
                   width: 250,
                   child: Column(
                     children: <Widget>[
-                      Text('Board Size: ${rules['boardSize']}'),
                       Text('Number of Teams: ${rules['numTeams']}'),
                     ],
                   ),
@@ -343,12 +518,16 @@ class _LobbyScreenState extends State<LobbyScreen> {
             .document(sessionId)
             .get())
         .data;
-    var playerOrder = data['playerIds'];
-    playerOrder.shuffle();
-    await Firestore.instance
-        .collection('sessions')
-        .document(sessionId)
-        .updateData({'playerIds': playerOrder, 'turnPlayerId': playerOrder[0]});
+    switch (gameName) {
+      case 'The Hunt':
+        var playerOrder = data['playerIds'];
+        playerOrder.shuffle();
+        await Firestore.instance
+            .collection('sessions')
+            .document(sessionId)
+            .updateData({'playerIds': playerOrder, 'turn': playerOrder[0]});
+        break;
+    }
   }
 
   @override
@@ -397,7 +576,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
               ),
               PageBreak(width: 50),
               _getPlayers(),
-              isLeader && !isStarting
+              isLeader && !isStarting && ['The Hunt'].contains(gameName)
                   ? RaisedGradientButton(
                       child: Text(
                         'Shuffle Players',
@@ -473,6 +652,15 @@ class _LobbyScreenState extends State<LobbyScreen> {
                             ],
                           ),
                         ),
+                        SizedBox(height: 10),
+                        startError == ''
+                            ? Container()
+                            : Text(
+                                startError,
+                                style: TextStyle(
+                                  color: Colors.red,
+                                ),
+                              ),
                         SizedBox(
                           height: 30,
                         )
@@ -539,7 +727,6 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
         rules['locations'] = sessionData['rules']['locations'];
         break;
       case 'Abstract':
-        rules['boardSize'] = sessionData['rules']['boardSize'];
         rules['numTeams'] = sessionData['rules']['numTeams'];
         break;
     }
@@ -698,34 +885,6 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
             child: ListView(
               children: <Widget>[
                 SizedBox(height: 20),
-                Text('Board Size:'),
-                Container(
-                  width: 80,
-                  child: DropdownButton<int>(
-                    isExpanded: true,
-                    value: rules['boardSize'],
-                    iconSize: 24,
-                    elevation: 16,
-                    style: TextStyle(color: Theme.of(context).primaryColor),
-                    underline: Container(
-                      height: 2,
-                      color: Theme.of(context).primaryColor,
-                    ),
-                    onChanged: (int newValue) {
-                      setState(() {
-                        rules['boardSize'] = newValue;
-                      });
-                    },
-                    items: <int>[5, 6].map<DropdownMenuItem<int>>((int value) {
-                      return DropdownMenuItem<int>(
-                        value: value,
-                        child: Text(value.toString(),
-                            style: TextStyle(fontFamily: 'Balsamiq')),
-                      );
-                    }).toList(),
-                  ),
-                ),
-                SizedBox(height: 10),
                 Text('Num teams:'),
                 Container(
                   width: 80,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:together/components/buttons.dart';
 import 'package:flutter/services.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 import 'package:together/components/misc.dart';
 import 'package:together/components/dialogs.dart';
@@ -24,11 +25,12 @@ class AbstractScreen extends StatefulWidget {
 
 class _AbstractScreenState extends State<AbstractScreen> {
   int numTeams;
-  int boardSize;
   bool isLoading = true;
+  String userTeamLeader = '';
+  String userTeam = '';
   // TODO: consolidate into single 2d array?
-  List<List<String>> words = [];
-  List<List<String>> colors = [];
+  List<dynamic> words = [];
+  List<List<Color>> colors = [];
   List<List<bool>> flipped = [];
 
   @override
@@ -44,8 +46,6 @@ class _AbstractScreenState extends State<AbstractScreen> {
   @override
   dispose() {
     SystemChrome.setPreferredOrientations([
-      DeviceOrientation.landscapeRight,
-      DeviceOrientation.landscapeLeft,
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
     ]);
@@ -70,7 +70,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
       await Firestore.instance
           .collection('sessions')
           .document(widget.sessionId)
-          .updateData({'turn': firstPlayer});
+          .updateData({'turn': 'green'});
 
       // navigate to lobby
       Navigator.of(context).pop();
@@ -84,21 +84,29 @@ class _AbstractScreenState extends State<AbstractScreen> {
   }
 
   setUpGame() async {
-    // game should be completely set up by the time people enter
-    // 2 teams: green / orange. 3 teams: green / orange / purple
-    // board size, number of teams, and words, and assign player to a team
-    // should anyone be able to click / change turns?
-    var data = (await Firestore.instance.collection('sessions').document(widget.sessionId).get()).data;
-    boardSize = data['rules']['boardSize'];
+    var data = (await Firestore.instance
+            .collection('sessions')
+            .document(widget.sessionId)
+            .get())
+        .data;
+
+    var userData = (await Firestore.instance
+            .collection('users')
+            .document(widget.userId)
+            .get())
+        .data;
 
     print('setting up game...');
 
     setState(() {
-      List<dynamic> wordsJSON = data['rules']['words'];
-      words = [];
-      for (var row in wordsJSON) {
-        words.add(row['rowWords'].cast<String>());
-      }
+      numTeams = data['rules']['numTeams'];
+      userTeamLeader = userData['abstractTeamLeader'];
+      userTeam = userData['abstractTeam'];
+    });
+
+    setState(() {
+      // get words
+      words = data['rules']['words'];
       isLoading = false;
     });
   }
@@ -168,22 +176,65 @@ class _AbstractScreenState extends State<AbstractScreen> {
             return Row(
               children: <Widget>[
                 Text(
-                  'It\'s  ',
+                  'It\'s ',
                   style: TextStyle(fontSize: 18),
                 ),
                 Text(
                   activeTeam,
                   style:
-                      TextStyle(fontSize: 22, color: stringToColor(activeTeam)),
+                      TextStyle(fontSize: 18, color: stringToColor(activeTeam)),
                 ),
                 Text(
-                  '  team\'s turn!',
+                  ' team\'s turn!',
                   style: TextStyle(fontSize: 18),
                 ),
               ],
             );
           }
         });
+  }
+
+  getPlayerStatus() {
+    if (userTeamLeader == '') {
+      return Row(
+        children: <Widget>[
+          Text(
+            '(You are a commoner on ',
+            style: TextStyle(fontSize: 14),
+          ),
+          Text(
+            '$userTeam',
+            style: TextStyle(
+              fontSize: 14,
+              color: stringToColor(userTeam),
+            ),
+          ),
+          Text(
+            ' team)',
+            style: TextStyle(fontSize: 14),
+          ),
+        ],
+      );
+    }
+    return Row(
+      children: <Widget>[
+        Text(
+          '(You are the glorious leader of ',
+          style: TextStyle(fontSize: 14),
+        ),
+        Text(
+          '$userTeam',
+          style: TextStyle(
+            fontSize: 14,
+            color: stringToColor(userTeam),
+          ),
+        ),
+        Text(
+          ' team)',
+          style: TextStyle(fontSize: 14),
+        ),
+      ],
+    );
   }
 
   getBoard() {
@@ -205,17 +256,162 @@ class _AbstractScreenState extends State<AbstractScreen> {
     );
   }
 
+  getColorFromString(String colorName, bool isLeaderAndNotFlipped) {
+    if (isLeaderAndNotFlipped) {
+      switch (colorName) {
+        case 'white':
+          return Colors.white;
+          break;
+        case 'green':
+          return Colors.green[100];
+          break;
+        case 'orange':
+          return Colors.orange[100];
+          break;
+        case 'purple':
+          return Colors.purple[100];
+          break;
+        case 'black':
+          return Colors.grey[800];
+          break;
+        case 'grey':
+          return Colors.grey[200];
+          break;
+        default:
+          return Colors.grey;
+          break;
+      }
+    } else {
+      switch (colorName) {
+        case 'white':
+          return Colors.white;
+          break;
+        case 'green':
+          return Colors.green;
+          break;
+        case 'orange':
+          return Colors.orange;
+          break;
+        case 'purple':
+          return Colors.purple;
+          break;
+        case 'black':
+          return Colors.black;
+          break;
+        default:
+          return Colors.grey;
+          break;
+      }
+    }
+  }
+
+  flipCard(int x, int y) async {
+    var data = (await Firestore.instance
+            .collection('sessions')
+            .document(widget.sessionId)
+            .get())
+        .data;
+
+    // check if it is player's turn
+    if (data['turn'] != userTeam) {
+      print('cannot flip when it is not your turn');
+      return;
+    }
+
+    // flip card
+    setState(() {
+      words[x]['rowWords'][y]['flipped'] = true;
+    });
+    data['rules']['words'] = words;
+    await Firestore.instance
+        .collection('sessions')
+        .document(widget.sessionId)
+        .updateData({'rules': data['rules']});
+
+    // if card is bad, update turn
+    if (words[x]['rowWords'][y]['color'] != userTeam) {
+      print('bad card, switching turns');
+      if (data['turn'] == 'green') {
+        await Firestore.instance
+            .collection('sessions')
+            .document(widget.sessionId)
+            .updateData({'turn': 'orange'});
+      } else if (data['turn'] == 'green' && data['numTeams'] == 2) {
+        await Firestore.instance
+            .collection('sessions')
+            .document(widget.sessionId)
+            .updateData({'turn': 'green'});
+      } else if (data['turn'] == 'green' && data['numTeams'] == 3) {
+        await Firestore.instance
+            .collection('sessions')
+            .document(widget.sessionId)
+            .updateData({'turn': 'purple'});
+      } else {
+        await Firestore.instance
+            .collection('sessions')
+            .document(widget.sessionId)
+            .updateData({'turn': 'green'});
+      }
+    }
+
+    // check if either team is done
+
+    // check if death card loss
+
+    // update status of game to "complete"
+
+    // game over update status in Turn widget
+  }
+
   Widget _buildGridItems(BuildContext context, int index) {
     int gridStateLength = words.length;
     int x, y = 0;
     x = (index / gridStateLength).floor();
     y = (index % gridStateLength);
+    bool tileIsVisible =
+        userTeamLeader != '' || words[x]['rowWords'][y]['flipped'];
     return GridTile(
       child: Container(
-        decoration:
-            BoxDecoration(border: Border.all(color: Colors.black, width: 0.5)),
+        decoration: BoxDecoration(
+          color: tileIsVisible
+              ? getColorFromString(
+                  words[x]['rowWords'][y]['color'],
+                  userTeamLeader != '' && !words[x]['rowWords'][y]['flipped']
+                      ? true
+                      : false)
+              : Colors.white,
+          border: Border.all(color: Colors.black, width: 0.5),
+        ),
         child: Center(
-          child: FlatButton(onPressed: () {print('hi');}, child: Text(words[x][y])),
+          child: FlatButton(
+            onPressed: () => flipCard(x, y),
+            child: words[x]['rowWords'][y]['color'] == 'black'
+                ? Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Text(
+                        words[x]['rowWords'][y]['name'],
+                        style: TextStyle(
+                            color: tileIsVisible &&
+                                    words[x]['rowWords'][y]['color'] == 'black'
+                                ? Colors.white
+                                : Colors.black),
+                      ),
+                      Icon(
+                        MdiIcons.skull,
+                        color: Colors.white,
+                      ),
+                    ],
+                  )
+                : Text(
+                    words[x]['rowWords'][y]['name'],
+                    style: TextStyle(
+                        color: tileIsVisible &&
+                                words[x]['rowWords'][y]['color'] == 'black'
+                            ? Colors.white
+                            : Colors.black),
+                  ),
+          ),
         ),
       ),
     );
@@ -254,7 +450,12 @@ class _AbstractScreenState extends State<AbstractScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
-                    getTurn(context),
+                    Column(
+                      children: <Widget>[
+                        getTurn(context),
+                        getPlayerStatus(),
+                      ],
+                    ),
                     SizedBox(width: 50),
                     Column(
                       children: <Widget>[
@@ -275,32 +476,32 @@ class _AbstractScreenState extends State<AbstractScreen> {
                     ),
                     SizedBox(width: 50),
                     widget.isLeader
-                    ? RaisedGradientButton(
-                        child: Text(
-                          'End game',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                        onPressed: () {
-                          showDialog<Null>(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return EndGameDialog(
-                                game: 'Abstract',
-                                sessionId: widget.sessionId,
+                        ? RaisedGradientButton(
+                            child: Text(
+                              'End game',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                            onPressed: () {
+                              showDialog<Null>(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return EndGameDialog(
+                                    game: 'Abstract',
+                                    sessionId: widget.sessionId,
+                                  );
+                                },
                               );
                             },
-                          );
-                        },
-                        height: 40,
-                        width: 140,
-                        gradient: LinearGradient(
-                          colors: <Color>[
-                            Color.fromARGB(255, 255, 185, 0),
-                            Color.fromARGB(255, 255, 213, 0),
-                          ],
-                        ),
-                      )
-                    : Container(),
+                            height: 40,
+                            width: 140,
+                            gradient: LinearGradient(
+                              colors: <Color>[
+                                Color.fromARGB(255, 255, 185, 0),
+                                Color.fromARGB(255, 255, 213, 0),
+                              ],
+                            ),
+                          )
+                        : Container(),
                   ],
                 ),
                 SizedBox(height: 10),

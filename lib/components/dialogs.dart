@@ -86,6 +86,32 @@ class _EndGameDialogState extends State<EndGameDialog> {
     }
   }
 
+  getDropdownValue() {
+    switch (widget.game) {
+      case 'The Hunt':
+        return theHuntWinner;
+        break;
+      case 'Abstract':
+        return abstractWinner;
+        break;
+    }
+  }
+
+  setDropdownValue(String newValue) {
+    switch (widget.game) {
+      case 'The Hunt':
+        setState(() {
+          theHuntWinner = newValue;
+        });
+        break;
+      case 'Abstract':
+        setState(() {
+          abstractWinner = newValue;
+        });
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     var width = MediaQuery.of(context).size.width;
@@ -103,7 +129,7 @@ class _EndGameDialogState extends State<EndGameDialog> {
               width: 80,
               child: DropdownButton<String>(
                 isExpanded: true,
-                value: theHuntWinner,
+                value: getDropdownValue(),
                 iconSize: 24,
                 elevation: 16,
                 style: TextStyle(color: Theme.of(context).primaryColor),
@@ -111,11 +137,7 @@ class _EndGameDialogState extends State<EndGameDialog> {
                   height: 2,
                   color: Theme.of(context).primaryColor,
                 ),
-                onChanged: (String newValue) {
-                  setState(() {
-                    theHuntWinner = newValue;
-                  });
-                },
+                onChanged: (String newValue) => setDropdownValue(newValue),
                 items: getWinnerDropdown(),
               ),
             ),

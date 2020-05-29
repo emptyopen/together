@@ -15,12 +15,15 @@ void main() => runApp(MyApp());
 // next up:
 // ability to leave a game (also delete session if last one out) - dialog on back button (leave game or just go to main menu)
 // BIG: add abstract
-//  - still need to initialize spy masters, and colors of words for each team (and death card)
-//  - cards are clickable only by leader? or by everyone
-//  - 6x6 with 3 teams? 5x5 with 2 teams 
-//  - figure out colors 
+//  - only spymasters should see flipped board 
+//  - everyone else sees color only when flipped
+//  - auto change turn when flipped card is not their team's 
+//  - add turn timer? 
+//  - end game automatically when all cards are flipped or death card is flipped
+// move setup code from hunt to lobby
 
 // TODO:
+// voting system for choosing abstract cards (all members of team must select it)
 // if leader leaves a game, need to assign remaining player the leader position
 // require minimum num players for hunt / abstract
 // add snackbar when auto exiting to lobby or main menu

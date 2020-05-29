@@ -147,9 +147,7 @@ class _LobbyDialogState extends State<LobbyDialog> {
         break;
       case 'Abstract':
         return {
-          'boardSize': 5,
           'numTeams': 2,
-          'words': ['hello', 'ok'],
         };
         break;
     }
