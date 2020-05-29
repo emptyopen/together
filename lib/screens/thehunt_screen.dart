@@ -6,6 +6,7 @@ import 'package:together/components/buttons.dart';
 
 import 'package:together/components/misc.dart';
 import 'package:together/components/layouts.dart';
+import 'package:together/components/dialogs.dart';
 import 'package:together/services/services.dart';
 import 'template/help_screen.dart';
 import 'lobby_screen.dart';
@@ -48,7 +49,7 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
     } else if (data['state'] == 'lobby') {
       // reset first player
       String firstPlayer = data['playerIds'][0];
-      await Firestore.instance.collection('sessions').document(widget.sessionId).updateData({'turnPlayerId': firstPlayer});
+      await Firestore.instance.collection('sessions').document(widget.sessionId).updateData({'turn': firstPlayer});
       // navigate to lobby
       Navigator.of(context).pop();
       slideTransition(
@@ -143,7 +144,7 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
             .document(widget.sessionId)
             .get())
         .data;
-    var currActivePlayer = sessionData['turnPlayerId'];
+    var currActivePlayer = sessionData['turn'];
     var allPlayers = sessionData['playerIds'];
     var activePlayerIndex = allPlayers.indexOf(currActivePlayer);
     var nextActivePlayer;
@@ -155,7 +156,7 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
     await Firestore.instance
         .collection('sessions')
         .document(widget.sessionId)
-        .updateData({'turnPlayerId': nextActivePlayer});
+        .updateData({'turn': nextActivePlayer});
   }
 
   fakeCallback() {}
@@ -176,7 +177,7 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
           } else {
             DocumentSnapshot items = snapshot.data.documents[0];
             var players = items['playerIds'];
-            var activePlayer = items['turnPlayerId'];
+            var activePlayer = items['turn'];
             List<Widget> names = [];
             players.forEach((val) {
               names.add(
@@ -205,6 +206,9 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
                   .document(activePlayer)
                   .get(),
               builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return Container();
+                }
                 return Container(
                   width: 250,
                   decoration: BoxDecoration(
@@ -408,7 +412,7 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
                   ),
                 ),
                 SizedBox(height: 30),
-                RaisedGradientButton(
+                widget.isLeader ? RaisedGradientButton(
                   child: Text(
                     'End game',
                     style: TextStyle(fontSize: 16),
@@ -418,6 +422,7 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
                       context: context,
                       builder: (BuildContext context) {
                         return EndGameDialog(
+                          game: 'The Hunt',
                           sessionId: widget.sessionId,
                         );
                       },
@@ -431,7 +436,7 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
                       Color.fromARGB(255, 255, 213, 0),
                     ],
                   ),
-                ),
+                ) : Container(),
                 SizedBox(height: 80),
               ],
             ),
@@ -462,132 +467,4 @@ class TheHuntScreenHelp extends StatelessWidget {
   }
 }
 
-class EndGameDialog extends StatefulWidget {
-  EndGameDialog({this.sessionId});
 
-  final String sessionId;
-
-  @override
-  _EndGameDialogState createState() => _EndGameDialogState();
-}
-
-class _EndGameDialogState extends State<EndGameDialog> {
-  String spiesOrCitizensWon = 'Spies';
-
-  endGame(bool isToLobby) async {
-    // leader can end game if someone won
-    // assign winner (add statistics)
-    // choice of lobby for another game or back to main menu
-    if (isToLobby) {
-      print('will end game and go to lobby');
-      // update session state to lobby - this automatically will trigger to lobby
-      await Firestore.instance.collection('sessions').document(widget.sessionId).updateData({'state': 'lobby'});
-      Navigator.of(context).pop();
-    } else {
-      await Firestore.instance.collection('sessions').document(widget.sessionId).delete();
-      Navigator.of(context).pop();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    var width = MediaQuery.of(context).size.width;
-    return AlertDialog(
-      title: Text('End the game!'),
-      contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),
-      content: Container(
-        height: 180,
-        width: width * 0.95,
-        child: ListView(
-          children: <Widget>[
-            SizedBox(height: 20),
-            Text('Who won?'),
-            Container(
-              width: 80,
-              child: DropdownButton<String>(
-                isExpanded: true,
-                value: spiesOrCitizensWon,
-                iconSize: 24,
-                elevation: 16,
-                style: TextStyle(color: Theme.of(context).primaryColor),
-                underline: Container(
-                  height: 2,
-                  color: Theme.of(context).primaryColor,
-                ),
-                onChanged: (String newValue) {
-                  setState(() {
-                    spiesOrCitizensWon = newValue;
-                  });
-                },
-                items: <String>['Spies', 'Citizens']
-                    .map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child:
-                        Text(value, style: TextStyle(fontFamily: 'Balsamiq', fontSize: 18,)),
-                  );
-                }).toList(),
-              ),
-            ),
-            SizedBox(height: 10),
-            Text('End game and go back to:'),
-            SizedBox(height: 10),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: <Widget>[
-                Container(
-                  height: 50,
-                  width: 110,
-                  child: RaisedGradientButton(
-                    child: Text(
-                      'Lobby',
-                      style: TextStyle(fontSize: 18),
-                    ),
-                    gradient: LinearGradient(
-                      colors: <Color>[
-                        Color.fromARGB(255, 255, 185, 0),
-                        Color.fromARGB(255, 255, 213, 0),
-                      ],
-                    ),
-                    onPressed: () => endGame(true),
-                  ),
-                ),
-                Container(
-                  height: 50,
-                  width: 150,
-                  child: RaisedGradientButton(
-                    child: Text(
-                      'Main Menu',
-                      style: TextStyle(fontSize: 18),
-                    ),
-                    gradient: LinearGradient(
-                      colors: <Color>[
-                        Color.fromARGB(255, 255, 185, 0),
-                        Color.fromARGB(255, 255, 213, 0),
-                      ],
-                    ),
-                    onPressed: () => endGame(false),
-                  ),
-                ),
-              ],
-            )
-          ],
-        ),
-      ),
-      actions: <Widget>[
-        Container(
-          child: FlatButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: Text(
-              'Cancel',
-              style: TextStyle(fontSize: 16),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}

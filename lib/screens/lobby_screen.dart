@@ -3,12 +3,19 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'dart:collection';
+import 'dart:math';
+import 'dart:convert';
 
 import '../components/buttons.dart';
 import '../components/layouts.dart';
 import '../components/misc.dart';
+import '../models/models.dart';
+import 'package:together/constants/values.dart';
 import 'package:together/services/services.dart';
 import 'package:together/screens/thehunt_screen.dart';
+import 'package:together/screens/abstract_screen.dart';
+
 
 class LobbyScreen extends StatefulWidget {
   LobbyScreen({Key key, this.roomCode}) : super(key: key);
@@ -51,6 +58,9 @@ class _LobbyScreenState extends State<LobbyScreen> {
             calledGameRoom = true;
           });
           Navigator.of(context).pop();
+          switch (gameName) {
+            case 'The Hunt': 
+
           slideTransition(
             context,
             TheHuntScreen(
@@ -60,6 +70,20 @@ class _LobbyScreenState extends State<LobbyScreen> {
               isLeader: isLeader,
             ),
           );
+          break;
+          case 'Abstract':
+
+          slideTransition(
+            context,
+            AbstractScreen(
+              sessionId: sessionId,
+              userId: userId,
+              roomCode: widget.roomCode,
+              isLeader: isLeader,
+            ),
+          );
+          break;
+          }
         }
       }
     });
@@ -117,15 +141,39 @@ class _LobbyScreenState extends State<LobbyScreen> {
         .then((event) async {
       if (event.documents.isNotEmpty) {
         String sessionId = event.documents.single.documentID;
+        var data = (await Firestore.instance.collection('sessions').document(sessionId).get()).data;
+        var boardSize = data['rules']['boardSize'];
+        List<RowList> words = [];
+
+        // hash set 
+        var hashSet = HashSet();
+        for (var i = 0; i < boardSize; i++) {
+          words.add(RowList());
+          for (var j = 0; j < boardSize; j++) {
+            Random _random = new Random();
+            String wordToAdd = abstractPossibleWords[_random.nextInt(abstractPossibleWords.length)];
+            while (hashSet.contains(wordToAdd)) {
+              wordToAdd = abstractPossibleWords[_random.nextInt(abstractPossibleWords.length)];
+            }
+            words[i].add(wordToAdd);
+          }
+        }
+        var serializedWords = [];
+        for (var i = 0; i < boardSize; i++) {
+          serializedWords.add(words[i].toJson());
+        }
+        var rules = data['rules'];
+        rules['words'] = serializedWords;
         await Firestore.instance
             .collection('sessions')
             .document(sessionId)
             .updateData({
+          'rules': rules,
           'state': 'started',
           'startTime': DateTime.now().add(Duration(seconds: 5)),
         });
       }
-    }).catchError((e) => print('error fetching data: $e'));
+    });//.catchError((e) => print('error fetching data: $e'));
   }
 
   StreamBuilder<QuerySnapshot> _getCountdown(BuildContext context) {
@@ -194,6 +242,17 @@ class _LobbyScreenState extends State<LobbyScreen> {
                   ),
                 );
                 break;
+              case 'Abstract':
+                return Container(
+                  width: 250,
+                  child: Column(
+                    children: <Widget>[
+                      Text('Board Size: ${rules['boardSize']}'),
+                      Text('Number of Teams: ${rules['numTeams']}'),
+                    ],
+                  ),
+                );
+                break;
               default:
                 return Text('Unknown game');
             }
@@ -245,10 +304,14 @@ class _LobbyScreenState extends State<LobbyScreen> {
                                             : Colors.black),
                                   ),
                                   Text(
-                                    playerIds[index] == leaderId ? ' (glorious leader) ' : '',
+                                    playerIds[index] == leaderId
+                                        ? ' (glorious leader) '
+                                        : '',
                                     style: TextStyle(fontSize: 14),
                                   ),
-                                  isLeader && playerIds[index] == leaderId ? SizedBox(height: 35): Container(),
+                                  isLeader && playerIds[index] == leaderId
+                                      ? SizedBox(height: 35)
+                                      : Container(),
                                   isLeader && playerIds[index] != leaderId
                                       ? SizedBox(
                                           height: 35,
@@ -283,9 +346,9 @@ class _LobbyScreenState extends State<LobbyScreen> {
     var playerOrder = data['playerIds'];
     playerOrder.shuffle();
     await Firestore.instance
-            .collection('sessions')
-            .document(sessionId)
-            .updateData({'playerIds': playerOrder, 'turnPlayerId': playerOrder[0]});
+        .collection('sessions')
+        .document(sessionId)
+        .updateData({'playerIds': playerOrder, 'turnPlayerId': playerOrder[0]});
   }
 
   @override
@@ -334,24 +397,26 @@ class _LobbyScreenState extends State<LobbyScreen> {
               ),
               PageBreak(width: 50),
               _getPlayers(),
-              isLeader && !isStarting ? RaisedGradientButton(
-                child: Text(
-                  'Shuffle Players',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                  ),
-                ),
-                onPressed: shufflePlayers,
-                height: 40,
-                width: 150,
-                gradient: LinearGradient(
-                  colors: <Color>[
-                    Theme.of(context).primaryColor,
-                    Theme.of(context).accentColor,
-                  ],
-                ),
-              ) : Container(),
+              isLeader && !isStarting
+                  ? RaisedGradientButton(
+                      child: Text(
+                        'Shuffle Players',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                        ),
+                      ),
+                      onPressed: shufflePlayers,
+                      height: 40,
+                      width: 150,
+                      gradient: LinearGradient(
+                        colors: <Color>[
+                          Theme.of(context).primaryColor,
+                          Theme.of(context).accentColor,
+                        ],
+                      ),
+                    )
+                  : Container(),
               SizedBox(height: 30),
               Text('Rules', style: TextStyle(fontSize: 24)),
               PageBreak(
@@ -395,7 +460,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
                           child: Text(
                             'Start Game',
                             style: TextStyle(
-                              color: Colors.white,
                               fontSize: 20,
                             ),
                           ),
@@ -415,7 +479,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                       ],
                     )
                   : Container(),
-                SizedBox(height: 60), 
+              SizedBox(height: 60),
             ],
           ),
         ),
@@ -451,17 +515,19 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
   }
 
   getCurrentRules() async {
-    // get possible locations
-    var locationData = (await Firestore.instance
-            .collection('locations')
-            .document('possible')
-            .get())
-        .data;
-    setState(() {
-      possibleLocations = locationData['locations'];
-      subList2 = possibleLocations.sublist(0, possibleLocations.length ~/ 2);
-      subList1 = possibleLocations.sublist(possibleLocations.length ~/ 2);
-    });
+    if (widget.game == 'The Hunt') {
+      // get possible locations
+      var locationData = (await Firestore.instance
+              .collection('locations')
+              .document('possible')
+              .get())
+          .data;
+      setState(() {
+        possibleLocations = locationData['locations'];
+        subList2 = possibleLocations.sublist(0, possibleLocations.length ~/ 2);
+        subList1 = possibleLocations.sublist(possibleLocations.length ~/ 2);
+      });
+    }
     var sessionData = (await Firestore.instance
             .collection('sessions')
             .document(widget.sessionId)
@@ -471,11 +537,18 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
       case 'The Hunt':
         rules['numSpies'] = sessionData['rules']['numSpies'];
         rules['locations'] = sessionData['rules']['locations'];
+        break;
+      case 'Abstract':
+        rules['boardSize'] = sessionData['rules']['boardSize'];
+        rules['numTeams'] = sessionData['rules']['numTeams'];
+        break;
     }
     setState(() {
       isLoading = false;
     });
-    getChosenLocations();
+    if (widget.game == 'The Hunt') {
+      getChosenLocations();
+    }
   }
 
   updateRules() async {
@@ -593,6 +666,93 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
                     'Locations: $numLocationsEnabled/${possibleLocations.length}'),
                 SizedBox(height: 5),
                 getChosenLocations(),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            Container(
+              child: FlatButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('Cancel'),
+              ),
+            ),
+            FlatButton(
+              onPressed: () {
+                updateRules();
+              },
+              child: Text('Update'),
+            )
+          ],
+        );
+        break;
+      case 'Abstract':
+        return AlertDialog(
+          title: Text('Edit game rules:'),
+          contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),
+          content: Container(
+            // decoration: BoxDecoration(border: Border.all()),
+            height: 200,
+            width: width * 0.95,
+            child: ListView(
+              children: <Widget>[
+                SizedBox(height: 20),
+                Text('Board Size:'),
+                Container(
+                  width: 80,
+                  child: DropdownButton<int>(
+                    isExpanded: true,
+                    value: rules['boardSize'],
+                    iconSize: 24,
+                    elevation: 16,
+                    style: TextStyle(color: Theme.of(context).primaryColor),
+                    underline: Container(
+                      height: 2,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    onChanged: (int newValue) {
+                      setState(() {
+                        rules['boardSize'] = newValue;
+                      });
+                    },
+                    items: <int>[5, 6].map<DropdownMenuItem<int>>((int value) {
+                      return DropdownMenuItem<int>(
+                        value: value,
+                        child: Text(value.toString(),
+                            style: TextStyle(fontFamily: 'Balsamiq')),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                SizedBox(height: 10),
+                Text('Num teams:'),
+                Container(
+                  width: 80,
+                  child: DropdownButton<int>(
+                    isExpanded: true,
+                    value: rules['numTeams'],
+                    iconSize: 24,
+                    elevation: 16,
+                    style: TextStyle(color: Theme.of(context).primaryColor),
+                    underline: Container(
+                      height: 2,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    onChanged: (int newValue) {
+                      setState(() {
+                        rules['numTeams'] = newValue;
+                      });
+                    },
+                    items: <int>[2, 3].map<DropdownMenuItem<int>>((int value) {
+                      return DropdownMenuItem<int>(
+                        value: value,
+                        child: Text(value.toString(),
+                            style: TextStyle(fontFamily: 'Balsamiq')),
+                      );
+                    }).toList(),
+                  ),
+                ),
               ],
             ),
           ),

@@ -58,12 +58,13 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
           Firestore.instance.collection('users').document(userId)
             .setData({'name': _displayName});
           print('Signed up user: $userId $_displayName');
+          userId = await widget.auth.signIn(_email, _password);
         }
         setState(() {
           _isLoading = false;
         });
 
-        if (userId.length > 0 && userId != null && _isLoginForm) {
+        if (userId.length > 0 && userId != null) {
           widget.loginCallback();
         }
       } catch (e) {
@@ -103,20 +104,23 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
         appBar: new AppBar(
           title: new Text('Together: Sign In'),
         ),
-        body: Stack(
-          children: <Widget>[
-            _showForm(),
-            _showCircularProgress(),
-          ],
+        body: SingleChildScrollView(
+                  child: Center(
+            child: Column(
+              children: <Widget>[
+                _showForm(),
+              ],
+            ),
+          ),
         ));
   }
 
   Widget _showCircularProgress() {
     if (_isLoading) {
-      return Center(child: CircularProgressIndicator());
+      return Container(padding: EdgeInsets.all(10) ,child: Center(child: CircularProgressIndicator()));
     }
     return Container(
-      height: 0.0,
+      height: 10.0,
       width: 0.0,
     );
   }
@@ -149,13 +153,13 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
         padding: EdgeInsets.all(16.0),
         child: new Form(
           key: _formKey,
-          child: new ListView(
+          child: ListView(
             shrinkWrap: true,
             children: <Widget>[
-              SizedBox(height: 70),
               _isLoginForm ? Container() : showDisplayNameInput(),
               showEmailInput(),
               showPasswordInput(),
+              _showCircularProgress(),
               showPrimaryButton(),
               showSecondaryButton(),
               showErrorMessage(),

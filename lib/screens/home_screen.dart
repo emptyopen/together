@@ -139,12 +139,59 @@ class _LobbyDialogState extends State<LobbyDialog> {
 
   getDefaultRules(String gameName) {
     switch (gameName) {
-      case 'The Hunt': 
-        return {'locations': ['Casino', 'Pirate Ship', 'Coal Mine', 'University'], 'numSpies': 1,};
+      case 'The Hunt':
+        return {
+          'locations': ['Casino', 'Pirate Ship', 'Coal Mine', 'University'],
+          'numSpies': 1,
+        };
         break;
       case 'Abstract':
-        print('it is abstract');
+        return {
+          'boardSize': 5,
+          'numTeams': 2,
+          'words': ['hello', 'ok'],
+        };
         break;
+    }
+  }
+
+  checkUserInGame({String userId, String sessionId = ''}) async {
+    // check if player has currentGame (that is not this game). if so, remove player from currentGame
+    var userData =
+        (await Firestore.instance.collection('users').document(userId).get())
+            .data;
+    if (userData.containsKey('currentGame')) {
+      print('user is still in game ${userData['currentGame']}, will remove');
+      var session = await Firestore.instance
+              .collection('sessions')
+              .document(userData['currentGame'])
+              .get();
+      var sessionData = session.data;
+
+      // if old game still exists and is not this game
+      if (sessionData != null && (sessionId == '' || sessionId != session.documentID)) {
+        // remove user from playerIds in old game
+        await Firestore.instance
+            .collection('sessions')
+            .document(userData['currentGame'])
+            .updateData({
+          'playerIds': FieldValue.arrayRemove([userId])
+        });
+        // check if room is empty, if so, delete session
+        var playerIds = (await Firestore.instance
+                .collection('sessions')
+                .document(userData['currentGame'])
+                .get())
+            .data['playerIds'];
+        if (playerIds.length == 0) {
+          await Firestore.instance
+              .collection('sessions')
+              .document(userData['currentGame'])
+              .delete();
+        }
+      }
+    } else {
+      print('user is not in another game, no problem');
     }
   }
 
@@ -152,14 +199,33 @@ class _LobbyDialogState extends State<LobbyDialog> {
     final _rnd = Random();
     final letters = 'ABCDEFGHJKMNPQRSTUVWXYZ';
     String randLetter() => letters[_rnd.nextInt(letters.length)];
-    _roomCode = randLetter() + randLetter() + randLetter();
+    String randRoomCode() => randLetter() + randLetter() + randLetter();
+    _roomCode = randRoomCode();
 
+    // check that room code doesn't exist
+    bool roomCodeExists = true;
+    while (roomCodeExists) {
+      await Firestore.instance
+          .collection('sessions')
+          .where('roomCode', isEqualTo: _roomCode)
+          .getDocuments()
+          .then((event) async {
+        if (event.documents.isEmpty) {
+          roomCodeExists = false;
+        } else {
+          _roomCode = randRoomCode();
+        }
+      }).catchError((e) => print('error fetching data: $e'));
+    }
+
+    // remove user from old game
     final userId = (await FirebaseAuth.instance.currentUser()).uid;
+    checkUserInGame(userId: userId);
 
     // define initial rules per game
     Map<String, dynamic> defaultRules = getDefaultRules(game);
 
-    var result = await Firestore.instance.collection('sessions').add({
+    var sessionContents = {
       'game': game,
       'rules': defaultRules,
       'password': password,
@@ -168,9 +234,24 @@ class _LobbyDialogState extends State<LobbyDialog> {
       'state': 'lobby',
       'leader': userId,
       'dateCreated': DateTime.now(),
-      'turnPlayerId': userId,
-    });
-    await Firestore.instance.collection('users').document(userId).updateData({'currentGame': result.documentID});
+    };
+    switch(game) {
+      case 'The Hunt':
+        sessionContents['turn'] = userId;
+        break;
+      case 'Abstract':
+        sessionContents['turn'] = 'green';
+        break;
+    }
+    var result = await Firestore.instance.collection('sessions').add(sessionContents);
+
+    // update user's current game
+    await Firestore.instance
+        .collection('users')
+        .document(userId)
+        .updateData({'currentGame': result.documentID});
+
+    // navigate to lobby
     Navigator.of(context).pop();
     slideTransition(
       context,
@@ -182,52 +263,75 @@ class _LobbyDialogState extends State<LobbyDialog> {
 
   joinGame(String roomCode, String password) async {
     roomCode = roomCode.toUpperCase();
+    final userId = (await FirebaseAuth.instance.currentUser()).uid;
 
     await Firestore.instance
-      .collection('sessions')
-      .where('roomCode', isEqualTo: roomCode)
-      .getDocuments()
-      .then((event) async {
-    if (event.documents.isNotEmpty) {
-      // check password
-      var correctPassword = event.documents.single.data['password'];
-      if (correctPassword != '') {
-        print('requires password');
-        if (correctPassword != _passwordController.text) {
-          print('incorrect password');
+        .collection('sessions')
+        .where('roomCode', isEqualTo: roomCode)
+        .getDocuments()
+        .then((event) async {
+      if (event.documents.isNotEmpty) {
+        var data = event.documents.single.data;
+
+        // check password
+        var correctPassword = data['password'];
+        if (correctPassword != '') {
+          if (correctPassword != _passwordController.text) {
+            setState(() {
+              isFormError = true;
+              formError = 'Incorrect password';
+            });
+            // break if form error
+            return;
+          }
+        }
+
+        // if game has started and player is not in session, reject
+        if (data['state'] == 'started' && !data['playerIds'].contains(userId)) {
           setState(() {
             isFormError = true;
-            formError = 'Incorrect password';
+            formError = 'Game has already started';
           });
+          return;
         }
-      }
-      
-      // otherwise, append playerId to session and update player's currentGame
-      String sessionId = event.documents.single.documentID;
-      final userId = (await FirebaseAuth.instance.currentUser()).uid;
-      await Firestore.instance.collection('sessions').document(sessionId).updateData({'playerIds': FieldValue.arrayUnion([userId])});
-      await Firestore.instance.collection('users').document(userId).updateData({'currentGame': sessionId});
 
-      // only move to room if password is correct
-      if (!isFormError) {
-        Navigator.of(context).pop();
-        slideTransition(
-          context,
-          LobbyScreen(
-            roomCode: _roomCodeController.text.toUpperCase(),
-          ),
-        );
+        // remove player from previous game
+        await checkUserInGame(userId: userId, sessionId: event.documents.single.documentID);
+
+        // otherwise, append playerId to session
+        String sessionId = event.documents.single.documentID;
+        await Firestore.instance
+            .collection('sessions')
+            .document(sessionId)
+            .updateData({
+          'playerIds': FieldValue.arrayUnion([userId])
+        });
+
+        // update player's currentGame
+        await Firestore.instance
+            .collection('users')
+            .document(userId)
+            .updateData({'currentGame': sessionId});
+
+        // only move to room if password is correct
+        if (!isFormError) {
+          Navigator.of(context).pop();
+          slideTransition(
+            context,
+            LobbyScreen(
+              roomCode: _roomCodeController.text.toUpperCase(),
+            ),
+          );
+        }
+      } else {
+        // room doesn't exist
+        print('room doesn\'t exist');
+        setState(() {
+          isFormError = true;
+          formError = 'Room does not exist';
+        });
       }
-    } else {
-      // room doesn't exist
-      print('room doesn\'t exist');
-      setState(() {
-        isFormError = true;
-        formError = 'Room does not exist';
-      });
-    }
     }).catchError((e) => print('error fetching data: $e'));
-    
   }
 
   leaveGame() async {
@@ -244,38 +348,43 @@ class _LobbyDialogState extends State<LobbyDialog> {
         width: 100.0,
         child: ListView(
           children: <Widget>[
-            widget.isJoin ? Container() : DropdownButton<String>(
-              value: _dropDownGame,
-              iconSize: 24,
-              elevation: 16,
-              style: TextStyle(color: Theme.of(context).primaryColor),
-              underline: Container(
-                height: 2,
-                color: Theme.of(context).primaryColor,
-              ),
-              onChanged: (String newValue) {
-                setState(() {
-                  _dropDownGame = newValue;
-                });
-              },
-              items: <String>['The Hunt', 'Abstract', 'Banana Phone']
-                  .map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value, style: TextStyle(fontFamily: 'Balsamiq')),
-                );
-              }).toList(),
-            ),
-            widget.isJoin ? TextField(
-              onChanged: (s) {
-                setState(() {
-                  isFormError = false;
-                  formError = '';
-                });
-              },
-              controller: _roomCodeController,
-              decoration: InputDecoration(labelText: 'Room Code: '),
-            ) : Container(),
+            widget.isJoin
+                ? Container()
+                : DropdownButton<String>(
+                    value: _dropDownGame,
+                    iconSize: 24,
+                    elevation: 16,
+                    style: TextStyle(color: Theme.of(context).primaryColor),
+                    underline: Container(
+                      height: 2,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    onChanged: (String newValue) {
+                      setState(() {
+                        _dropDownGame = newValue;
+                      });
+                    },
+                    items: <String>['The Hunt', 'Abstract', 'Banana Phone']
+                        .map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value,
+                            style: TextStyle(fontFamily: 'Balsamiq')),
+                      );
+                    }).toList(),
+                  ),
+            widget.isJoin
+                ? TextField(
+                    onChanged: (s) {
+                      setState(() {
+                        isFormError = false;
+                        formError = '';
+                      });
+                    },
+                    controller: _roomCodeController,
+                    decoration: InputDecoration(labelText: 'Room Code: '),
+                  )
+                : Container(),
             TextField(
               onChanged: (s) {
                 setState(() {
@@ -287,7 +396,10 @@ class _LobbyDialogState extends State<LobbyDialog> {
               decoration: InputDecoration(labelText: 'Password: '),
             ),
             SizedBox(height: 8),
-            isFormError ? Text(formError, style: TextStyle(color: Colors.red, fontSize: 14)) : Container(),
+            isFormError
+                ? Text(formError,
+                    style: TextStyle(color: Colors.red, fontSize: 14))
+                : Container(),
           ],
         ),
       ),
@@ -300,7 +412,9 @@ class _LobbyDialogState extends State<LobbyDialog> {
         // This button results in adding the contact to the database
         FlatButton(
             onPressed: () {
-              widget.isJoin ? joinGame(_roomCodeController.text, _passwordController.text) : createGame(_dropDownGame, _passwordController.text);
+              widget.isJoin
+                  ? joinGame(_roomCodeController.text, _passwordController.text)
+                  : createGame(_dropDownGame, _passwordController.text);
             },
             child: Text('Confirm'))
       ],
