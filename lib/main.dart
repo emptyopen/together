@@ -11,21 +11,24 @@ void main() => runApp(MyApp());
 // ensure creating new game that code is unique
 // when joining a game, check if current game exists. if so, remove player from game
 // don't allow joining a game that has started (for new players)
+// BIG: add abstract
 
 // next up:
 // ability to leave a game (also delete session if last one out) - dialog on back button (leave game or just go to main menu)
-// BIG: add abstract
-//  - only spymasters should see flipped board 
-//  - everyone else sees color only when flipped
-//  - auto change turn when flipped card is not their team's 
-//  - add turn timer? 
-//  - end game automatically when all cards are flipped or death card is flipped
 // move setup code from hunt to lobby
 
 // TODO:
-// voting system for choosing abstract cards (all members of team must select it)
+// abstract:
+//  - add counter of remaining words per team
+//  - add turn timer? 
+//  - end game automatically when all cards are flipped or death card is flipped
+//  - !! when game ends, show everyone board (use state of session)
+//  - voting system for choosing abstract cards (all members of team must select it)
+//  - add help screen: any number of teams can win with rebuttal
+//  - or tiebreaker, with total time used as second marker
+//  - max time limit per session of 45 seconds per remaining word
 // if leader leaves a game, need to assign remaining player the leader position
-// require minimum num players for hunt / abstract
+// require minimum num players for hunt (remove error message in abstract when cleared)
 // add snackbar when auto exiting to lobby or main menu
 // add credits screen for winners and losers (template) (mode of "ending" with new time limit of when to go to lobby / main menu)
 // add password reset option

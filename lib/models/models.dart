@@ -55,4 +55,9 @@ class Coords {
       'y': y,
     };
 
+  bool operator == (o) => o is Coords && o.x == x && o.y == y;
+
+  int get hashCode => x.hashCode ^ y.hashCode;
+
 }
+

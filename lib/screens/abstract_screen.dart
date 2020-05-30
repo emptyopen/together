@@ -275,10 +275,10 @@ class _AbstractScreenState extends State<AbstractScreen> {
           return Colors.grey[800];
           break;
         case 'grey':
-          return Colors.grey[200];
+          return Colors.white;
           break;
         default:
-          return Colors.grey;
+          return Colors.grey[300];
           break;
       }
     } else {
@@ -299,7 +299,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
           return Colors.black;
           break;
         default:
-          return Colors.grey;
+          return Colors.grey[300];
           break;
       }
     }
@@ -389,6 +389,17 @@ class _AbstractScreenState extends State<AbstractScreen> {
                 ? Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
+                      words[x]['rowWords'][y]['flipped']
+                          ? Row(
+                            children: <Widget>[
+                              Icon(
+                                  MdiIcons.skull,
+                                  color: Colors.white,
+                                ),
+                                SizedBox(width: 5),
+                            ],
+                          )
+                          : Container(),
                       Text(
                         words[x]['rowWords'][y]['name'],
                         style: TextStyle(
@@ -397,10 +408,17 @@ class _AbstractScreenState extends State<AbstractScreen> {
                                 ? Colors.white
                                 : Colors.black),
                       ),
-                      Icon(
-                        MdiIcons.skull,
-                        color: Colors.white,
-                      ),
+                      words[x]['rowWords'][y]['flipped']
+                          ? Row(
+                            children: <Widget>[
+                              SizedBox(width: 5),
+                              Icon(
+                                  MdiIcons.skull,
+                                  color: Colors.white,
+                                ),
+                            ],
+                          )
+                          : Container(),
                     ],
                   )
                 : Text(
@@ -415,6 +433,72 @@ class _AbstractScreenState extends State<AbstractScreen> {
         ),
       ),
     );
+  }
+
+  getScores() {
+    return StreamBuilder(
+        stream: Firestore.instance
+            .collection('sessions')
+            .where('roomCode', isEqualTo: widget.roomCode)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return Text(
+              'No Data...',
+            );
+          } else {
+            DocumentSnapshot data = snapshot.data.documents[0];
+            var words = data['rules']['words'];
+            int totalGreen = 0;
+            int totalOrange = 0;
+            int totalPurple = 0;
+            int flippedGreen = 0;
+            int flippedOrange = 0;
+            int flippedPurple = 0;
+            for (var row in words) {
+              for (var m in row['rowWords']) {
+                if (m['color'] == 'green') {
+                  totalGreen += 1;
+                  if (m['flipped']) {
+                    flippedGreen += 1;
+                  }
+                }
+                if (m['color'] == 'orange') {
+                  totalOrange += 1;
+                  if (m['flipped']) {
+                    flippedOrange += 1;
+                  }
+                }
+                if (m['color'] == 'purple') {
+                  totalPurple += 1;
+                  if (m['flipped']) {
+                    flippedPurple += 1;
+                  }
+                }
+              }
+            };
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Text('Completed cards  -->    '),
+                Text(
+                  'Green: $flippedGreen/$totalGreen  ',
+                  style: TextStyle(color: Colors.green),
+                ),
+                Text(
+                  'Orange: $flippedOrange/$totalOrange  ',
+                  style: TextStyle(color: Colors.orange),
+                ),
+                numTeams == 3
+                    ? Text(
+                        'Purple: $flippedPurple/$totalPurple',
+                        style: TextStyle(color: Colors.purple),
+                      )
+                    : Container(),
+              ],
+            );
+          }
+        });
   }
 
   @override
@@ -504,6 +588,8 @@ class _AbstractScreenState extends State<AbstractScreen> {
                         : Container(),
                   ],
                 ),
+                SizedBox(height: 10),
+                getScores(),
                 SizedBox(height: 10),
                 getBoard(),
               ],

@@ -156,35 +156,21 @@ class _LobbyScreenState extends State<LobbyScreen> {
             // verify that there are sufficient number of players
             if ((rules['numTeams'] == 2 && data['playerIds'].length < 4) ||
                 (rules['numTeams'] == 3 && data['playerIds'].length < 6)) {
-              print('insufficient players');
               setState(() {
-                startError = 'Insufficient player';
-              });
-              return; // TODO: this might need to be a flag instead
-            }
-
-            // functions for getting random coordinates
-            Random _random = new Random();
-            List<int> randomCoords(int boardSize) {
-              return [_random.nextInt(boardSize), _random.nextInt(boardSize)];
-            }
-            List getWordCoords(
-                HashSet teamWordsHashSet, int boardSize, int numWords) {
-              List coordsList = [];
-              while (coordsList.length < numWords) {
-                List<int> coordsToAdd = randomCoords(boardSize);
-                while (teamWordsHashSet.contains(coordsToAdd)) {
-                  coordsToAdd = randomCoords(boardSize);
+                if (rules['numTeams'] == 2) {
+                  startError = 'Need at least 4 players for two teams';
+                } else {
+                  startError = 'Need at least 6 players for three teams';
                 }
-                teamWordsHashSet.add(coordsToAdd);
-                coordsList
-                    .add(Coords(x: coordsToAdd[0], y: coordsToAdd[1]).toJson());
-              }
-              return coordsList;
+              });
+              return;
             }
 
-            // initialize board
-            // initialize words
+            setState(() {
+              startError = '';
+            });
+
+            // initialize board, words
             var boardSize = 5;
             if (rules['numTeams'] == 3) {
               boardSize = 6;
@@ -205,41 +191,62 @@ class _LobbyScreenState extends State<LobbyScreen> {
                 words[i].add(wordToAdd);
               }
             }
+            // functions for getting random coordinates for board size
+            Random _random = new Random();
+            Coords randomCoords(int boardSize) {
+              return Coords(x: _random.nextInt(boardSize), y: _random.nextInt(boardSize));
+            }
+            // function for filling a list with unused random coordinates
+            List<Coords> getWordCoords(
+                HashSet wordCoordsHashSet, int boardSize, int numWords) {
+              List<Coords> coordsList = [];
+              while (coordsList.length < numWords) {
+                Coords coordsToAdd = randomCoords(boardSize);
+                while (wordCoordsHashSet.contains(coordsToAdd)) {
+                  coordsToAdd = randomCoords(boardSize);
+                }
+                wordCoordsHashSet.add(coordsToAdd);
+                coordsList
+                    .add(Coords(x: coordsToAdd.x, y: coordsToAdd.y));
+              }
+              return coordsList;
+            }
             // update colors for words for teams / death word
             // 2 teams & 5x5=25: (9, 8) = 17, 7 neutral, 1 death
             // 3 teams & 6x6=36: (10, 9, 8) = 27, 8 neutral, 1 death
-            var teamWordsHashSet = HashSet();
+            var wordCoordsHashSet = HashSet();
             if (rules['numTeams'] == 2) {
-              var possibleCardsNeeded = [9, 8];
-              possibleCardsNeeded.shuffle();
+              // var possibleCardsNeeded = [9, 8];
+              // possibleCardsNeeded.shuffle();
               for (var coords in getWordCoords(
-                  teamWordsHashSet, 5, possibleCardsNeeded[0])) {
-                words[coords['x']].rowWords[coords['y']]['color'] = 'green';
+                  wordCoordsHashSet, 5, 9)) {
+                words[coords.x].rowWords[coords.y]['color'] = 'green';
               }
               for (var coords in getWordCoords(
-                  teamWordsHashSet, 5, possibleCardsNeeded[1])) {
-                words[coords['x']].rowWords[coords['y']]['color'] = 'orange';
+                  wordCoordsHashSet, 5, 9)) {
+                words[coords.x].rowWords[coords.y]['color'] = 'orange';
               }
-              for (var coords in getWordCoords(teamWordsHashSet, 5, 1)) {
-                words[coords['x']].rowWords[coords['y']]['color'] = 'black';
+              for (var coords in getWordCoords(wordCoordsHashSet, 5, 1)) {
+                words[coords.x].rowWords[coords.y]['color'] = 'black';
               }
             } else {
-              var possibleCardsNeeded = [10, 9, 8];
-              possibleCardsNeeded.shuffle();
+              // var possibleCardsNeeded = [9, 8, 7];
+              // possibleCardsNeeded.shuffle();
+              // set order for now (otherwise need to keep track of which team needs to do the most)
               for (var coords in getWordCoords(
-                  teamWordsHashSet, 5, possibleCardsNeeded[0])) {
-                words[coords['x']].rowWords[coords['y']]['color'] = 'green';
+                  wordCoordsHashSet, 6, 8)){ //possibleCardsNeeded[0])) {
+                words[coords.x].rowWords[coords.y]['color'] = 'green';
               }
               for (var coords in getWordCoords(
-                  teamWordsHashSet, 5, possibleCardsNeeded[1])) {
-                words[coords['x']].rowWords[coords['y']]['color'] = 'orange';
+                  wordCoordsHashSet, 6, 8)) {
+                words[coords.x].rowWords[coords.y]['color'] = 'orange';
               }
               for (var coords in getWordCoords(
-                  teamWordsHashSet, 5, possibleCardsNeeded[2])) {
-                words[coords['x']].rowWords[coords['y']]['color'] = 'purple';
+                  wordCoordsHashSet, 6, 8)) {
+                words[coords.x].rowWords[coords.y]['color'] = 'purple';
               }
-              for (var coords in getWordCoords(teamWordsHashSet, 5, 1)) {
-                words[coords['x']].rowWords[coords['y']]['color'] = 'black';
+              for (var coords in getWordCoords(wordCoordsHashSet, 5, 1)) {
+                words[coords.x].rowWords[coords.y]['color'] = 'black';
               }
             }
             // set words
@@ -615,6 +622,9 @@ class _LobbyScreenState extends State<LobbyScreen> {
                             ),
                           ),
                           onPressed: () {
+                            setState(() {
+                              startError = '';
+                            });
                             showDialog<Null>(
                               context: context,
                               builder: (BuildContext context) {
