@@ -31,7 +31,7 @@ class _EndGameDialogState extends State<EndGameDialog> {
       await Firestore.instance
           .collection('sessions')
           .document(widget.sessionId)
-          .updateData({'state': 'lobby'});
+          .updateData({'state': 'lobby', 'setupComplete': false});
       Navigator.of(context).pop();
     } else {
       await Firestore.instance

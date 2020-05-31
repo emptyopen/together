@@ -129,13 +129,74 @@ class _LobbyScreenState extends State<LobbyScreen> {
   startGame(data) async {
     var rules = data['rules'];
 
+    if (data['setupComplete']) {
+      print('skipping setup, already complete');
+    }
+
     // initialize final values/rules for games
     switch (gameName) {
       case 'The Hunt':
-        // TODO: initialize all the stuff here
+
+        // verify that there are sufficient number of players
+        if (data['playerIds'].length < 3) {
+          setState(() {
+            if (rules['numTeams'] == 2) {
+              startError = 'Need at least 3 players';
+            }
+          });
+          return;
+        }
+
+        // clear error if we are good to start
+        setState(() {
+          startError = '';
+        });
+
+        // initialize random tool
+        final _random = new Random();
+
+        // set location
+        var possibleLocations = data['rules']['locations'];
+        var location =
+            possibleLocations[_random.nextInt(possibleLocations.length)];
+        print('location is $location');
+
+        // randomize player order
+        var playerIds = data['playerIds'];
+        playerIds.shuffle();
+
+        // set spies
+        int numSpies = data['rules']['numSpies'];
+        var i = 0;
+        while (i < numSpies) {
+          print('spy is ${playerIds[i]}');
+          await Firestore.instance
+              .collection('users')
+              .document(playerIds[i])
+              .updateData({'huntRole': 'spy', 'huntLocation': location});
+          i += 1;
+        }
+
+        // set other roles
+        List<dynamic> possibleRoles = (await Firestore.instance
+                .collection('locations')
+                .document(location)
+                .get())
+            .data['roles'];
+        while (i < playerIds.length) {
+          print('player ${playerIds[i]} is not spy');
+          await Firestore.instance
+              .collection('users')
+              .document(playerIds[i])
+              .updateData({
+            'huntRole': possibleRoles[_random.nextInt(possibleRoles.length)],
+            'huntLocation': location,
+          });
+          i += 1;
+        }
         break;
+        
       case 'Abstract':
-        // TODO: !!!!!!!!!!!!!! only perform this once, set flag in session afterwards
 
         // verify that there are sufficient number of players
         if ((rules['numTeams'] == 2 && data['playerIds'].length < 4) ||
@@ -150,6 +211,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
           return;
         }
 
+        // clear error if we are good to start
         setState(() {
           startError = '';
         });
@@ -337,6 +399,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
       'rules': rules,
       'state': 'started',
       'startTime': DateTime.now().add(Duration(seconds: 5)),
+      'setupComplete': true,
     });
   }
 
@@ -499,12 +562,12 @@ class _LobbyScreenState extends State<LobbyScreen> {
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return Scaffold(
-            appBar: AppBar(
-              title: Text(
-                '$gameName: Lobby',
-              ),
-            ),
-            body: Container());
+                appBar: AppBar(
+                  title: Text(
+                    '$gameName: Lobby',
+                  ),
+                ),
+                body: Container());
           }
           // all data for all components
           DocumentSnapshot data = snapshot.data;

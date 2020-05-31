@@ -84,18 +84,10 @@ class _AbstractScreenState extends State<AbstractScreen> {
             .get())
         .data;
 
-    print('setting up game...');
-
     setState(() {
       numTeams = data['rules']['numTeams'];
       userTeamLeader = userData['abstractTeamLeader'];
       userTeam = userData['abstractTeam'];
-    });
-
-    setState(() {
-      // // get words
-      // words = data['rules']['words'];
-      isLoading = false;
     });
   }
 
@@ -202,23 +194,24 @@ class _AbstractScreenState extends State<AbstractScreen> {
   }
 
   getBoard(data) {
-    if (isLoading) {
-      return Container();
-    }
     int numCols = 5;
     if (numTeams == 3) {
       numCols = 6;
     }
-    return AspectRatio(
-      aspectRatio: 1,
-      child: GridView.builder(
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: numCols,
-          childAspectRatio: MediaQuery.of(context).size.width /
-              (MediaQuery.of(context).size.height - 200),
+    return SafeArea(
+      child: Container(
+        height: 200,
+        child: GridView.builder(
+          physics: NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: numCols,
+            childAspectRatio: MediaQuery.of(context).size.width /
+                (MediaQuery.of(context).size.height - 200),
+          ),
+          itemBuilder: (context, index) =>
+              _buildGridItems(context, index, data),
+          itemCount: numCols * numCols,
         ),
-        itemBuilder: (context, index) => _buildGridItems(context, index, data),
-        itemCount: numCols * numCols,
       ),
     );
   }
@@ -395,13 +388,13 @@ class _AbstractScreenState extends State<AbstractScreen> {
       updateTurn(data);
     } else if (orangeGotAll && data['turn'] == 'orange') {
       updateTurn(data);
-    } else if (purpleGotAll &&
-        data['turn'] == 'purple') {
+    } else if (purpleGotAll && data['turn'] == 'purple') {
       updateTurn(data);
     }
 
     // one last check for a win
-    if ((numTeams == 2 && greenGotAll && orangeGotAll) || (numTeams == 3 && greenGotAll && orangeGotAll && purpleGotAll)) {
+    if ((numTeams == 2 && greenGotAll && orangeGotAll) ||
+        (numTeams == 3 && greenGotAll && orangeGotAll && purpleGotAll)) {
       print('game has ended, all win!');
       await Firestore.instance
           .collection('sessions')
@@ -558,7 +551,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
                   ],
                 ),
         ),
-        SizedBox(width: 50),
+        SizedBox(width: 30),
         Container(
           decoration: BoxDecoration(
             border: Border.all(),
@@ -583,7 +576,29 @@ class _AbstractScreenState extends State<AbstractScreen> {
             ],
           ),
         ),
-        SizedBox(width: 50),
+        SizedBox(width: 30),
+        userTeam == data['turn']
+            ? Row(
+                children: <Widget>[
+                  RaisedGradientButton(
+                    child: Text(
+                      'End turn',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    onPressed: () => updateTurn(data),
+                    height: 40,
+                    width: 110,
+                    gradient: LinearGradient(
+                      colors: <Color>[
+                        Colors.blue,
+                        Colors.blue[200],
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: 30),
+                ],
+              )
+            : Container(),
         widget.userId == data['leader']
             ? RaisedGradientButton(
                 child: Text(
@@ -646,7 +661,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
       }
     }
     return Container(
-      width: 360,
+      width: numTeams == 3 ? 360 : 280,
       decoration: BoxDecoration(
         border: Border.all(),
         borderRadius: BorderRadius.circular(10),
@@ -675,18 +690,148 @@ class _AbstractScreenState extends State<AbstractScreen> {
     );
   }
 
+  showTeams(data) {
+    // set up teams
+    List<Widget> greenTeam = [
+      Text(
+        'Green Team:',
+        style: TextStyle(color: Colors.green),
+      )
+    ];
+    List<Widget> orangeTeam = [
+      Text(
+        'Orange Team',
+        style: TextStyle(color: Colors.orange),
+      )
+    ];
+    List<Widget> purpleTeam = [
+      Text(
+        'Purple Team',
+        style: TextStyle(color: Colors.purple),
+      )
+    ];
+
+    for (var playerId in data['rules']['greenTeam']) {
+      greenTeam.add(FutureBuilder(
+          future:
+              Firestore.instance.collection('users').document(playerId).get(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return Container();
+            }
+            if (playerId == data['rules']['greenLeader']) {
+              return Text(snapshot.data['name'] + ' (leader)');
+            } else {
+              return Text(snapshot.data['name']);
+            }
+          }));
+    }
+    for (var playerId in data['rules']['orangeTeam']) {
+      orangeTeam.add(FutureBuilder(
+          future:
+              Firestore.instance.collection('users').document(playerId).get(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return Container();
+            }
+            if (playerId == data['rules']['orangeLeader']) {
+              return Text(snapshot.data['name'] + ' (leader)');
+            } else {
+              return Text(snapshot.data['name']);
+            }
+          }));
+    }
+    if (numTeams == 3) {
+      for (var playerId in data['rules']['purpleTeam']) {
+        purpleTeam.add(FutureBuilder(
+            future:
+                Firestore.instance.collection('users').document(playerId).get(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return Container();
+              }
+              if (playerId == data['rules']['purpleLeader']) {
+                return Text(snapshot.data['name'] + ' (leader)');
+              } else {
+                return Text(snapshot.data['name']);
+              }
+            }));
+      }
+    }
+
+    var width = MediaQuery.of(context).size.width;
+    return RaisedGradientButton(
+      child: Text(
+        'Show teams',
+        style: TextStyle(fontSize: 14),
+      ),
+      onPressed: () {
+        showDialog<Null>(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Teams:'),
+              contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),
+              content: Container(
+                height: 100,
+                width: width * 0.95,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Column(
+                      children: greenTeam,
+                    ),
+                    SizedBox(width: 30),
+                    Column(children: orangeTeam),
+                    numTeams == 3
+                        ? Row(
+                            children: <Widget>[
+                              SizedBox(width: 30),
+                              Column(children: purpleTeam),
+                            ],
+                          )
+                        : Container(),
+                  ],
+                ),
+              ),
+              actions: <Widget>[
+                Container(
+                  child: FlatButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: Text('OK'),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+      height: 36,
+      width: 110,
+      gradient: LinearGradient(
+        colors: <Color>[
+          Colors.blue,
+          Colors.blue[200],
+        ],
+      ),
+    );
+  }
+
+  getSubHeaders(data) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        getScores(data),
+        SizedBox(width: 30),
+        showTeams(data),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (isLoading) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text(
-            'Abstract',
-          ),
-        ),
-        body: Container(),
-      );
-    }
     return StreamBuilder(
         stream: Firestore.instance
             .collection('sessions')
@@ -727,19 +872,17 @@ class _AbstractScreenState extends State<AbstractScreen> {
                   ),
                 ],
               ),
-              body: SingleChildScrollView(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      SizedBox(height: 5),
-                      getHeaders(data),
-                      SizedBox(height: 5),
-                      getScores(data),
-                      SizedBox(height: 10),
-                      getBoard(data),
-                    ],
-                  ),
+              body: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    SizedBox(height: 5),
+                    getHeaders(data),
+                    SizedBox(height: 5),
+                    getSubHeaders(data),
+                    SizedBox(height: 10),
+                    getBoard(data),
+                  ],
                 ),
               ));
         });

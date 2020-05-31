@@ -16,17 +16,19 @@ void main() => runApp(MyApp());
 // who leader is in lobby not updating
 // end game automatically when all cards are flipped or death card is flipped
 // when game ends, show everyone board (use state of session)
+// roles not updating in the hunt
+// move setup code from hunt to lobby
+// need button to manually end turn
+// scrolling on abstract needs to be fixed
+// fix iphone safe area
+// check teams button 
 
 // next up:
-// roles not updating in the hunt
-// scrolling on abstract needs to be fixed
-// need button to manually end turn
-// check teams button (should be universal)
 //  - add turn timer? 
 // ability to leave a game (also delete session if last one out) - dialog on back button (leave game or just go to main menu)
-// move setup code from hunt to lobby
 
 // TODO:
+// probably don't need setupComplete flag, games can only be configured from the lobby
 // abstract:
 //  - voting system for choosing abstract cards (all members of team must select it)
 //  - add help screen: any number of teams can win with rebuttal
