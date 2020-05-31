@@ -3,21 +3,19 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:together/components/buttons.dart';
 import 'package:flutter/services.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:shimmer/shimmer.dart';
 
-import 'package:together/components/misc.dart';
 import 'package:together/components/dialogs.dart';
-import 'package:together/models/models.dart';
 import 'package:together/services/services.dart';
 import 'template/help_screen.dart';
 import 'lobby_screen.dart';
 
 class AbstractScreen extends StatefulWidget {
-  AbstractScreen({this.sessionId, this.userId, this.roomCode, this.isLeader});
+  AbstractScreen({this.sessionId, this.userId, this.roomCode});
 
   final String sessionId;
   final String userId;
   final String roomCode;
-  final bool isLeader;
 
   @override
   _AbstractScreenState createState() => _AbstractScreenState();
@@ -28,10 +26,6 @@ class _AbstractScreenState extends State<AbstractScreen> {
   bool isLoading = true;
   String userTeamLeader = '';
   String userTeam = '';
-  // TODO: consolidate into single 2d array?
-  List<dynamic> words = [];
-  List<List<Color>> colors = [];
-  List<List<bool>> flipped = [];
 
   @override
   void initState() {
@@ -52,21 +46,15 @@ class _AbstractScreenState extends State<AbstractScreen> {
     super.dispose();
   }
 
-  checkIfExit() async {
-    // run async func to check if game is back to lobby or deleted (main menu)
-    var data = (await Firestore.instance
-            .collection('sessions')
-            .document(widget.sessionId)
-            .get())
-        .data;
+  checkIfExit(data) async {
+    // run async func to check if game is over, or back to lobby or deleted (main menu)
     if (data == null) {
       print('game was deleted');
 
       // navigate to main menu
       Navigator.of(context).pop();
     } else if (data['state'] == 'lobby') {
-      // reset first player
-      String firstPlayer = data['playerIds'][0];
+      // reset first team to green
       await Firestore.instance
           .collection('sessions')
           .document(widget.sessionId)
@@ -105,19 +93,14 @@ class _AbstractScreenState extends State<AbstractScreen> {
     });
 
     setState(() {
-      // get words
-      words = data['rules']['words'];
+      // // get words
+      // words = data['rules']['words'];
       isLoading = false;
     });
   }
 
-  updateTurn() async {
-    Map<String, dynamic> sessionData = (await Firestore.instance
-            .collection('sessions')
-            .document(widget.sessionId)
-            .get())
-        .data;
-    var currActiveTeam = sessionData['turn'];
+  updateTurn(data) async {
+    var currActiveTeam = data['turn'];
     var nextActiveTeam = '';
     if (currActiveTeam == 'green') {
       nextActiveTeam = 'orange';
@@ -128,7 +111,6 @@ class _AbstractScreenState extends State<AbstractScreen> {
         nextActiveTeam = 'purple';
       }
     } else {
-      // must be purple
       nextActiveTeam = 'green';
     }
     await Firestore.instance
@@ -156,42 +138,24 @@ class _AbstractScreenState extends State<AbstractScreen> {
     }
   }
 
-  StreamBuilder<QuerySnapshot> getTurn(BuildContext context) {
-    return StreamBuilder(
-        stream: Firestore.instance
-            .collection('sessions')
-            .where('roomCode', isEqualTo: widget.roomCode)
-            .snapshots(),
-        builder: (context, snapshot) {
-          // check if exit here, only on update
-          // TODO: this should be moved to it's own future/listener? confusing placement
-          checkIfExit();
-          if (!snapshot.hasData || snapshot.data.documents.length == 0) {
-            return Text(
-              'No Data...',
-            );
-          } else {
-            DocumentSnapshot items = snapshot.data.documents[0];
-            var activeTeam = items['turn'];
-            return Row(
-              children: <Widget>[
-                Text(
-                  'It\'s ',
-                  style: TextStyle(fontSize: 18),
-                ),
-                Text(
-                  activeTeam,
-                  style:
-                      TextStyle(fontSize: 18, color: stringToColor(activeTeam)),
-                ),
-                Text(
-                  ' team\'s turn!',
-                  style: TextStyle(fontSize: 18),
-                ),
-              ],
-            );
-          }
-        });
+  Widget getTurn(BuildContext context, data) {
+    var activeTeam = data['turn'];
+    return Row(
+      children: <Widget>[
+        Text(
+          'It\'s ',
+          style: TextStyle(fontSize: 16),
+        ),
+        Text(
+          activeTeam,
+          style: TextStyle(fontSize: 16, color: stringToColor(activeTeam)),
+        ),
+        Text(
+          ' team\'s turn!',
+          style: TextStyle(fontSize: 16),
+        ),
+      ],
+    );
   }
 
   getPlayerStatus() {
@@ -200,18 +164,18 @@ class _AbstractScreenState extends State<AbstractScreen> {
         children: <Widget>[
           Text(
             '(You are a commoner on ',
-            style: TextStyle(fontSize: 14),
+            style: TextStyle(fontSize: 12),
           ),
           Text(
             '$userTeam',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 12,
               color: stringToColor(userTeam),
             ),
           ),
           Text(
             ' team)',
-            style: TextStyle(fontSize: 14),
+            style: TextStyle(fontSize: 12),
           ),
         ],
       );
@@ -220,28 +184,31 @@ class _AbstractScreenState extends State<AbstractScreen> {
       children: <Widget>[
         Text(
           '(You are the glorious leader of ',
-          style: TextStyle(fontSize: 14),
+          style: TextStyle(fontSize: 12),
         ),
         Text(
           '$userTeam',
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 12,
             color: stringToColor(userTeam),
           ),
         ),
         Text(
           ' team)',
-          style: TextStyle(fontSize: 14),
+          style: TextStyle(fontSize: 12),
         ),
       ],
     );
   }
 
-  getBoard() {
+  getBoard(data) {
     if (isLoading) {
       return Container();
     }
-    int numCols = words.length;
+    int numCols = 5;
+    if (numTeams == 3) {
+      numCols = 6;
+    }
     return AspectRatio(
       aspectRatio: 1,
       child: GridView.builder(
@@ -250,7 +217,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
           childAspectRatio: MediaQuery.of(context).size.width /
               (MediaQuery.of(context).size.height - 200),
         ),
-        itemBuilder: _buildGridItems,
+        itemBuilder: (context, index) => _buildGridItems(context, index, data),
         itemCount: numCols * numCols,
       ),
     );
@@ -312,6 +279,12 @@ class _AbstractScreenState extends State<AbstractScreen> {
             .get())
         .data;
 
+    // check if game is over
+    if (data['state'] == 'complete') {
+      print('game is over!');
+      return;
+    }
+
     // check if it is player's turn
     if (data['turn'] != userTeam) {
       print('cannot flip when it is not your turn');
@@ -319,57 +292,136 @@ class _AbstractScreenState extends State<AbstractScreen> {
     }
 
     // flip card
-    setState(() {
-      words[x]['rowWords'][y]['flipped'] = true;
-    });
-    data['rules']['words'] = words;
+    data['rules']['words'][x]['rowWords'][y]['flipped'] = true;
     await Firestore.instance
         .collection('sessions')
         .document(widget.sessionId)
         .updateData({'rules': data['rules']});
 
     // if card is bad, update turn
-    if (words[x]['rowWords'][y]['color'] != userTeam) {
+    if (data['rules']['words'][x]['rowWords'][y]['color'] != userTeam) {
       print('bad card, switching turns');
-      if (data['turn'] == 'green') {
-        await Firestore.instance
-            .collection('sessions')
-            .document(widget.sessionId)
-            .updateData({'turn': 'orange'});
-      } else if (data['turn'] == 'green' && data['numTeams'] == 2) {
-        await Firestore.instance
-            .collection('sessions')
-            .document(widget.sessionId)
-            .updateData({'turn': 'green'});
-      } else if (data['turn'] == 'green' && data['numTeams'] == 3) {
-        await Firestore.instance
-            .collection('sessions')
-            .document(widget.sessionId)
-            .updateData({'turn': 'purple'});
-      } else {
-        await Firestore.instance
-            .collection('sessions')
-            .document(widget.sessionId)
-            .updateData({'turn': 'green'});
+      updateTurn(data);
+    }
+
+    // check if any team is done
+    int totalGreen = 0;
+    int totalOrange = 0;
+    int totalPurple = 0;
+    int flippedGreen = 0;
+    int flippedOrange = 0;
+    int flippedPurple = 0;
+    for (var row in data['rules']['words']) {
+      for (var m in row['rowWords']) {
+        if (m['color'] == 'green') {
+          totalGreen += 1;
+          if (m['flipped']) {
+            flippedGreen += 1;
+          }
+        }
+        if (m['color'] == 'orange') {
+          totalOrange += 1;
+          if (m['flipped']) {
+            flippedOrange += 1;
+          }
+        }
+        if (m['color'] == 'purple') {
+          totalPurple += 1;
+          if (m['flipped']) {
+            flippedPurple += 1;
+          }
+        }
       }
     }
 
-    // check if either team is done
+    // end game check
+    bool thereIsWinner = false;
+    bool deathCardDrawn = false;
+    List<String> winners = [];
 
-    // check if death card loss
+    // check for winners, if so end game (this will be run until it is orange/purple's turn)
+    bool greenGotAll = totalGreen == flippedGreen;
+    bool orangeGotAll = totalOrange == flippedOrange;
+    bool purpleGotAll = totalPurple == flippedPurple && flippedPurple > 1;
+    if (greenGotAll) {
+      thereIsWinner = true;
+      winners.add('green');
+    }
+    if (orangeGotAll) {
+      thereIsWinner = true;
+      winners.add('orange');
+    }
+    if (purpleGotAll) {
+      thereIsWinner = true;
+      winners.add('purple');
+    }
 
-    // update status of game to "complete"
+    // check if death card ends game
+    if (data['rules']['words'][x]['rowWords'][y]['color'] == 'black') {
+      winners = ['green', 'orange'];
+      if (numTeams == 3) {
+        winners.add('purple');
+      }
+      winners.removeWhere((item) => item == userTeam);
+      print('winners by black card are: $winners');
+      thereIsWinner = true;
+      deathCardDrawn = true;
+    }
 
-    // game over update status in Turn widget
+    // end game if there is a winner and everyone has had a chance for rebuttal, OR if the black card was drawn
+    if ((thereIsWinner &&
+            ((numTeams == 2 &&
+                data['turn'] == 'green' &&
+                data['rules']['greenAlreadyWon'] == true))) ||
+        deathCardDrawn) {
+      print('game has ended! xy');
+      await Firestore.instance
+          .collection('sessions')
+          .document(widget.sessionId)
+          .updateData(deathCardDrawn
+              ? {'state': 'complete', 'winners': winners, 'deathCard': true}
+              : {'state': 'complete', 'winners': winners});
+    }
+
+    // update turns if relevant (i.e. green has won and it is green's team)
+    if (greenGotAll && data['turn'] == 'green') {
+      data['rules']['greenAlreadyWon'] = true;
+      await Firestore.instance
+          .collection('sessions')
+          .document(widget.sessionId)
+          .updateData({
+        'rules': data['rules'],
+      });
+      updateTurn(data);
+    } else if (orangeGotAll && data['turn'] == 'orange') {
+      updateTurn(data);
+    } else if (purpleGotAll &&
+        data['turn'] == 'purple') {
+      updateTurn(data);
+    }
+
+    // one last check for a win
+    if ((numTeams == 2 && greenGotAll && orangeGotAll) || (numTeams == 3 && greenGotAll && orangeGotAll && purpleGotAll)) {
+      print('game has ended, all win!');
+      await Firestore.instance
+          .collection('sessions')
+          .document(widget.sessionId)
+          .updateData(deathCardDrawn
+              ? {'state': 'complete', 'winners': winners, 'deathCard': true}
+              : {'state': 'complete', 'winners': winners});
+    }
   }
 
-  Widget _buildGridItems(BuildContext context, int index) {
+  Widget _buildGridItems(BuildContext context, int index, dynamic data) {
+    var words = data['rules']['words'];
     int gridStateLength = words.length;
     int x, y = 0;
     x = (index / gridStateLength).floor();
     y = (index % gridStateLength);
-    bool tileIsVisible =
-        userTeamLeader != '' || words[x]['rowWords'][y]['flipped'];
+    bool tileIsVisible = userTeamLeader != '' ||
+        words[x]['rowWords'][y]['flipped'] ||
+        data['state'] == 'complete';
+    // update words here
     return GridTile(
       child: Container(
         decoration: BoxDecoration(
@@ -391,14 +443,14 @@ class _AbstractScreenState extends State<AbstractScreen> {
                     children: <Widget>[
                       words[x]['rowWords'][y]['flipped']
                           ? Row(
-                            children: <Widget>[
-                              Icon(
+                              children: <Widget>[
+                                Icon(
                                   MdiIcons.skull,
                                   color: Colors.white,
                                 ),
                                 SizedBox(width: 5),
-                            ],
-                          )
+                              ],
+                            )
                           : Container(),
                       Text(
                         words[x]['rowWords'][y]['name'],
@@ -410,14 +462,14 @@ class _AbstractScreenState extends State<AbstractScreen> {
                       ),
                       words[x]['rowWords'][y]['flipped']
                           ? Row(
-                            children: <Widget>[
-                              SizedBox(width: 5),
-                              Icon(
+                              children: <Widget>[
+                                SizedBox(width: 5),
+                                Icon(
                                   MdiIcons.skull,
                                   color: Colors.white,
                                 ),
-                            ],
-                          )
+                              ],
+                            )
                           : Container(),
                     ],
                   )
@@ -435,167 +487,262 @@ class _AbstractScreenState extends State<AbstractScreen> {
     );
   }
 
-  getScores() {
-    return StreamBuilder(
-        stream: Firestore.instance
-            .collection('sessions')
-            .where('roomCode', isEqualTo: widget.roomCode)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return Text(
-              'No Data...',
-            );
-          } else {
-            DocumentSnapshot data = snapshot.data.documents[0];
-            var words = data['rules']['words'];
-            int totalGreen = 0;
-            int totalOrange = 0;
-            int totalPurple = 0;
-            int flippedGreen = 0;
-            int flippedOrange = 0;
-            int flippedPurple = 0;
-            for (var row in words) {
-              for (var m in row['rowWords']) {
-                if (m['color'] == 'green') {
-                  totalGreen += 1;
-                  if (m['flipped']) {
-                    flippedGreen += 1;
-                  }
-                }
-                if (m['color'] == 'orange') {
-                  totalOrange += 1;
-                  if (m['flipped']) {
-                    flippedOrange += 1;
-                  }
-                }
-                if (m['color'] == 'purple') {
-                  totalPurple += 1;
-                  if (m['flipped']) {
-                    flippedPurple += 1;
-                  }
-                }
-              }
-            };
-            return Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Text('Completed cards  -->    '),
-                Text(
-                  'Green: $flippedGreen/$totalGreen  ',
-                  style: TextStyle(color: Colors.green),
+  colorStringToWidget(String color) {
+    switch (color) {
+      case 'green':
+        return Text('Green', style: TextStyle(color: Colors.green));
+        break;
+      case 'orange':
+        return Text('Orange', style: TextStyle(color: Colors.orange));
+        break;
+      case 'purple':
+        return Text('Purple', style: TextStyle(color: Colors.purple));
+        break;
+    }
+  }
+
+  winnersToEnglish(List<dynamic> winners) {
+    if (winners.length == 1) {
+      return Row(
+        children: <Widget>[
+          colorStringToWidget(winners[0]),
+          Text(' team wins!'),
+        ],
+      );
+    }
+    if (winners.length == 2) {
+      return Row(
+        children: <Widget>[
+          colorStringToWidget(winners[0]),
+          Text(' and '),
+          colorStringToWidget(winners[1]),
+          Text(' teams win!'),
+        ],
+      );
+    }
+    return Row(
+      children: <Widget>[
+        Text('All ', style: TextStyle(color: Colors.green)),
+        Text('teams ', style: TextStyle(color: Colors.orange)),
+        Text('win!', style: TextStyle(color: Colors.purple)),
+      ],
+    );
+  }
+
+  getHeaders(data) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
+          child: data['state'] == 'complete'
+              ? Column(
+                  children: <Widget>[
+                    Shimmer.fromColors(
+                      period: Duration(seconds: 5),
+                      baseColor: Theme.of(context).primaryColor,
+                      highlightColor: Colors.blue[100],
+                      child: Text('Game over!', style: TextStyle(fontSize: 20)),
+                    ),
+                    winnersToEnglish(data['winners'])
+                  ],
+                )
+              : Column(
+                  children: <Widget>[
+                    getTurn(context, data),
+                    getPlayerStatus(),
+                  ],
                 ),
-                Text(
-                  'Orange: $flippedOrange/$totalOrange  ',
-                  style: TextStyle(color: Colors.orange),
+        ),
+        SizedBox(width: 50),
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
+          child: Column(
+            children: <Widget>[
+              Text(
+                'Room Code:',
+                style: TextStyle(
+                  fontSize: 12,
                 ),
-                numTeams == 3
-                    ? Text(
-                        'Purple: $flippedPurple/$totalPurple',
-                        style: TextStyle(color: Colors.purple),
-                      )
-                    : Container(),
-              ],
-            );
+              ),
+              Text(
+                widget.roomCode,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Theme.of(context).primaryColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(width: 50),
+        widget.userId == data['leader']
+            ? RaisedGradientButton(
+                child: Text(
+                  'End game',
+                  style: TextStyle(fontSize: 16),
+                ),
+                onPressed: () {
+                  showDialog<Null>(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return EndGameDialog(
+                        game: 'Abstract',
+                        sessionId: widget.sessionId,
+                      );
+                    },
+                  );
+                },
+                height: 40,
+                width: 140,
+                gradient: LinearGradient(
+                  colors: <Color>[
+                    Color.fromARGB(255, 255, 185, 0),
+                    Color.fromARGB(255, 255, 213, 0),
+                  ],
+                ),
+              )
+            : Container(),
+      ],
+    );
+  }
+
+  getScores(data) {
+    var words = data['rules']['words'];
+    int totalGreen = 0;
+    int totalOrange = 0;
+    int totalPurple = 0;
+    int flippedGreen = 0;
+    int flippedOrange = 0;
+    int flippedPurple = 0;
+    for (var row in words) {
+      for (var m in row['rowWords']) {
+        if (m['color'] == 'green') {
+          totalGreen += 1;
+          if (m['flipped']) {
+            flippedGreen += 1;
           }
-        });
+        }
+        if (m['color'] == 'orange') {
+          totalOrange += 1;
+          if (m['flipped']) {
+            flippedOrange += 1;
+          }
+        }
+        if (m['color'] == 'purple') {
+          totalPurple += 1;
+          if (m['flipped']) {
+            flippedPurple += 1;
+          }
+        }
+      }
+    }
+    return Container(
+      width: 360,
+      decoration: BoxDecoration(
+        border: Border.all(),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          Text('Completed:   '),
+          Text(
+            'Green: $flippedGreen/$totalGreen  ',
+            style: TextStyle(color: Colors.green),
+          ),
+          Text(
+            'Orange: $flippedOrange/$totalOrange  ',
+            style: TextStyle(color: Colors.orange),
+          ),
+          numTeams == 3
+              ? Text(
+                  'Purple: $flippedPurple/$totalPurple',
+                  style: TextStyle(color: Colors.purple),
+                )
+              : Container(),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    if (isLoading) {
+      return Scaffold(
         appBar: AppBar(
           title: Text(
             'Abstract',
           ),
-          actions: <Widget>[
-            IconButton(
-              icon: Icon(Icons.info),
-              onPressed: () {
-                // HapticFeedback.heavyImpact();
-                Navigator.of(context).push(
-                  PageRouteBuilder(
-                    opaque: false,
-                    pageBuilder: (BuildContext context, _, __) {
-                      return AbstractScreenHelp();
+        ),
+        body: Container(),
+      );
+    }
+    return StreamBuilder(
+        stream: Firestore.instance
+            .collection('sessions')
+            .document(widget.sessionId)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return Scaffold(
+                appBar: AppBar(
+                  title: Text(
+                    'Abstract',
+                  ),
+                ),
+                body: Container());
+          }
+          // all data for all components
+          DocumentSnapshot data = snapshot.data;
+          checkIfExit(data);
+          return Scaffold(
+              appBar: AppBar(
+                title: Text(
+                  'Abstract',
+                ),
+                actions: <Widget>[
+                  IconButton(
+                    icon: Icon(Icons.info),
+                    onPressed: () {
+                      // HapticFeedback.heavyImpact();
+                      Navigator.of(context).push(
+                        PageRouteBuilder(
+                          opaque: false,
+                          pageBuilder: (BuildContext context, _, __) {
+                            return AbstractScreenHelp();
+                          },
+                        ),
+                      );
                     },
                   ),
-                );
-              },
-            ),
-          ],
-        ),
-        body: SingleChildScrollView(
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    Column(
-                      children: <Widget>[
-                        getTurn(context),
-                        getPlayerStatus(),
-                      ],
-                    ),
-                    SizedBox(width: 50),
-                    Column(
-                      children: <Widget>[
-                        Text(
-                          'Room Code:',
-                          style: TextStyle(
-                            fontSize: 14,
-                          ),
-                        ),
-                        Text(
-                          widget.roomCode,
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Theme.of(context).primaryColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(width: 50),
-                    widget.isLeader
-                        ? RaisedGradientButton(
-                            child: Text(
-                              'End game',
-                              style: TextStyle(fontSize: 16),
-                            ),
-                            onPressed: () {
-                              showDialog<Null>(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return EndGameDialog(
-                                    game: 'Abstract',
-                                    sessionId: widget.sessionId,
-                                  );
-                                },
-                              );
-                            },
-                            height: 40,
-                            width: 140,
-                            gradient: LinearGradient(
-                              colors: <Color>[
-                                Color.fromARGB(255, 255, 185, 0),
-                                Color.fromARGB(255, 255, 213, 0),
-                              ],
-                            ),
-                          )
-                        : Container(),
-                  ],
+                ],
+              ),
+              body: SingleChildScrollView(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      SizedBox(height: 5),
+                      getHeaders(data),
+                      SizedBox(height: 5),
+                      getScores(data),
+                      SizedBox(height: 10),
+                      getBoard(data),
+                    ],
+                  ),
                 ),
-                SizedBox(height: 10),
-                getScores(),
-                SizedBox(height: 10),
-                getBoard(),
-              ],
-            ),
-          ),
-        ));
+              ));
+        });
   }
 }
 

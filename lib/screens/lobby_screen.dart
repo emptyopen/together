@@ -25,7 +25,6 @@ class LobbyScreen extends StatefulWidget {
 }
 
 class _LobbyScreenState extends State<LobbyScreen> {
-  bool isLeader = false;
   bool isStarting = false;
   Timer _timer;
   DateTime startTime;
@@ -35,6 +34,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
   String leaderId;
   String gameName;
   bool calledGameRoom = false;
+  bool isLoading = true;
   String startError = '';
 
   @override
@@ -65,7 +65,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
                   sessionId: sessionId,
                   userId: userId,
                   roomCode: widget.roomCode,
-                  isLeader: isLeader,
                 ),
               );
               break;
@@ -76,7 +75,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
                   sessionId: sessionId,
                   userId: userId,
                   roomCode: widget.roomCode,
-                  isLeader: isLeader,
                 ),
               );
               break;
@@ -106,8 +104,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
         leaderId = event.documents.single.data['leader'];
         // check if current user is leader
         setState(() {
-          isLeader = documentData['leader'] == userId;
           gameName = documentData['game'];
+          isLoading = false;
         });
       }
     }).catchError((e) => print('error fetching data: $e'));
@@ -128,395 +126,339 @@ class _LobbyScreenState extends State<LobbyScreen> {
         .updateData({'playerIds': currPlayers});
   }
 
-  startGame() async {
-    // update session document with state and start date
-    // TODO: just get session id during init and use it afterwards
-    await Firestore.instance
-        .collection('sessions')
-        .where('roomCode', isEqualTo: widget.roomCode)
-        .getDocuments()
-        .then((event) async {
-      if (event.documents.isNotEmpty) {
-        String sessionId = event.documents.single.documentID;
-        var data = (await Firestore.instance
-                .collection('sessions')
-                .document(sessionId)
-                .get())
-            .data;
-        var rules = data['rules'];
+  startGame(data) async {
+    var rules = data['rules'];
 
-        // initialize final values/rules for games
-        switch (gameName) {
-          case 'The Hunt':
-            // TODO: initialize all the stuff here
-            break;
-          case 'Abstract':
-            // TODO: !!!!!!!!!!!!!! only perform this once, set flag in session afterwards
+    // initialize final values/rules for games
+    switch (gameName) {
+      case 'The Hunt':
+        // TODO: initialize all the stuff here
+        break;
+      case 'Abstract':
+        // TODO: !!!!!!!!!!!!!! only perform this once, set flag in session afterwards
 
-            // verify that there are sufficient number of players
-            if ((rules['numTeams'] == 2 && data['playerIds'].length < 4) ||
-                (rules['numTeams'] == 3 && data['playerIds'].length < 6)) {
-              setState(() {
-                if (rules['numTeams'] == 2) {
-                  startError = 'Need at least 4 players for two teams';
-                } else {
-                  startError = 'Need at least 6 players for three teams';
-                }
-              });
-              return;
-            }
-
-            setState(() {
-              startError = '';
-            });
-
-            // initialize board, words
-            var boardSize = 5;
-            if (rules['numTeams'] == 3) {
-              boardSize = 6;
-            }
-            List<RowList> words = [];
-            var wordsHashSet = HashSet();
-            for (var i = 0; i < boardSize; i++) {
-              words.add(RowList());
-              for (var j = 0; j < boardSize; j++) {
-                Random _random = new Random();
-                String wordToAdd = abstractPossibleWords[
-                    _random.nextInt(abstractPossibleWords.length)];
-                while (wordsHashSet.contains(wordToAdd)) {
-                  wordToAdd = abstractPossibleWords[
-                      _random.nextInt(abstractPossibleWords.length)];
-                }
-                wordsHashSet.add(wordToAdd);
-                words[i].add(wordToAdd);
-              }
-            }
-            // functions for getting random coordinates for board size
-            Random _random = new Random();
-            Coords randomCoords(int boardSize) {
-              return Coords(x: _random.nextInt(boardSize), y: _random.nextInt(boardSize));
-            }
-            // function for filling a list with unused random coordinates
-            List<Coords> getWordCoords(
-                HashSet wordCoordsHashSet, int boardSize, int numWords) {
-              List<Coords> coordsList = [];
-              while (coordsList.length < numWords) {
-                Coords coordsToAdd = randomCoords(boardSize);
-                while (wordCoordsHashSet.contains(coordsToAdd)) {
-                  coordsToAdd = randomCoords(boardSize);
-                }
-                wordCoordsHashSet.add(coordsToAdd);
-                coordsList
-                    .add(Coords(x: coordsToAdd.x, y: coordsToAdd.y));
-              }
-              return coordsList;
-            }
-            // update colors for words for teams / death word
-            // 2 teams & 5x5=25: (9, 8) = 17, 7 neutral, 1 death
-            // 3 teams & 6x6=36: (10, 9, 8) = 27, 8 neutral, 1 death
-            var wordCoordsHashSet = HashSet();
+        // verify that there are sufficient number of players
+        if ((rules['numTeams'] == 2 && data['playerIds'].length < 4) ||
+            (rules['numTeams'] == 3 && data['playerIds'].length < 6)) {
+          setState(() {
             if (rules['numTeams'] == 2) {
-              // var possibleCardsNeeded = [9, 8];
-              // possibleCardsNeeded.shuffle();
-              for (var coords in getWordCoords(
-                  wordCoordsHashSet, 5, 9)) {
-                words[coords.x].rowWords[coords.y]['color'] = 'green';
-              }
-              for (var coords in getWordCoords(
-                  wordCoordsHashSet, 5, 9)) {
-                words[coords.x].rowWords[coords.y]['color'] = 'orange';
-              }
-              for (var coords in getWordCoords(wordCoordsHashSet, 5, 1)) {
-                words[coords.x].rowWords[coords.y]['color'] = 'black';
-              }
+              startError = 'Need at least 4 players for two teams';
             } else {
-              // var possibleCardsNeeded = [9, 8, 7];
-              // possibleCardsNeeded.shuffle();
-              // set order for now (otherwise need to keep track of which team needs to do the most)
-              for (var coords in getWordCoords(
-                  wordCoordsHashSet, 6, 8)){ //possibleCardsNeeded[0])) {
-                words[coords.x].rowWords[coords.y]['color'] = 'green';
-              }
-              for (var coords in getWordCoords(
-                  wordCoordsHashSet, 6, 8)) {
-                words[coords.x].rowWords[coords.y]['color'] = 'orange';
-              }
-              for (var coords in getWordCoords(
-                  wordCoordsHashSet, 6, 8)) {
-                words[coords.x].rowWords[coords.y]['color'] = 'purple';
-              }
-              for (var coords in getWordCoords(wordCoordsHashSet, 5, 1)) {
-                words[coords.x].rowWords[coords.y]['color'] = 'black';
-              }
+              startError = 'Need at least 6 players for three teams';
             }
-            // set words
-            var serializedWords = [];
-            for (var i = 0; i < boardSize; i++) {
-              serializedWords.add(words[i].toJson());
-            }
-            rules['words'] = serializedWords;
-
-            // initialize who is on which teams, and spymasters
-            // update user documents with their team color and isTeamLeader
-            // TODO: might want fine grained control of teams in lobby
-            var players = data['playerIds'];
-            players.shuffle();
-            if (rules['numTeams'] == 2) {
-              // divide playerIds into 2 teams
-              rules['greenTeam'] = players.sublist(0, players.length ~/ 2);
-              for (var playerId in rules['greenTeam']) {
-                await Firestore.instance
-                    .collection('users')
-                    .document(playerId)
-                    .updateData({
-                  'abstractTeam': 'green',
-                  'abstractTeamLeader': '',
-                });
-              }
-              rules['greenLeader'] = players[0];
-              await Firestore.instance
-                  .collection('users')
-                  .document(rules['greenLeader'])
-                  .updateData({'abstractTeamLeader': 'green'});
-              rules['orangeTeam'] =
-                  players.sublist(players.length ~/ 2, players.length);
-              for (var playerId in rules['orangeTeam']) {
-                await Firestore.instance
-                    .collection('users')
-                    .document(playerId)
-                    .updateData({
-                  'abstractTeam': 'orange',
-                  'abstractTeamLeader': '',
-                });
-              }
-              rules['orangeLeader'] = players[players.length ~/ 2];
-              await Firestore.instance
-                  .collection('users')
-                  .document(rules['orangeLeader'])
-                  .updateData({'abstractTeamLeader': 'orange'});
-            } else {
-              // divide playerIds into 3 teams
-              rules['greenTeam'] = players.sublist(0, players.length ~/ 3);
-              for (var playerId in rules['greenTeam']) {
-                await Firestore.instance
-                    .collection('users')
-                    .document(playerId)
-                    .updateData({
-                  'abstractTeam': 'green',
-                  'abstractTeamLeader': '',
-                });
-              }
-              rules['greenLeader'] = players[0];
-              await Firestore.instance
-                  .collection('users')
-                  .document(rules['greenLeader'])
-                  .updateData({'abstractTeamLeader': 'green'});
-              rules['orangeTeam'] =
-                  players.sublist(players.length ~/ 3, players.length ~/ 3 * 2);
-              for (var playerId in rules['orangeTeam']) {
-                await Firestore.instance
-                    .collection('users')
-                    .document(playerId)
-                    .updateData({
-                  'abstractTeam': 'orange',
-                  'abstractTeamLeader': '',
-                });
-              }
-              rules['orangeLeader'] = players[players.length ~/ 3];
-              await Firestore.instance
-                  .collection('users')
-                  .document(rules['orangeLeader'])
-                  .updateData({'abstractTeamLeader': 'orange'});
-              rules['purpleTeam'] =
-                  players.sublist(players.length ~/ 3 * 2, players.length);
-              for (var playerId in rules['purpleTeam']) {
-                await Firestore.instance
-                    .collection('users')
-                    .document(playerId)
-                    .updateData({
-                  'abstractTeam': 'purple',
-                  'abstractTeamLeader': '',
-                });
-              }
-              rules['purpleLeader'] = players[players.length ~/ 3 * 2];
-              await Firestore.instance
-                  .collection('users')
-                  .document(rules['purpleLeader'])
-                  .updateData({'abstractTeamLeader': 'purple'});
-            }
-            break;
+          });
+          return;
         }
 
-        await Firestore.instance
-            .collection('sessions')
-            .document(sessionId)
-            .updateData({
-          'rules': rules,
-          'state': 'started',
-          'startTime': DateTime.now().add(Duration(seconds: 5)),
+        setState(() {
+          startError = '';
         });
-      }
-    }).catchError((e) => print('error fetching data: $e'));
-  }
 
-  StreamBuilder<QuerySnapshot> _getCountdown(BuildContext context) {
-    return StreamBuilder(
-        stream: Firestore.instance
-            .collection('sessions')
-            .where('roomCode', isEqualTo: widget.roomCode)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return Text(
-              'No Data...',
-            );
-          } else {
-            DocumentSnapshot items = snapshot.data.documents[0];
-            // check if we are in the started state. if we aren't, display nothing.
-            if (items['state'] == 'lobby') {
-              return Container();
+        // initialize board, words
+        var boardSize = 5;
+        if (rules['numTeams'] == 3) {
+          boardSize = 6;
+        }
+        List<RowList> words = [];
+        var wordsHashSet = HashSet();
+        for (var i = 0; i < boardSize; i++) {
+          words.add(RowList());
+          for (var j = 0; j < boardSize; j++) {
+            Random _random = new Random();
+            String wordToAdd = abstractPossibleWords[
+                _random.nextInt(abstractPossibleWords.length)];
+            while (wordsHashSet.contains(wordToAdd)) {
+              wordToAdd = abstractPossibleWords[
+                  _random.nextInt(abstractPossibleWords.length)];
             }
-            // if we are started, countdown if we are before the time, otherwise pop and move to game room
-            isStarting = true;
-            startTime = items['startTime'].toDate();
-            return Column(
-              children: <Widget>[
-                Text(
-                  startTime == null || _now == null
-                      ? ''
-                      : 'Game is starting in ${startTime.difference(_now).inSeconds}',
-                  style: TextStyle(
-                    color: Theme.of(context).primaryColor,
-                    fontSize: 24,
-                  ),
-                ),
-                SizedBox(
-                  height: 30,
-                ),
-              ],
-            );
+            wordsHashSet.add(wordToAdd);
+            words[i].add(wordToAdd);
           }
-        });
-  }
-
-  StreamBuilder<QuerySnapshot> getRules(BuildContext context) {
-    return StreamBuilder(
-        stream: Firestore.instance
-            .collection('sessions')
-            .where('roomCode', isEqualTo: widget.roomCode)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return Text(
-              'No Data...',
-            );
-          } else {
-            DocumentSnapshot items = snapshot.data.documents[0];
-            var rules = items['rules'];
-            switch (gameName) {
-              case 'The Hunt':
-                return Container(
-                  width: 250,
-                  child: Column(
-                    children: <Widget>[
-                      Text('Number of spies: ${rules['numSpies']}'),
-                      Text('Locations: ${rules['locations']}'),
-                    ],
-                  ),
-                );
-                break;
-              case 'Abstract':
-                return Container(
-                  width: 250,
-                  child: Column(
-                    children: <Widget>[
-                      Text('Number of Teams: ${rules['numTeams']}'),
-                    ],
-                  ),
-                );
-                break;
-              default:
-                return Text('Unknown game');
+        }
+        // functions for getting random coordinates for board size
+        Random _random = new Random();
+        Coords randomCoords(int boardSize) {
+          return Coords(
+              x: _random.nextInt(boardSize), y: _random.nextInt(boardSize));
+        }
+        // function for filling a list with unused random coordinates
+        List<Coords> getWordCoords(
+            HashSet wordCoordsHashSet, int boardSize, int numWords) {
+          List<Coords> coordsList = [];
+          while (coordsList.length < numWords) {
+            Coords coordsToAdd = randomCoords(boardSize);
+            while (wordCoordsHashSet.contains(coordsToAdd)) {
+              coordsToAdd = randomCoords(boardSize);
             }
+            wordCoordsHashSet.add(coordsToAdd);
+            coordsList.add(Coords(x: coordsToAdd.x, y: coordsToAdd.y));
           }
-        });
+          return coordsList;
+        }
+        // update colors for words for teams / death word
+        // 2 teams & 5x5=25: (9, 8) = 17, 7 neutral, 1 death
+        // 3 teams & 6x6=36: (10, 9, 8) = 27, 8 neutral, 1 death
+        var wordCoordsHashSet = HashSet();
+        if (rules['numTeams'] == 2) {
+          // var possibleCardsNeeded = [9, 8];
+          // possibleCardsNeeded.shuffle();
+          for (var coords in getWordCoords(wordCoordsHashSet, 5, 9)) {
+            words[coords.x].rowWords[coords.y]['color'] = 'green';
+          }
+          for (var coords in getWordCoords(wordCoordsHashSet, 5, 9)) {
+            words[coords.x].rowWords[coords.y]['color'] = 'orange';
+          }
+          for (var coords in getWordCoords(wordCoordsHashSet, 5, 1)) {
+            words[coords.x].rowWords[coords.y]['color'] = 'black';
+          }
+        } else {
+          // var possibleCardsNeeded = [9, 8, 7];
+          // possibleCardsNeeded.shuffle();
+          // set order for now (otherwise need to keep track of which team needs to do the most)
+          for (var coords in getWordCoords(wordCoordsHashSet, 6, 8)) {
+            //possibleCardsNeeded[0])) {
+            words[coords.x].rowWords[coords.y]['color'] = 'green';
+          }
+          for (var coords in getWordCoords(wordCoordsHashSet, 6, 8)) {
+            words[coords.x].rowWords[coords.y]['color'] = 'orange';
+          }
+          for (var coords in getWordCoords(wordCoordsHashSet, 6, 8)) {
+            words[coords.x].rowWords[coords.y]['color'] = 'purple';
+          }
+          for (var coords in getWordCoords(wordCoordsHashSet, 5, 1)) {
+            words[coords.x].rowWords[coords.y]['color'] = 'black';
+          }
+        }
+        // set words
+        var serializedWords = [];
+        for (var i = 0; i < boardSize; i++) {
+          serializedWords.add(words[i].toJson());
+        }
+        rules['words'] = serializedWords;
+
+        // set greenAlreadyWon for ensuring rebuttal for orange/purple
+        rules['greenAlreadyWon'] = false;
+
+        // initialize who is on which teams, and spymasters
+        // update user documents with their team color and isTeamLeader
+        // TODO: might want fine grained control of teams in lobby
+        var players = data['playerIds'];
+        players.shuffle();
+        if (rules['numTeams'] == 2) {
+          // divide playerIds into 2 teams
+          rules['greenTeam'] = players.sublist(0, players.length ~/ 2);
+          for (var playerId in rules['greenTeam']) {
+            await Firestore.instance
+                .collection('users')
+                .document(playerId)
+                .updateData({
+              'abstractTeam': 'green',
+              'abstractTeamLeader': '',
+            });
+          }
+          rules['greenLeader'] = players[0];
+          await Firestore.instance
+              .collection('users')
+              .document(rules['greenLeader'])
+              .updateData({'abstractTeamLeader': 'green'});
+          rules['orangeTeam'] =
+              players.sublist(players.length ~/ 2, players.length);
+          for (var playerId in rules['orangeTeam']) {
+            await Firestore.instance
+                .collection('users')
+                .document(playerId)
+                .updateData({
+              'abstractTeam': 'orange',
+              'abstractTeamLeader': '',
+            });
+          }
+          rules['orangeLeader'] = players[players.length ~/ 2];
+          await Firestore.instance
+              .collection('users')
+              .document(rules['orangeLeader'])
+              .updateData({'abstractTeamLeader': 'orange'});
+        } else {
+          // divide playerIds into 3 teams
+          rules['greenTeam'] = players.sublist(0, players.length ~/ 3);
+          for (var playerId in rules['greenTeam']) {
+            await Firestore.instance
+                .collection('users')
+                .document(playerId)
+                .updateData({
+              'abstractTeam': 'green',
+              'abstractTeamLeader': '',
+            });
+          }
+          rules['greenLeader'] = players[0];
+          await Firestore.instance
+              .collection('users')
+              .document(rules['greenLeader'])
+              .updateData({'abstractTeamLeader': 'green'});
+          rules['orangeTeam'] =
+              players.sublist(players.length ~/ 3, players.length ~/ 3 * 2);
+          for (var playerId in rules['orangeTeam']) {
+            await Firestore.instance
+                .collection('users')
+                .document(playerId)
+                .updateData({
+              'abstractTeam': 'orange',
+              'abstractTeamLeader': '',
+            });
+          }
+          rules['orangeLeader'] = players[players.length ~/ 3];
+          await Firestore.instance
+              .collection('users')
+              .document(rules['orangeLeader'])
+              .updateData({'abstractTeamLeader': 'orange'});
+          rules['purpleTeam'] =
+              players.sublist(players.length ~/ 3 * 2, players.length);
+          for (var playerId in rules['purpleTeam']) {
+            await Firestore.instance
+                .collection('users')
+                .document(playerId)
+                .updateData({
+              'abstractTeam': 'purple',
+              'abstractTeamLeader': '',
+            });
+          }
+          rules['purpleLeader'] = players[players.length ~/ 3 * 2];
+          await Firestore.instance
+              .collection('users')
+              .document(rules['purpleLeader'])
+              .updateData({'abstractTeamLeader': 'purple'});
+        }
+        break;
+    }
+
+    await Firestore.instance
+        .collection('sessions')
+        .document(sessionId)
+        .updateData({
+      'rules': rules,
+      'state': 'started',
+      'startTime': DateTime.now().add(Duration(seconds: 5)),
+    });
   }
 
-  StreamBuilder<QuerySnapshot> _getPlayers() {
-    return StreamBuilder(
-        stream: Firestore.instance
-            .collection('sessions')
-            .where('roomCode', isEqualTo: widget.roomCode)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return Text(
-              'No Data...',
-            );
-          } else {
-            List<DocumentSnapshot> items = snapshot.data.documents;
-            // if start date exists and we are past it, move to game screen (with session id)
-            var playerIds = items[0]['playerIds'];
-            return Container(
-              height: 35.0 * playerIds.length,
-              child: ListView.builder(
-                  itemCount: playerIds.length,
-                  itemBuilder: (context, index) {
-                    return FutureBuilder(
-                        future: Firestore.instance
-                            .collection('users')
-                            .document(playerIds[index])
-                            .get(),
-                        builder: (context, snapshot) {
-                          if (!snapshot.hasData) {
-                            return Container();
-                          }
-                          return Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: <Widget>[
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: <Widget>[
-                                  Text(
-                                    snapshot.data['name'],
-                                    style: TextStyle(
-                                        fontSize: 20,
-                                        color: userId == playerIds[index]
-                                            ? Theme.of(context).primaryColor
-                                            : Colors.black),
+  Widget _getCountdown(BuildContext context, data) {
+    // check if we are in the started state. if we aren't, display nothing.
+    if (data['state'] == 'lobby') {
+      return Container();
+    }
+    // if we are started, countdown if we are before the time, otherwise pop and move to game room
+    isStarting = true;
+    startTime = data['startTime'].toDate();
+    return Column(
+      children: <Widget>[
+        Text(
+          startTime == null || _now == null
+              ? ''
+              : 'Game is starting in ${startTime.difference(_now).inSeconds}',
+          style: TextStyle(
+            color: Theme.of(context).primaryColor,
+            fontSize: 24,
+          ),
+        ),
+        SizedBox(
+          height: 30,
+        ),
+      ],
+    );
+  }
+
+  Widget getRules(BuildContext context, data) {
+    var rules = data['rules'];
+    switch (gameName) {
+      case 'The Hunt':
+        return Container(
+          width: 250,
+          child: Column(
+            children: <Widget>[
+              Text('Number of spies: ${rules['numSpies']}'),
+              SizedBox(height: 5),
+              Text('Possible locations: ${rules['locations']}'),
+            ],
+          ),
+        );
+        break;
+      case 'Abstract':
+        return Container(
+          width: 250,
+          child: Column(
+            children: <Widget>[
+              Text('Number of Teams: ${rules['numTeams']}'),
+            ],
+          ),
+        );
+        break;
+      default:
+        return Text('Unknown game');
+    }
+  }
+
+  Widget _getPlayers(data) {
+    // if start date exists and we are past it, move to game screen (with session id)
+    var playerIds = data['playerIds'];
+    return Container(
+      height: 35.0 * playerIds.length,
+      child: ListView.builder(
+          itemCount: playerIds.length,
+          itemBuilder: (context, index) {
+            return FutureBuilder(
+                future: Firestore.instance
+                    .collection('users')
+                    .document(playerIds[index])
+                    .get(),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return Container();
+                  }
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          Text(
+                            snapshot.data['name'],
+                            style: TextStyle(
+                                fontSize: 20,
+                                color: userId == playerIds[index]
+                                    ? Theme.of(context).primaryColor
+                                    : Colors.black),
+                          ),
+                          Text(
+                            playerIds[index] == data['leader']
+                                ? ' (glorious leader) '
+                                : '',
+                            style: TextStyle(fontSize: 14),
+                          ),
+                          userId == data['leader'] &&
+                                  playerIds[index] == data['leader']
+                              ? SizedBox(height: 30)
+                              : Container(),
+                          userId == data['leader'] &&
+                                  playerIds[index] != data['leader']
+                              ? SizedBox(
+                                  height: 30,
+                                  child: IconButton(
+                                    icon: Icon(
+                                      MdiIcons.accountRemove,
+                                      size: 20,
+                                      color: Colors.redAccent,
+                                    ),
+                                    onPressed: () =>
+                                        kickPlayer(playerIds[index]),
                                   ),
-                                  Text(
-                                    playerIds[index] == leaderId
-                                        ? ' (glorious leader) '
-                                        : '',
-                                    style: TextStyle(fontSize: 14),
-                                  ),
-                                  isLeader && playerIds[index] == leaderId
-                                      ? SizedBox(height: 35)
-                                      : Container(),
-                                  isLeader && playerIds[index] != leaderId
-                                      ? SizedBox(
-                                          height: 35,
-                                          child: IconButton(
-                                            icon: Icon(
-                                              MdiIcons.accountRemove,
-                                              size: 20,
-                                              color: Colors.redAccent,
-                                            ),
-                                            onPressed: () =>
-                                                kickPlayer(playerIds[index]),
-                                          ),
-                                        )
-                                      : Container(),
-                                ],
-                              ),
-                            ],
-                          );
-                        });
-                  }),
-            );
-          }
-        });
+                                )
+                              : Container(),
+                        ],
+                      ),
+                    ],
+                  );
+                });
+          }),
+    );
   }
 
   shufflePlayers() async {
@@ -539,150 +481,180 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          '${gameName}: Lobby',
-        ),
-      ),
-      body: SingleChildScrollView(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              SizedBox(height: 40),
-              isLeader
-                  ? Text('- you are the glorious leader -')
-                  : Text('- bug the leader if you want the game to start -'),
-              SizedBox(height: 30),
-              _getCountdown(context),
-              Text(
-                'Room Code:',
-                style: TextStyle(
-                  fontSize: 24,
-                ),
-              ),
-              PageBreak(
-                width: 100,
-              ),
-              Text(
-                widget.roomCode,
-                style: TextStyle(
-                  fontSize: 34,
-                  color: Theme.of(context).primaryColor,
-                ),
-              ),
-              SizedBox(
-                height: 30,
-              ),
-              Text(
-                'Players:',
-                style: TextStyle(
-                  fontSize: 24,
-                ),
-              ),
-              PageBreak(width: 50),
-              _getPlayers(),
-              isLeader && !isStarting && ['The Hunt'].contains(gameName)
-                  ? RaisedGradientButton(
-                      child: Text(
-                        'Shuffle Players',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                        ),
-                      ),
-                      onPressed: shufflePlayers,
-                      height: 40,
-                      width: 150,
-                      gradient: LinearGradient(
-                        colors: <Color>[
-                          Theme.of(context).primaryColor,
-                          Theme.of(context).accentColor,
-                        ],
-                      ),
-                    )
-                  : Container(),
-              SizedBox(height: 30),
-              Text('Rules', style: TextStyle(fontSize: 24)),
-              PageBreak(
-                width: 80,
-              ),
-              getRules(context),
-              isLeader && !isStarting
-                  ? Column(
-                      children: <Widget>[
-                        SizedBox(height: 10),
-                        RaisedGradientButton(
-                          child: Text(
-                            'Edit Rules',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                            ),
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              startError = '';
-                            });
-                            showDialog<Null>(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return EditRulesDialog(
-                                  game: gameName,
-                                  sessionId: sessionId,
-                                );
-                              },
-                            );
-                          },
-                          height: 40,
-                          width: 130,
-                          gradient: LinearGradient(
-                            colors: <Color>[
-                              Theme.of(context).primaryColor,
-                              Theme.of(context).accentColor,
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: 40),
-                        RaisedGradientButton(
-                          child: Text(
-                            'Start Game',
-                            style: TextStyle(
-                              fontSize: 20,
-                            ),
-                          ),
-                          onPressed: startGame,
-                          height: 50,
-                          width: 150,
-                          gradient: LinearGradient(
-                            colors: <Color>[
-                              Color.fromARGB(255, 255, 185, 0),
-                              Color.fromARGB(255, 255, 213, 0),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: 10),
-                        startError == ''
-                            ? Container()
-                            : Text(
-                                startError,
-                                style: TextStyle(
-                                  color: Colors.red,
-                                ),
-                              ),
-                        SizedBox(
-                          height: 30,
-                        )
-                      ],
-                    )
-                  : Container(),
-              SizedBox(height: 60),
-            ],
+    if (isLoading) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(
+            '$gameName: Lobby',
           ),
         ),
-      ),
-    );
+        body: Container(),
+      );
+    }
+    return StreamBuilder(
+        stream: Firestore.instance
+            .collection('sessions')
+            .document(sessionId)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return Scaffold(
+            appBar: AppBar(
+              title: Text(
+                '$gameName: Lobby',
+              ),
+            ),
+            body: Container());
+          }
+          // all data for all components
+          DocumentSnapshot data = snapshot.data;
+          return Scaffold(
+            appBar: AppBar(
+              title: Text(
+                '$gameName: Lobby',
+              ),
+            ),
+            body: SingleChildScrollView(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    SizedBox(height: 40),
+                    _getCountdown(context, data),
+                    Text(
+                      'Room Code:',
+                      style: TextStyle(
+                        fontSize: 24,
+                      ),
+                    ),
+                    PageBreak(
+                      width: 100,
+                    ),
+                    Text(
+                      widget.roomCode,
+                      style: TextStyle(
+                        fontSize: 34,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                    ),
+                    SizedBox(
+                      height: 30,
+                    ),
+                    Text(
+                      'Players:',
+                      style: TextStyle(
+                        fontSize: 24,
+                      ),
+                    ),
+                    PageBreak(width: 50),
+                    _getPlayers(data),
+                    userId == data['leader'] &&
+                            !isStarting &&
+                            ['The Hunt'].contains(gameName)
+                        ? Column(
+                            children: <Widget>[
+                              RaisedGradientButton(
+                                child: Text(
+                                  'Shuffle Players',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                  ),
+                                ),
+                                onPressed: shufflePlayers,
+                                height: 40,
+                                width: 150,
+                                gradient: LinearGradient(
+                                  colors: <Color>[
+                                    Theme.of(context).primaryColor,
+                                    Theme.of(context).accentColor,
+                                  ],
+                                ),
+                              ),
+                              SizedBox(height: 30),
+                            ],
+                          )
+                        : Container(),
+                    Text('Rules', style: TextStyle(fontSize: 24)),
+                    PageBreak(
+                      width: 80,
+                    ),
+                    getRules(context, data),
+                    userId == data['leader'] && !isStarting
+                        ? Column(
+                            children: <Widget>[
+                              SizedBox(height: 10),
+                              RaisedGradientButton(
+                                child: Text(
+                                  'Edit Rules',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                  ),
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    startError = '';
+                                  });
+                                  showDialog<Null>(
+                                    context: context,
+                                    builder: (BuildContext context) {
+                                      return EditRulesDialog(
+                                        game: gameName,
+                                        sessionId: sessionId,
+                                      );
+                                    },
+                                  );
+                                },
+                                height: 40,
+                                width: 130,
+                                gradient: LinearGradient(
+                                  colors: <Color>[
+                                    Theme.of(context).primaryColor,
+                                    Theme.of(context).accentColor,
+                                  ],
+                                ),
+                              ),
+                              SizedBox(height: 40),
+                              RaisedGradientButton(
+                                child: Text(
+                                  'Start Game',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                  ),
+                                ),
+                                onPressed: () => startGame(data),
+                                height: 50,
+                                width: 150,
+                                gradient: LinearGradient(
+                                  colors: <Color>[
+                                    Color.fromARGB(255, 255, 185, 0),
+                                    Color.fromARGB(255, 255, 213, 0),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(height: 10),
+                              startError == ''
+                                  ? Container()
+                                  : Text(
+                                      startError,
+                                      style: TextStyle(
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                              SizedBox(
+                                height: 30,
+                              )
+                            ],
+                          )
+                        : Container(),
+                    SizedBox(height: 60),
+                  ],
+                ),
+              ),
+            ),
+          );
+        });
   }
 }
 
@@ -697,7 +669,6 @@ class EditRulesDialog extends StatefulWidget {
 }
 
 class _EditRulesDialogState extends State<EditRulesDialog> {
-  TextEditingController _passwordController = new TextEditingController();
   Map<String, dynamic> rules = {};
   bool isLoading = true;
   List<dynamic> possibleLocations;
@@ -740,12 +711,12 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
         rules['numTeams'] = sessionData['rules']['numTeams'];
         break;
     }
-    setState(() {
-      isLoading = false;
-    });
     if (widget.game == 'The Hunt') {
       getChosenLocations();
     }
+    setState(() {
+      isLoading = false;
+    });
   }
 
   updateRules() async {

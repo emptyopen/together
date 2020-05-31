@@ -12,17 +12,22 @@ void main() => runApp(MyApp());
 // when joining a game, check if current game exists. if so, remove player from game
 // don't allow joining a game that has started (for new players)
 // BIG: add abstract
+// flips not updating on other devices
+// who leader is in lobby not updating
+// end game automatically when all cards are flipped or death card is flipped
+// when game ends, show everyone board (use state of session)
 
 // next up:
+// roles not updating in the hunt
+// scrolling on abstract needs to be fixed
+// need button to manually end turn
+// check teams button (should be universal)
+//  - add turn timer? 
 // ability to leave a game (also delete session if last one out) - dialog on back button (leave game or just go to main menu)
 // move setup code from hunt to lobby
 
 // TODO:
 // abstract:
-//  - add counter of remaining words per team
-//  - add turn timer? 
-//  - end game automatically when all cards are flipped or death card is flipped
-//  - !! when game ends, show everyone board (use state of session)
 //  - voting system for choosing abstract cards (all members of team must select it)
 //  - add help screen: any number of teams can win with rebuttal
 //  - or tiebreaker, with total time used as second marker
