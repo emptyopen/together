@@ -6,30 +6,28 @@ import 'screens/root_screen.dart';
 void main() => runApp(MyApp());
 
 // done:
-// auto login when registering
-// fix loading icon for login
-// ensure creating new game that code is unique
-// when joining a game, check if current game exists. if so, remove player from game
-// don't allow joining a game that has started (for new players)
-// BIG: add abstract
-// flips not updating on other devices
-// who leader is in lobby not updating
-// end game automatically when all cards are flipped or death card is flipped
-// when game ends, show everyone board (use state of session)
-// roles not updating in the hunt
-// move setup code from hunt to lobby
-// need button to manually end turn
-// scrolling on abstract needs to be fixed
-// fix iphone safe area
-// check teams button 
 
 // next up:
-//  - add turn timer? 
+// BIG: add bananaphone 
+/*
+need to initialize: turn order
+number of rounds
+drawing prompt per player per round
+currentRound = (1, 2, 3) rounds?
+currentPhase = 'draw1', 'describe1', 'draw2', 'describe2'
+
+need at least 4 players? 
+Each person draws, then describes, then draws, then describes
+
+Will need a voting system to pick best drawing/description per phase 
+*/
 // ability to leave a game (also delete session if last one out) - dialog on back button (leave game or just go to main menu)
 
 // TODO:
+// abstract should show leader view at end of game (not just solid blocks)
 // probably don't need setupComplete flag, games can only be configured from the lobby
 // abstract:
+//  - add turn timer
 //  - voting system for choosing abstract cards (all members of team must select it)
 //  - add help screen: any number of teams can win with rebuttal
 //  - or tiebreaker, with total time used as second marker

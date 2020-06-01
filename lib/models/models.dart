@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class Word {
 
   Word({this.name, this.flipped, this.color});
@@ -61,3 +63,27 @@ class Coords {
 
 }
 
+class RoundPrompts {
+
+  RoundPrompts();
+
+  List<String> prompts = [];
+
+  add(String word) {
+    prompts.add(word);
+  }
+
+  RoundPrompts.fromJson(Map<String, dynamic> json)
+      : prompts = json['prompts'];
+
+  Map<String, dynamic> toJson() =>
+    {
+      'prompts': prompts
+    };
+}
+
+class DrawingPoints {
+  Paint paint;
+  Offset points;
+  DrawingPoints({this.points, this.paint});
+}

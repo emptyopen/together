@@ -171,6 +171,11 @@ class _LobbyDialogState extends State<LobbyDialog> {
           'numTeams': 2,
         };
         break;
+      case 'Bananaphone':
+        return {
+          'numRounds': 2,
+        };
+        break;
     }
   }
 
@@ -253,6 +258,7 @@ class _LobbyDialogState extends State<LobbyDialog> {
       'state': 'lobby',
       'leader': userId,
       'dateCreated': DateTime.now(),
+      'setupComplete': false,
     };
     switch(game) {
       case 'The Hunt':
@@ -260,6 +266,10 @@ class _LobbyDialogState extends State<LobbyDialog> {
         break;
       case 'Abstract':
         sessionContents['turn'] = 'green';
+        break;
+      case 'Bananaphone':
+        sessionContents['phase'] = 'draw1';
+        sessionContents['round'] = 0;
         break;
     }
     var result = await Firestore.instance.collection('sessions').add(sessionContents);
@@ -383,7 +393,7 @@ class _LobbyDialogState extends State<LobbyDialog> {
                         _dropDownGame = newValue;
                       });
                     },
-                    items: <String>['The Hunt', 'Abstract', 'Banana Phone']
+                    items: <String>['The Hunt', 'Abstract', 'Bananaphone']
                         .map<DropdownMenuItem<String>>((String value) {
                       return DropdownMenuItem<String>(
                         value: value,

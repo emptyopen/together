@@ -11,9 +11,11 @@ import '../components/layouts.dart';
 import '../components/misc.dart';
 import '../models/models.dart';
 import 'package:together/constants/values.dart';
+import 'package:together/constants/values.dart';
 import 'package:together/services/services.dart';
 import 'package:together/screens/thehunt_screen.dart';
 import 'package:together/screens/abstract_screen.dart';
+import 'package:together/screens/bananaphone_screen.dart';
 
 class LobbyScreen extends StatefulWidget {
   LobbyScreen({Key key, this.roomCode}) : super(key: key);
@@ -78,6 +80,16 @@ class _LobbyScreenState extends State<LobbyScreen> {
                 ),
               );
               break;
+            case 'Bananaphone':
+              slideTransition(
+                context,
+                BananaphoneScreen(
+                  sessionId: sessionId,
+                  userId: userId,
+                  roomCode: widget.roomCode,
+                ),
+              );
+              break;
           }
         }
       }
@@ -129,267 +141,309 @@ class _LobbyScreenState extends State<LobbyScreen> {
   startGame(data) async {
     var rules = data['rules'];
 
-    if (data['setupComplete']) {
+    if (data.containsKey('setupComplete') && data['setupComplete']) {
       print('skipping setup, already complete');
-    }
+    } else {
+      // initialize final values/rules for games
+      switch (gameName) {
+        case 'The Hunt':
+          print('Setting up The Hunt game...');
 
-    // initialize final values/rules for games
-    switch (gameName) {
-      case 'The Hunt':
+          // verify that there are sufficient number of players
+          if (data['playerIds'].length < 3) {
+            setState(() {
+              if (rules['numTeams'] == 2) {
+                startError = 'Need at least 3 players';
+              }
+            });
+            return;
+          }
 
-        // verify that there are sufficient number of players
-        if (data['playerIds'].length < 3) {
+          // clear error if we are good to start
           setState(() {
-            if (rules['numTeams'] == 2) {
-              startError = 'Need at least 3 players';
-            }
+            startError = '';
           });
-          return;
-        }
 
-        // clear error if we are good to start
-        setState(() {
-          startError = '';
-        });
+          // initialize random tool
+          final _random = new Random();
 
-        // initialize random tool
-        final _random = new Random();
+          // set location
+          var possibleLocations = data['rules']['locations'];
+          var location =
+              possibleLocations[_random.nextInt(possibleLocations.length)];
+          print('location is $location');
 
-        // set location
-        var possibleLocations = data['rules']['locations'];
-        var location =
-            possibleLocations[_random.nextInt(possibleLocations.length)];
-        print('location is $location');
+          // randomize player order
+          var playerIds = data['playerIds'];
+          playerIds.shuffle();
 
-        // randomize player order
-        var playerIds = data['playerIds'];
-        playerIds.shuffle();
+          // set spies
+          int numSpies = data['rules']['numSpies'];
+          var i = 0;
+          while (i < numSpies) {
+            print('spy is ${playerIds[i]}');
+            await Firestore.instance
+                .collection('users')
+                .document(playerIds[i])
+                .updateData({'huntRole': 'spy', 'huntLocation': location});
+            i += 1;
+          }
 
-        // set spies
-        int numSpies = data['rules']['numSpies'];
-        var i = 0;
-        while (i < numSpies) {
-          print('spy is ${playerIds[i]}');
-          await Firestore.instance
-              .collection('users')
-              .document(playerIds[i])
-              .updateData({'huntRole': 'spy', 'huntLocation': location});
-          i += 1;
-        }
+          // set other roles
+          List<dynamic> possibleRoles = (await Firestore.instance
+                  .collection('locations')
+                  .document(location)
+                  .get())
+              .data['roles'];
+          while (i < playerIds.length) {
+            print('player ${playerIds[i]} is not spy');
+            await Firestore.instance
+                .collection('users')
+                .document(playerIds[i])
+                .updateData({
+              'huntRole': possibleRoles[_random.nextInt(possibleRoles.length)],
+              'huntLocation': location,
+            });
+            i += 1;
+          }
+          break;
 
-        // set other roles
-        List<dynamic> possibleRoles = (await Firestore.instance
-                .collection('locations')
-                .document(location)
-                .get())
-            .data['roles'];
-        while (i < playerIds.length) {
-          print('player ${playerIds[i]} is not spy');
-          await Firestore.instance
-              .collection('users')
-              .document(playerIds[i])
-              .updateData({
-            'huntRole': possibleRoles[_random.nextInt(possibleRoles.length)],
-            'huntLocation': location,
-          });
-          i += 1;
-        }
-        break;
-        
-      case 'Abstract':
+        case 'Abstract':
+          print('Setting up Abstract game...');
 
-        // verify that there are sufficient number of players
-        if ((rules['numTeams'] == 2 && data['playerIds'].length < 4) ||
-            (rules['numTeams'] == 3 && data['playerIds'].length < 6)) {
+          // verify that there are sufficient number of players
+          if ((rules['numTeams'] == 2 && data['playerIds'].length < 4) ||
+              (rules['numTeams'] == 3 && data['playerIds'].length < 6)) {
+            setState(() {
+              if (rules['numTeams'] == 2) {
+                startError = 'Need at least 4 players for two teams';
+              } else {
+                startError = 'Need at least 6 players for three teams';
+              }
+            });
+            return;
+          }
+
+          // clear error if we are good to start
           setState(() {
-            if (rules['numTeams'] == 2) {
-              startError = 'Need at least 4 players for two teams';
-            } else {
-              startError = 'Need at least 6 players for three teams';
-            }
+            startError = '';
           });
-          return;
-        }
 
-        // clear error if we are good to start
-        setState(() {
-          startError = '';
-        });
-
-        // initialize board, words
-        var boardSize = 5;
-        if (rules['numTeams'] == 3) {
-          boardSize = 6;
-        }
-        List<RowList> words = [];
-        var wordsHashSet = HashSet();
-        for (var i = 0; i < boardSize; i++) {
-          words.add(RowList());
-          for (var j = 0; j < boardSize; j++) {
-            Random _random = new Random();
-            String wordToAdd = abstractPossibleWords[
-                _random.nextInt(abstractPossibleWords.length)];
-            while (wordsHashSet.contains(wordToAdd)) {
-              wordToAdd = abstractPossibleWords[
+          // initialize board, words
+          var boardSize = 5;
+          if (rules['numTeams'] == 3) {
+            boardSize = 6;
+          }
+          List<RowList> words = [];
+          var wordsHashSet = HashSet();
+          for (var i = 0; i < boardSize; i++) {
+            words.add(RowList());
+            for (var j = 0; j < boardSize; j++) {
+              Random _random = new Random();
+              String wordToAdd = abstractPossibleWords[
                   _random.nextInt(abstractPossibleWords.length)];
+              while (wordsHashSet.contains(wordToAdd)) {
+                wordToAdd = abstractPossibleWords[
+                    _random.nextInt(abstractPossibleWords.length)];
+              }
+              wordsHashSet.add(wordToAdd);
+              words[i].add(wordToAdd);
             }
-            wordsHashSet.add(wordToAdd);
-            words[i].add(wordToAdd);
           }
-        }
-        // functions for getting random coordinates for board size
-        Random _random = new Random();
-        Coords randomCoords(int boardSize) {
-          return Coords(
-              x: _random.nextInt(boardSize), y: _random.nextInt(boardSize));
-        }
-        // function for filling a list with unused random coordinates
-        List<Coords> getWordCoords(
-            HashSet wordCoordsHashSet, int boardSize, int numWords) {
-          List<Coords> coordsList = [];
-          while (coordsList.length < numWords) {
-            Coords coordsToAdd = randomCoords(boardSize);
-            while (wordCoordsHashSet.contains(coordsToAdd)) {
-              coordsToAdd = randomCoords(boardSize);
+          // functions for getting random coordinates for board size
+          Random _random = new Random();
+          Coords randomCoords(int boardSize) {
+            return Coords(
+                x: _random.nextInt(boardSize), y: _random.nextInt(boardSize));
+          }
+          // function for filling a list with unused random coordinates
+          List<Coords> getWordCoords(
+              HashSet wordCoordsHashSet, int boardSize, int numWords) {
+            List<Coords> coordsList = [];
+            while (coordsList.length < numWords) {
+              Coords coordsToAdd = randomCoords(boardSize);
+              while (wordCoordsHashSet.contains(coordsToAdd)) {
+                coordsToAdd = randomCoords(boardSize);
+              }
+              wordCoordsHashSet.add(coordsToAdd);
+              coordsList.add(Coords(x: coordsToAdd.x, y: coordsToAdd.y));
             }
-            wordCoordsHashSet.add(coordsToAdd);
-            coordsList.add(Coords(x: coordsToAdd.x, y: coordsToAdd.y));
+            return coordsList;
           }
-          return coordsList;
-        }
-        // update colors for words for teams / death word
-        // 2 teams & 5x5=25: (9, 8) = 17, 7 neutral, 1 death
-        // 3 teams & 6x6=36: (10, 9, 8) = 27, 8 neutral, 1 death
-        var wordCoordsHashSet = HashSet();
-        if (rules['numTeams'] == 2) {
-          // var possibleCardsNeeded = [9, 8];
-          // possibleCardsNeeded.shuffle();
-          for (var coords in getWordCoords(wordCoordsHashSet, 5, 9)) {
-            words[coords.x].rowWords[coords.y]['color'] = 'green';
+          // update colors for words for teams / death word
+          // 2 teams & 5x5=25: (9, 8) = 17, 7 neutral, 1 death
+          // 3 teams & 6x6=36: (10, 9, 8) = 27, 8 neutral, 1 death
+          var wordCoordsHashSet = HashSet();
+          if (rules['numTeams'] == 2) {
+            // var possibleCardsNeeded = [9, 8];
+            // possibleCardsNeeded.shuffle();
+            for (var coords in getWordCoords(wordCoordsHashSet, 5, 9)) {
+              words[coords.x].rowWords[coords.y]['color'] = 'green';
+            }
+            for (var coords in getWordCoords(wordCoordsHashSet, 5, 9)) {
+              words[coords.x].rowWords[coords.y]['color'] = 'orange';
+            }
+            for (var coords in getWordCoords(wordCoordsHashSet, 5, 1)) {
+              words[coords.x].rowWords[coords.y]['color'] = 'black';
+            }
+          } else {
+            // var possibleCardsNeeded = [9, 8, 7];
+            // possibleCardsNeeded.shuffle();
+            // set order for now (otherwise need to keep track of which team needs to do the most)
+            for (var coords in getWordCoords(wordCoordsHashSet, 6, 8)) {
+              //possibleCardsNeeded[0])) {
+              words[coords.x].rowWords[coords.y]['color'] = 'green';
+            }
+            for (var coords in getWordCoords(wordCoordsHashSet, 6, 8)) {
+              words[coords.x].rowWords[coords.y]['color'] = 'orange';
+            }
+            for (var coords in getWordCoords(wordCoordsHashSet, 6, 8)) {
+              words[coords.x].rowWords[coords.y]['color'] = 'purple';
+            }
+            for (var coords in getWordCoords(wordCoordsHashSet, 5, 1)) {
+              words[coords.x].rowWords[coords.y]['color'] = 'black';
+            }
           }
-          for (var coords in getWordCoords(wordCoordsHashSet, 5, 9)) {
-            words[coords.x].rowWords[coords.y]['color'] = 'orange';
+          // set words
+          var serializedWords = [];
+          for (var i = 0; i < boardSize; i++) {
+            serializedWords.add(words[i].toJson());
           }
-          for (var coords in getWordCoords(wordCoordsHashSet, 5, 1)) {
-            words[coords.x].rowWords[coords.y]['color'] = 'black';
-          }
-        } else {
-          // var possibleCardsNeeded = [9, 8, 7];
-          // possibleCardsNeeded.shuffle();
-          // set order for now (otherwise need to keep track of which team needs to do the most)
-          for (var coords in getWordCoords(wordCoordsHashSet, 6, 8)) {
-            //possibleCardsNeeded[0])) {
-            words[coords.x].rowWords[coords.y]['color'] = 'green';
-          }
-          for (var coords in getWordCoords(wordCoordsHashSet, 6, 8)) {
-            words[coords.x].rowWords[coords.y]['color'] = 'orange';
-          }
-          for (var coords in getWordCoords(wordCoordsHashSet, 6, 8)) {
-            words[coords.x].rowWords[coords.y]['color'] = 'purple';
-          }
-          for (var coords in getWordCoords(wordCoordsHashSet, 5, 1)) {
-            words[coords.x].rowWords[coords.y]['color'] = 'black';
-          }
-        }
-        // set words
-        var serializedWords = [];
-        for (var i = 0; i < boardSize; i++) {
-          serializedWords.add(words[i].toJson());
-        }
-        rules['words'] = serializedWords;
+          rules['words'] = serializedWords;
 
-        // set greenAlreadyWon for ensuring rebuttal for orange/purple
-        rules['greenAlreadyWon'] = false;
+          // set greenAlreadyWon for ensuring rebuttal for orange/purple
+          rules['greenAlreadyWon'] = false;
 
-        // initialize who is on which teams, and spymasters
-        // update user documents with their team color and isTeamLeader
-        // TODO: might want fine grained control of teams in lobby
-        var players = data['playerIds'];
-        players.shuffle();
-        if (rules['numTeams'] == 2) {
-          // divide playerIds into 2 teams
-          rules['greenTeam'] = players.sublist(0, players.length ~/ 2);
-          for (var playerId in rules['greenTeam']) {
+          // initialize who is on which teams, and spymasters
+          // update user documents with their team color and isTeamLeader
+          // TODO: might want fine grained control of teams in lobby
+          var players = data['playerIds'];
+          players.shuffle();
+          if (rules['numTeams'] == 2) {
+            // divide playerIds into 2 teams
+            rules['greenTeam'] = players.sublist(0, players.length ~/ 2);
+            for (var playerId in rules['greenTeam']) {
+              await Firestore.instance
+                  .collection('users')
+                  .document(playerId)
+                  .updateData({
+                'abstractTeam': 'green',
+                'abstractTeamLeader': '',
+              });
+            }
+            rules['greenLeader'] = players[0];
             await Firestore.instance
                 .collection('users')
-                .document(playerId)
-                .updateData({
-              'abstractTeam': 'green',
-              'abstractTeamLeader': '',
-            });
-          }
-          rules['greenLeader'] = players[0];
-          await Firestore.instance
-              .collection('users')
-              .document(rules['greenLeader'])
-              .updateData({'abstractTeamLeader': 'green'});
-          rules['orangeTeam'] =
-              players.sublist(players.length ~/ 2, players.length);
-          for (var playerId in rules['orangeTeam']) {
+                .document(rules['greenLeader'])
+                .updateData({'abstractTeamLeader': 'green'});
+            rules['orangeTeam'] =
+                players.sublist(players.length ~/ 2, players.length);
+            for (var playerId in rules['orangeTeam']) {
+              await Firestore.instance
+                  .collection('users')
+                  .document(playerId)
+                  .updateData({
+                'abstractTeam': 'orange',
+                'abstractTeamLeader': '',
+              });
+            }
+            rules['orangeLeader'] = players[players.length ~/ 2];
             await Firestore.instance
                 .collection('users')
-                .document(playerId)
-                .updateData({
-              'abstractTeam': 'orange',
-              'abstractTeamLeader': '',
-            });
-          }
-          rules['orangeLeader'] = players[players.length ~/ 2];
-          await Firestore.instance
-              .collection('users')
-              .document(rules['orangeLeader'])
-              .updateData({'abstractTeamLeader': 'orange'});
-        } else {
-          // divide playerIds into 3 teams
-          rules['greenTeam'] = players.sublist(0, players.length ~/ 3);
-          for (var playerId in rules['greenTeam']) {
+                .document(rules['orangeLeader'])
+                .updateData({'abstractTeamLeader': 'orange'});
+          } else {
+            // divide playerIds into 3 teams
+            rules['greenTeam'] = players.sublist(0, players.length ~/ 3);
+            for (var playerId in rules['greenTeam']) {
+              await Firestore.instance
+                  .collection('users')
+                  .document(playerId)
+                  .updateData({
+                'abstractTeam': 'green',
+                'abstractTeamLeader': '',
+              });
+            }
+            rules['greenLeader'] = players[0];
             await Firestore.instance
                 .collection('users')
-                .document(playerId)
-                .updateData({
-              'abstractTeam': 'green',
-              'abstractTeamLeader': '',
-            });
-          }
-          rules['greenLeader'] = players[0];
-          await Firestore.instance
-              .collection('users')
-              .document(rules['greenLeader'])
-              .updateData({'abstractTeamLeader': 'green'});
-          rules['orangeTeam'] =
-              players.sublist(players.length ~/ 3, players.length ~/ 3 * 2);
-          for (var playerId in rules['orangeTeam']) {
+                .document(rules['greenLeader'])
+                .updateData({'abstractTeamLeader': 'green'});
+            rules['orangeTeam'] =
+                players.sublist(players.length ~/ 3, players.length ~/ 3 * 2);
+            for (var playerId in rules['orangeTeam']) {
+              await Firestore.instance
+                  .collection('users')
+                  .document(playerId)
+                  .updateData({
+                'abstractTeam': 'orange',
+                'abstractTeamLeader': '',
+              });
+            }
+            rules['orangeLeader'] = players[players.length ~/ 3];
             await Firestore.instance
                 .collection('users')
-                .document(playerId)
-                .updateData({
-              'abstractTeam': 'orange',
-              'abstractTeamLeader': '',
-            });
-          }
-          rules['orangeLeader'] = players[players.length ~/ 3];
-          await Firestore.instance
-              .collection('users')
-              .document(rules['orangeLeader'])
-              .updateData({'abstractTeamLeader': 'orange'});
-          rules['purpleTeam'] =
-              players.sublist(players.length ~/ 3 * 2, players.length);
-          for (var playerId in rules['purpleTeam']) {
+                .document(rules['orangeLeader'])
+                .updateData({'abstractTeamLeader': 'orange'});
+            rules['purpleTeam'] =
+                players.sublist(players.length ~/ 3 * 2, players.length);
+            for (var playerId in rules['purpleTeam']) {
+              await Firestore.instance
+                  .collection('users')
+                  .document(playerId)
+                  .updateData({
+                'abstractTeam': 'purple',
+                'abstractTeamLeader': '',
+              });
+            }
+            rules['purpleLeader'] = players[players.length ~/ 3 * 2];
             await Firestore.instance
                 .collection('users')
-                .document(playerId)
-                .updateData({
-              'abstractTeam': 'purple',
-              'abstractTeamLeader': '',
-            });
+                .document(rules['purpleLeader'])
+                .updateData({'abstractTeamLeader': 'purple'});
           }
-          rules['purpleLeader'] = players[players.length ~/ 3 * 2];
-          await Firestore.instance
-              .collection('users')
-              .document(rules['purpleLeader'])
-              .updateData({'abstractTeamLeader': 'purple'});
-        }
-        break;
+          break;
+
+        case 'Bananaphone':
+          print('Setting up Bananaphone game...');
+
+          // verify that there are sufficient number of players
+          if (data['playerIds'].length < 4) {
+            setState(() {
+              startError = 'Need at least 4 players';
+            });
+            return;
+          }
+
+          // clear error if we are good to start
+          setState(() {
+            startError = '';
+          });
+
+          // initialize random tool
+          final _random = new Random();
+
+          // set prompts (one per player per round)
+          var prompts = [];
+          HashSet usedPrompts = HashSet();
+          for (var round = 0; round < data['rules']['numRounds']; round++) {
+            var roundPrompt = RoundPrompts();
+            for (String _ in data['playerIds']) {
+              // find unused prompt
+              String promptToAdd = bananaphonePossiblePrompts[_random.nextInt(bananaphonePossiblePrompts.length)];
+              while (usedPrompts.contains(promptToAdd)) {
+                promptToAdd = bananaphonePossiblePrompts[_random.nextInt(bananaphonePossiblePrompts.length)];
+              }
+              roundPrompt.add(promptToAdd);
+            }
+            prompts.add(roundPrompt.toJson());
+          }
+          rules['prompts'] = prompts;
+          print('updating $sessionId with $rules');
+          await Firestore.instance.collection('sessions').document(sessionId).updateData({'rules': rules});
+          print('updated.');
+          break;
+      }
     }
 
     await Firestore.instance
@@ -450,6 +504,16 @@ class _LobbyScreenState extends State<LobbyScreen> {
           child: Column(
             children: <Widget>[
               Text('Number of Teams: ${rules['numTeams']}'),
+            ],
+          ),
+        );
+        break;
+      case 'Bananaphone':
+        return Container(
+          width: 250,
+          child: Column(
+            children: <Widget>[
+              Text('Number of rounds: ${rules['numRounds']}'),
             ],
           ),
         );
@@ -524,22 +588,13 @@ class _LobbyScreenState extends State<LobbyScreen> {
     );
   }
 
-  shufflePlayers() async {
-    var data = (await Firestore.instance
-            .collection('sessions')
-            .document(sessionId)
-            .get())
-        .data;
-    switch (gameName) {
-      case 'The Hunt':
-        var playerOrder = data['playerIds'];
-        playerOrder.shuffle();
-        await Firestore.instance
-            .collection('sessions')
-            .document(sessionId)
-            .updateData({'playerIds': playerOrder, 'turn': playerOrder[0]});
-        break;
-    }
+  shufflePlayers(data) async {
+    var playerOrder = data['playerIds'];
+    playerOrder.shuffle();
+    await Firestore.instance
+        .collection('sessions')
+        .document(sessionId)
+        .updateData({'playerIds': playerOrder, 'turn': playerOrder[0]});
   }
 
   @override
@@ -570,7 +625,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                 body: Container());
           }
           // all data for all components
-          DocumentSnapshot data = snapshot.data;
+          var data = snapshot.data.data;
           return Scaffold(
             appBar: AppBar(
               title: Text(
@@ -613,7 +668,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                     _getPlayers(data),
                     userId == data['leader'] &&
                             !isStarting &&
-                            ['The Hunt'].contains(gameName)
+                            ['The Hunt', 'Bananaphone'].contains(gameName)
                         ? Column(
                             children: <Widget>[
                               RaisedGradientButton(
@@ -624,7 +679,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                                     fontSize: 18,
                                   ),
                                 ),
-                                onPressed: shufflePlayers,
+                                onPressed: () => shufflePlayers(data),
                                 height: 40,
                                 width: 150,
                                 gradient: LinearGradient(
@@ -772,6 +827,9 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
         break;
       case 'Abstract':
         rules['numTeams'] = sessionData['rules']['numTeams'];
+        break;
+      case 'Bananaphone':
+        rules['numRounds'] = sessionData['rules']['numRounds'];
         break;
     }
     if (widget.game == 'The Hunt') {
@@ -948,6 +1006,67 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
                       });
                     },
                     items: <int>[2, 3].map<DropdownMenuItem<int>>((int value) {
+                      return DropdownMenuItem<int>(
+                        value: value,
+                        child: Text(value.toString(),
+                            style: TextStyle(fontFamily: 'Balsamiq')),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            Container(
+              child: FlatButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('Cancel'),
+              ),
+            ),
+            FlatButton(
+              onPressed: () {
+                updateRules();
+              },
+              child: Text('Update'),
+            )
+          ],
+        );
+        break;
+      case 'Bananaphone':
+        return AlertDialog(
+          title: Text('Edit game rules:'),
+          contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),
+          content: Container(
+            // decoration: BoxDecoration(border: Border.all()),
+            height:
+                subList2 != null ? 120 + 40 * subList1.length.toDouble() : 100,
+            width: width * 0.95,
+            child: ListView(
+              children: <Widget>[
+                SizedBox(height: 20),
+                Text('Number of rounds:'),
+                Container(
+                  width: 80,
+                  child: DropdownButton<int>(
+                    isExpanded: true,
+                    value: rules['numRounds'],
+                    iconSize: 24,
+                    elevation: 16,
+                    style: TextStyle(color: Theme.of(context).primaryColor),
+                    underline: Container(
+                      height: 2,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    onChanged: (int newValue) {
+                      setState(() {
+                        rules['numRounds'] = newValue;
+                      });
+                    },
+                    items: <int>[1, 2, 3, 4, 5]
+                        .map<DropdownMenuItem<int>>((int value) {
                       return DropdownMenuItem<int>(
                         value: value,
                         child: Text(value.toString(),

@@ -200,7 +200,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
     }
     return SafeArea(
       child: Container(
-        height: 200,
+        height: 220,
         child: GridView.builder(
           physics: NeverScrollableScrollPhysics(),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -612,6 +612,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
                       return EndGameDialog(
                         game: 'Abstract',
                         sessionId: widget.sessionId,
+                        winnerAlreadyDecided: true,
                       );
                     },
                   );
@@ -872,11 +873,11 @@ class _AbstractScreenState extends State<AbstractScreen> {
                   ),
                 ],
               ),
-              body: Center(
+              body: SingleChildScrollView(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
-                    SizedBox(height: 5),
+                    SizedBox(height: 20),
                     getHeaders(data),
                     SizedBox(height: 5),
                     getSubHeaders(data),
@@ -894,7 +895,9 @@ class AbstractScreenHelp extends StatelessWidget {
   Widget build(BuildContext context) {
     return HelpScreen(
       title: 'Abstract: Rules',
-      information: ['    Help goes here'],
+      information: ['    The rules for abstract are simple. The objective of the game is to flip all cards for your team. '
+      'Leaders of teams take turns giving a clue which should tie different words on the board together. The house rule for clues is '
+      'any clue that has a Wikipedia page is OK.'],
       buttonColor: Theme.of(context).primaryColor,
     );
   }

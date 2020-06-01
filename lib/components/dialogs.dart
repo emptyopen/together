@@ -4,11 +4,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:together/components/buttons.dart';
 
 class EndGameDialog extends StatefulWidget {
-  EndGameDialog({this.game, this.sessionId, this.numTeams = 2});
+  EndGameDialog(
+      {this.game,
+      this.sessionId,
+      this.numTeams = 2,
+      this.winnerAlreadyDecided = false});
 
   final String game;
   final String sessionId;
   final int numTeams;
+  final bool winnerAlreadyDecided;
 
   @override
   _EndGameDialogState createState() => _EndGameDialogState();
@@ -57,32 +62,6 @@ class _EndGameDialogState extends State<EndGameDialog> {
           );
         }).toList();
         break;
-      case 'Abstract':
-        if (widget.numTeams == 2) {
-          return ['Green', 'Orange']
-              .map<DropdownMenuItem<String>>((String value) {
-            return DropdownMenuItem<String>(
-              value: value,
-              child: Text(value,
-                  style: TextStyle(
-                    fontFamily: 'Balsamiq',
-                    fontSize: 18,
-                  )),
-            );
-          }).toList();
-        } else {
-        return ['Green', 'Orange', 'Purple']
-            .map<DropdownMenuItem<String>>((String value) {
-          return DropdownMenuItem<String>(
-            value: value,
-            child: Text(value,
-                style: TextStyle(
-                  fontFamily: 'Balsamiq',
-                  fontSize: 18,
-                )),
-          );
-        }).toList();
-        }
     }
   }
 
@@ -104,11 +83,6 @@ class _EndGameDialogState extends State<EndGameDialog> {
           theHuntWinner = newValue;
         });
         break;
-      case 'Abstract':
-        setState(() {
-          abstractWinner = newValue;
-        });
-        break;
     }
   }
 
@@ -119,29 +93,37 @@ class _EndGameDialogState extends State<EndGameDialog> {
       title: Text('End the game!'),
       contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),
       content: Container(
-        height: 200,
+        height: widget.winnerAlreadyDecided ? 100 : 200,
         width: width * 0.95,
         child: ListView(
           children: <Widget>[
             SizedBox(height: 20),
-            Text('Who won?'),
-            Container(
-              width: 80,
-              child: DropdownButton<String>(
-                isExpanded: true,
-                value: getDropdownValue(),
-                iconSize: 24,
-                elevation: 16,
-                style: TextStyle(color: Theme.of(context).primaryColor),
-                underline: Container(
-                  height: 2,
-                  color: Theme.of(context).primaryColor,
-                ),
-                onChanged: (String newValue) => setDropdownValue(newValue),
-                items: getWinnerDropdown(),
-              ),
-            ),
-            SizedBox(height: 10),
+            widget.winnerAlreadyDecided
+                ? Container()
+                : Column(
+                    children: <Widget>[
+                      Text('Who won?'),
+                      Container(
+                        width: 80,
+                        child: DropdownButton<String>(
+                          isExpanded: true,
+                          value: getDropdownValue(),
+                          iconSize: 24,
+                          elevation: 16,
+                          style:
+                              TextStyle(color: Theme.of(context).primaryColor),
+                          underline: Container(
+                            height: 2,
+                            color: Theme.of(context).primaryColor,
+                          ),
+                          onChanged: (String newValue) =>
+                              setDropdownValue(newValue),
+                          items: getWinnerDropdown(),
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                    ],
+                  ),
             Text('End game and go back to:'),
             SizedBox(height: 10),
             Row(
