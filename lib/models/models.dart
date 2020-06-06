@@ -82,8 +82,19 @@ class RoundPrompts {
     };
 }
 
-class DrawingPoints {
+class DrawingPoint {
   Paint paint;
-  Offset points;
-  DrawingPoints({this.points, this.paint});
+  Offset point;
+  
+  DrawingPoint({this.point, this.paint});
+
+  DrawingPoint.fromJson(Map<String, dynamic> json)
+      : paint = json['paint'],
+      point = json['points'];
+
+  Map<String, dynamic> toJson() =>
+    {
+      'paint': paint,
+      'points': point,
+    };
 }

@@ -429,12 +429,14 @@ class _LobbyScreenState extends State<LobbyScreen> {
           for (var round = 0; round < data['rules']['numRounds']; round++) {
             var roundPrompt = RoundPrompts();
             for (String _ in data['playerIds']) {
-              // find unused prompt
+              // find two unused prompt
               String promptToAdd = bananaphonePossiblePrompts[_random.nextInt(bananaphonePossiblePrompts.length)];
               while (usedPrompts.contains(promptToAdd)) {
                 promptToAdd = bananaphonePossiblePrompts[_random.nextInt(bananaphonePossiblePrompts.length)];
               }
-              roundPrompt.add(promptToAdd);
+              usedPrompts.add(promptToAdd);
+              var promptsToAdd = promptToAdd;
+              roundPrompt.add(promptsToAdd);
             }
             prompts.add(roundPrompt.toJson());
           }

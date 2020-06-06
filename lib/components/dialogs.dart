@@ -31,6 +31,22 @@ class _EndGameDialogState extends State<EndGameDialog> {
 
   endGame(bool isToLobby) async {
     // TODO: assign winner (add statistics)
+
+    // clear old data
+    if (widget.game == 'Bananaphone') {
+      print('flushing data...');
+      var data = (await Firestore.instance.collection('sessions').document(widget.sessionId).get()).data;
+      data['playerIds'].asMap().forEach((i, val) {
+        data.remove('draw1Player$i');
+        data.remove('describe1Player$i');
+        data.remove('draw2Player$i');
+        data.remove('describe2Player$i');
+        data['phase'] = 'draw1';
+      });
+      await Firestore.instance.collection('sessions').document(widget.sessionId).setData(data);
+    }
+
+    // go to lobby or main menu 
     if (isToLobby) {
       // update session state to lobby - this automatically will trigger to lobby
       await Firestore.instance

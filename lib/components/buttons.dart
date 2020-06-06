@@ -20,28 +20,28 @@ class RaisedGradientButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return RaisedButton(
-      onPressed: onPressed,
-      shape: RoundedRectangleBorder(
-          side: borderHighlight
-              ? BorderSide(width: 3, color: Colors.white)
-              : BorderSide.none,
-          borderRadius: BorderRadius.circular(80.0)),
-      padding: const EdgeInsets.all(0.0),
-      child: Ink(
-        decoration: BoxDecoration(
-          gradient: gradient,
-          borderRadius: BorderRadius.all(Radius.circular(80.0)),
+    return Container(
+      width: width,
+      height: height,
+      child: RaisedButton(
+        onPressed: onPressed,
+        shape: RoundedRectangleBorder(
+            side: borderHighlight
+                ? BorderSide(width: 3, color: Colors.white)
+                : BorderSide.none,
+            borderRadius: BorderRadius.circular(80.0)),
+        padding: const EdgeInsets.all(0.0),
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: gradient,
+            borderRadius: BorderRadius.all(Radius.circular(80.0)),
+          ),
+          child: Container(
+              constraints: BoxConstraints(
+              ),
+              alignment: Alignment.center,
+              child: child),
         ),
-        child: Container(
-            constraints: BoxConstraints(
-              minWidth: 88.0,
-              minHeight: 36.0,
-              maxHeight: height,
-              maxWidth: width,
-            ),
-            alignment: Alignment.center,
-            child: child),
       ),
     );
   }
