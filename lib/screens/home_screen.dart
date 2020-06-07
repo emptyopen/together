@@ -169,6 +169,7 @@ class _LobbyDialogState extends State<LobbyDialog> {
       case 'Abstract':
         return {
           'numTeams': 2,
+          'turnTimer': '30',
         };
         break;
       case 'Bananaphone':
@@ -422,7 +423,7 @@ class _LobbyDialogState extends State<LobbyDialog> {
                 });
               },
               controller: _passwordController,
-              decoration: InputDecoration(labelText: 'Password: '),
+              decoration: InputDecoration(labelText: 'Password (optional):',),
             ),
             SizedBox(height: 8),
             isFormError

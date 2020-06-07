@@ -33,8 +33,13 @@ class _EndGameDialogState extends State<EndGameDialog> {
     // TODO: assign winner (add statistics)
 
     // clear old data
+    print('flushing data...');
+    if (widget.game == 'Abstract') {
+      var data = (await Firestore.instance.collection('sessions').document(widget.sessionId).get()).data;
+      data.remove('endOnNextGreen');
+      await Firestore.instance.collection('sessions').document(widget.sessionId).setData(data);
+    }
     if (widget.game == 'Bananaphone') {
-      print('flushing data...');
       var data = (await Firestore.instance.collection('sessions').document(widget.sessionId).get()).data;
       data['playerIds'].asMap().forEach((i, val) {
         data.remove('draw1Player$i');

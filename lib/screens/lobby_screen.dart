@@ -11,7 +11,6 @@ import '../components/layouts.dart';
 import '../components/misc.dart';
 import '../models/models.dart';
 import 'package:together/constants/values.dart';
-import 'package:together/constants/values.dart';
 import 'package:together/services/services.dart';
 import 'package:together/screens/thehunt_screen.dart';
 import 'package:together/screens/abstract_screen.dart';
@@ -402,6 +401,42 @@ class _LobbyScreenState extends State<LobbyScreen> {
                 .document(rules['purpleLeader'])
                 .updateData({'abstractTeamLeader': 'purple'});
           }
+
+          // start the timer, and initialize cumulative times
+          if (rules['numTeams'] == 2) {
+            await Firestore.instance
+                .collection('sessions')
+                .document(sessionId)
+                .updateData({
+              'greenTime': 0,
+              'orangeTime': 0,
+              'greenStart': DateTime.now(),
+              'orangeStart': DateTime.now(),
+              'timer': DateTime.now().add(
+                Duration(
+                    seconds: (rules['numTeams'] == 2 ? 9 : 8) *
+                        int.parse(rules['turnTimer'])),
+              )
+            });
+          } else {
+            await Firestore.instance
+                .collection('sessions')
+                .document(sessionId)
+                .updateData({
+              'greenTime': 0,
+              'orangeTime': 0,
+              'purpleTime': 0,
+              'greenStart': DateTime.now(),
+              'orangeStart': DateTime.now(),
+              'purpleStart': DateTime.now(),
+              'timer': DateTime.now().add(
+                Duration(
+                    seconds: (rules['numTeams'] == 2 ? 9 : 8) *
+                        int.parse(rules['turnTimer'])),
+              )
+            });
+          }
+
           break;
 
         case 'Bananaphone':
@@ -430,9 +465,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
             var roundPrompt = RoundPrompts();
             for (String _ in data['playerIds']) {
               // find two unused prompt
-              String promptToAdd = bananaphonePossiblePrompts[_random.nextInt(bananaphonePossiblePrompts.length)];
+              String promptToAdd = bananaphonePossiblePrompts[
+                  _random.nextInt(bananaphonePossiblePrompts.length)];
               while (usedPrompts.contains(promptToAdd)) {
-                promptToAdd = bananaphonePossiblePrompts[_random.nextInt(bananaphonePossiblePrompts.length)];
+                promptToAdd = bananaphonePossiblePrompts[
+                    _random.nextInt(bananaphonePossiblePrompts.length)];
               }
               usedPrompts.add(promptToAdd);
               var promptsToAdd = promptToAdd;
@@ -442,7 +479,10 @@ class _LobbyScreenState extends State<LobbyScreen> {
           }
           rules['prompts'] = prompts;
           print('updating $sessionId with $rules');
-          await Firestore.instance.collection('sessions').document(sessionId).updateData({'rules': rules});
+          await Firestore.instance
+              .collection('sessions')
+              .document(sessionId)
+              .updateData({'rules': rules});
           print('updated.');
           break;
       }
@@ -470,7 +510,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
     return Column(
       children: <Widget>[
         Text(
-          startTime == null || _now == null
+          (startTime == null || _now == null) && startTime.difference(_now).inSeconds < 0
               ? ''
               : 'Game is starting in ${startTime.difference(_now).inSeconds}',
           style: TextStyle(
@@ -501,13 +541,39 @@ class _LobbyScreenState extends State<LobbyScreen> {
         );
         break;
       case 'Abstract':
-        return Container(
-          width: 250,
-          child: Column(
-            children: <Widget>[
-              Text('Number of Teams: ${rules['numTeams']}'),
-            ],
-          ),
+        return Column(
+          children: <Widget>[
+            RulesContainer(
+              rules: <Widget>[
+                Text(
+                  'Number of Teams:',
+                  style: TextStyle(fontSize: 14),
+                ),
+                Text(
+                  rules['numTeams'].toString(),
+                  style: TextStyle(fontSize: 18),
+                ),
+              ],
+            ),
+            SizedBox(height: 5),
+            RulesContainer(
+              rules: <Widget>[
+                Text(
+                  'Turn timer:',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14),
+                ),
+                Text(
+                  '(seconds per remaining word)',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                Text(
+                  rules['turnTimer'],
+                  style: TextStyle(fontSize: 18),
+                ),
+              ],
+            ),
+          ],
         );
         break;
       case 'Bananaphone':

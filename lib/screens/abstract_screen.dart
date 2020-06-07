@@ -4,6 +4,7 @@ import 'package:together/components/buttons.dart';
 import 'package:flutter/services.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:shimmer/shimmer.dart';
+import 'dart:async';
 
 import 'package:together/components/dialogs.dart';
 import 'package:together/services/services.dart';
@@ -26,6 +27,9 @@ class _AbstractScreenState extends State<AbstractScreen> {
   bool isLoading = true;
   String userTeamLeader = '';
   String userTeam = '';
+  Timer _timer;
+  DateTime _now;
+  bool isUpdating = false;
 
   @override
   void initState() {
@@ -35,6 +39,12 @@ class _AbstractScreenState extends State<AbstractScreen> {
       DeviceOrientation.landscapeLeft,
     ]);
     setUpGame();
+    _timer = Timer.periodic(Duration(milliseconds: 100), (Timer t) {
+      if (!mounted) return;
+      setState(() {
+        _now = DateTime.now();
+      });
+    });
   }
 
   @override
@@ -92,23 +102,115 @@ class _AbstractScreenState extends State<AbstractScreen> {
   }
 
   updateTurn(data) async {
-    var currActiveTeam = data['turn'];
-    var nextActiveTeam = '';
-    if (currActiveTeam == 'green') {
-      nextActiveTeam = 'orange';
-    } else if (currActiveTeam == 'orange') {
-      if (numTeams == 2) {
-        nextActiveTeam = 'green';
-      } else {
-        nextActiveTeam = 'purple';
+    if (data['state'] == 'complete') {
+      print('game is over, not updating');
+      return;
+    }
+
+    // get number of remaining words for team
+    var increment = data['rules']['turnTimer'];
+    int unflippedGreen = 0;
+    int unflippedOrange = 0;
+    int unflippedPurple = 0;
+    for (var row in data['rules']['words']) {
+      for (var m in row['rowWords']) {
+        if (m['color'] == 'green') {
+          if (!m['flipped']) {
+            unflippedGreen += 1;
+          }
+        }
+        if (m['color'] == 'orange') {
+          if (!m['flipped']) {
+            unflippedOrange += 1;
+          }
+        }
+        if (m['color'] == 'purple') {
+          if (!m['flipped']) {
+            unflippedPurple += 1;
+          }
+        }
       }
-    } else {
-      nextActiveTeam = 'green';
+    }
+
+    // clear out all flippedThisTurns
+    var rules = data['rules'];
+    for (var x = 0; x < (numTeams == 2 ? 5 : 6); x++) {
+      for (var y = 0; y < (numTeams == 2 ? 5 : 6); y++) {
+        if (rules['words'][x]['rowWords'][y]['flippedThisTurn']) {
+          rules['words'][x]['rowWords'][y]['flippedThisTurn'] = false;
+        }
+      }
     }
     await Firestore.instance
         .collection('sessions')
         .document(widget.sessionId)
-        .updateData({'turn': nextActiveTeam});
+        .updateData({'rules': rules});
+
+    // figure out next team and update cumulative team times
+    var currActiveTeam = data['turn'];
+    var nextActiveTeam = '';
+    if (currActiveTeam == 'green') {
+      nextActiveTeam = 'orange';
+      await Firestore.instance
+          .collection('sessions')
+          .document(widget.sessionId)
+          .updateData({
+        'greenTime': data['greenTime'] +
+            _now.difference(data['greenStart'].toDate()).inMilliseconds,
+        'orangeStart': DateTime.now(),
+      });
+    } else if (currActiveTeam == 'orange') {
+      if (numTeams == 2) {
+        nextActiveTeam = 'green';
+        await Firestore.instance
+            .collection('sessions')
+            .document(widget.sessionId)
+            .updateData({
+          'orangeTime': data['orangeTime'] +
+              _now.difference(data['orangeStart'].toDate()).inMilliseconds,
+          'greenStart': DateTime.now(),
+        });
+      } else {
+        nextActiveTeam = 'purple';
+        await Firestore.instance
+            .collection('sessions')
+            .document(widget.sessionId)
+            .updateData({
+          'orangeTime': data['orangeTime'] +
+              _now.difference(data['orangeStart'].toDate()).inMilliseconds,
+          'purpleStart': DateTime.now(),
+        });
+      }
+    } else {
+      await Firestore.instance
+          .collection('sessions')
+          .document(widget.sessionId)
+          .updateData({
+        'purpleTime': data['purpleTime'] +
+            _now.difference(data['purpleStart'].toDate()).inMilliseconds,
+        'purpleStart': DateTime.now(),
+      });
+      nextActiveTeam = 'green';
+    }
+    var numUnflipped = unflippedGreen;
+    if (nextActiveTeam == 'orange') {
+      numUnflipped = unflippedOrange;
+    }
+    if (nextActiveTeam == 'purple') {
+      numUnflipped = unflippedPurple;
+    }
+
+    // update timer
+    await Firestore.instance
+        .collection('sessions')
+        .document(widget.sessionId)
+        .updateData({
+      'turn': nextActiveTeam,
+      'timer': DateTime.now()
+          .add(Duration(seconds: 10 + int.parse(increment) * numUnflipped))
+    });
+
+    isUpdating = false;
   }
 
   fakeCallback() {}
@@ -286,6 +388,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
 
     // flip card
     data['rules']['words'][x]['rowWords'][y]['flipped'] = true;
+    data['rules']['words'][x]['rowWords'][y]['flippedThisTurn'] = true;
     await Firestore.instance
         .collection('sessions')
         .document(widget.sessionId)
@@ -361,41 +464,37 @@ class _AbstractScreenState extends State<AbstractScreen> {
       deathCardDrawn = true;
     }
 
-    // end game if there is a winner and everyone has had a chance for rebuttal, OR if the black card was drawn
-    if ((thereIsWinner &&
-            ((numTeams == 2 &&
-                data['turn'] == 'green' &&
-                data['rules']['greenAlreadyWon'] == true))) ||
-        deathCardDrawn) {
-      print('game has ended! xy');
-      await Firestore.instance
-          .collection('sessions')
-          .document(widget.sessionId)
-          .updateData(deathCardDrawn
-              ? {'state': 'complete', 'winners': winners, 'deathCard': true}
-              : {'state': 'complete', 'winners': winners});
-    }
-
     // update turns if relevant (i.e. green has won and it is green's team)
+    bool freshTurnOnThisFlip = false;
     if (greenGotAll && data['turn'] == 'green') {
-      data['rules']['greenAlreadyWon'] = true;
-      await Firestore.instance
-          .collection('sessions')
-          .document(widget.sessionId)
-          .updateData({
-        'rules': data['rules'],
-      });
-      updateTurn(data);
+      await updateTurn(data);
+      freshTurnOnThisFlip = true;
     } else if (orangeGotAll && data['turn'] == 'orange') {
-      updateTurn(data);
+      await updateTurn(data);
+      freshTurnOnThisFlip = true;
     } else if (purpleGotAll && data['turn'] == 'purple') {
-      updateTurn(data);
+      await updateTurn(data);
+      freshTurnOnThisFlip = true;
     }
 
-    // one last check for a win
-    if ((numTeams == 2 && greenGotAll && orangeGotAll) ||
-        (numTeams == 3 && greenGotAll && orangeGotAll && purpleGotAll)) {
-      print('game has ended, all win!');
+    data = (await Firestore.instance
+            .collection('sessions')
+            .document(widget.sessionId)
+            .get())
+        .data;
+
+    // end game if there is a winner and turn has just become green, OR if the black card was drawn, OR all teams have won
+    if ((thereIsWinner && data['turn'] == 'green' && freshTurnOnThisFlip) ||
+        deathCardDrawn ||
+        winners.length == data['numTeams']) {
+      print('game has ended!');
+
+      // determine winner if there is a tie
+      if (winners.length > 1) {
+        print('resolving tie with amount of time spent');
+      } else {
+        print('not a tie');
+      }
       await Firestore.instance
           .collection('sessions')
           .document(widget.sessionId)
@@ -427,25 +526,58 @@ class _AbstractScreenState extends State<AbstractScreen> {
               : Colors.white,
           border: Border.all(color: Colors.black, width: 0.5),
         ),
-        child: Center(
-          child: FlatButton(
-            onPressed: () => flipCard(x, y),
-            child: words[x]['rowWords'][y]['color'] == 'black'
-                ? Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      words[x]['rowWords'][y]['flipped']
-                          ? Row(
-                              children: <Widget>[
-                                Icon(
-                                  MdiIcons.skull,
-                                  color: Colors.white,
-                                ),
-                                SizedBox(width: 5),
-                              ],
-                            )
-                          : Container(),
-                      Text(
+        child: Stack(
+          children: <Widget>[
+            Center(
+              child: FlatButton(
+                onPressed: () => flipCard(x, y),
+                child: words[x]['rowWords'][y]['color'] == 'black'
+                    ? Stack(
+                        children: <Widget>[
+                          Positioned.fill(
+                            child: Align(
+                              alignment: Alignment.center,
+                              child: words[x]['rowWords'][y]['flipped']
+                                  ? Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: <Widget>[
+                                        Icon(
+                                          MdiIcons.skull,
+                                          color: Colors.grey[700],
+                                        ),
+                                        SizedBox(width: 20),
+                                        Icon(
+                                          MdiIcons.skull,
+                                          color: Colors.grey[700],
+                                        ),
+                                        SizedBox(width: 20),
+                                        Icon(
+                                          MdiIcons.skull,
+                                          color: Colors.grey[700],
+                                        ),
+                                      ],
+                                    )
+                                  : Container(),
+                            ),
+                          ),
+                          Positioned.fill(
+                            child: Align(
+                              alignment: Alignment.center,
+                              child: Text(
+                                words[x]['rowWords'][y]['name'],
+                                style: TextStyle(
+                                    color: tileIsVisible &&
+                                            words[x]['rowWords'][y]['color'] ==
+                                                'black'
+                                        ? Colors.white
+                                        : Colors.black),
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    : Text(
                         words[x]['rowWords'][y]['name'],
                         style: TextStyle(
                             color: tileIsVisible &&
@@ -453,28 +585,15 @@ class _AbstractScreenState extends State<AbstractScreen> {
                                 ? Colors.white
                                 : Colors.black),
                       ),
-                      words[x]['rowWords'][y]['flipped']
-                          ? Row(
-                              children: <Widget>[
-                                SizedBox(width: 5),
-                                Icon(
-                                  MdiIcons.skull,
-                                  color: Colors.white,
-                                ),
-                              ],
-                            )
-                          : Container(),
-                    ],
-                  )
-                : Text(
-                    words[x]['rowWords'][y]['name'],
-                    style: TextStyle(
-                        color: tileIsVisible &&
-                                words[x]['rowWords'][y]['color'] == 'black'
-                            ? Colors.white
-                            : Colors.black),
-                  ),
-          ),
+              ),
+            ),
+            words[x]['rowWords'][y]['flippedThisTurn']
+                ? Positioned(
+                    child: Icon(MdiIcons.sproutOutline, size: 16, color: Colors.black), // alertDecagramOutline, magnifyPlusOutline
+                    right: 5,
+                    bottom: 5)
+                : Container(),
+          ],
         ),
       ),
     );
@@ -577,7 +696,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
           ),
         ),
         SizedBox(width: 30),
-        userTeam == data['turn']
+        userTeam == data['turn'] && data['state'] != 'complete'
             ? Row(
                 children: <Widget>[
                   RaisedGradientButton(
@@ -809,7 +928,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
           },
         );
       },
-      height: 36,
+      height: 30,
       width: 110,
       gradient: LinearGradient(
         colors: <Color>[
@@ -820,10 +939,52 @@ class _AbstractScreenState extends State<AbstractScreen> {
     );
   }
 
+  secondsToTimeString(int seconds) {
+    var minutes = seconds ~/ 60;
+    seconds = seconds - minutes * 60;
+    if (minutes == 0) {
+      return '$seconds seconds';
+    }
+    return '${minutes}m ${seconds}s';
+  }
+
+  getTimer(data) {
+    var seconds = data['timer'].toDate().difference(_now).inSeconds;
+    // if seconds is negative, turn needs to switch and timer needs to be updated
+    if (seconds < 0 && widget.userId == data['leader'] && !isUpdating) {
+      isUpdating = true;
+      updateTurn(data);
+    }
+    return Container(
+      width: 150,
+      decoration: BoxDecoration(
+        border: Border.all(),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
+      child: data['state'] == 'complete'
+          ? Center(child: Text('Game over!'))
+          : Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                seconds < 0
+                    ? Text('')
+                    : Text(
+                        'Time: ${secondsToTimeString(seconds)}',
+                        style: TextStyle(
+                            color: seconds <= 30 ? Colors.red : Colors.black),
+                      ),
+              ],
+            ),
+    );
+  }
+
   getSubHeaders(data) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
+        getTimer(data),
+        SizedBox(width: 30),
         getScores(data),
         SizedBox(width: 30),
         showTeams(data),
@@ -895,9 +1056,14 @@ class AbstractScreenHelp extends StatelessWidget {
   Widget build(BuildContext context) {
     return HelpScreen(
       title: 'Abstract: Rules',
-      information: ['    The rules for abstract are simple. The objective of the game is to flip all cards for your team. '
-      'Leaders of teams take turns giving a clue which should tie different words on the board together. The house rule for clues is '
-      'any clue that has a Wikipedia page is OK.'],
+      information: [
+        '    The objective of this game is to flip all cards for your team. '
+            'Leaders of teams take turns giving a clue to their team which should tie different words on the board together. '
+            'A clue can be anything that has a Wikipedia page. '
+            'The timer is shared for the leader giving the clue and the leader\'s team guessing.',
+        '    If a team wins, teams that didn\'t initially start before the winning team get chance for rebuttal. In '
+            'case of ties, the team that used the least time throughout the game wins.',
+      ],
       buttonColor: Theme.of(context).primaryColor,
     );
   }

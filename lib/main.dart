@@ -6,32 +6,25 @@ import 'screens/root_screen.dart';
 void main() => runApp(MyApp());
 
 // done:
+// add optional to password
 
 // next up:
 // BIG: add bananaphone 
-/*
-need to initialize: turn order
-number of rounds
-drawing prompt per player per round
-currentRound = (1, 2, 3) rounds?
-currentPhase = 'draw1', 'describe1', 'draw2', 'describe2'
-
-need at least 4 players? 
-Each person draws, then describes, then draws, then describes
-
-Will need a voting system to pick best drawing/description per phase 
-*/
 // ability to leave a game (also delete session if last one out) - dialog on back button (leave game or just go to main menu)
-
-// TODO:
-// abstract should show leader view at end of game (not just solid blocks)
-// probably don't need setupComplete flag, games can only be configured from the lobby
+// add timer to the hunt
 // abstract:
 //  - add turn timer
-//  - voting system for choosing abstract cards (all members of team must select it)
 //  - add help screen: any number of teams can win with rebuttal
 //  - or tiebreaker, with total time used as second marker
-//  - max time limit per session of 45 seconds per remaining word
+//  - max time limit per session of 30 seconds per remaining word
+// fix abstract end game logic (simplify and clean up)
+// add indicators to words that have been flipped this turn - use an additional property when storing it - might need to loop over all letters to set old ones false
+
+// TODO:
+// abstract: ability to manually change teams (people can just join the team they want to be on?)
+// abstract should show leader view at end of game (not just solid blocks)
+// probably don't need setupComplete flag, games can only be configured from the lobby
+// abstract: add voting system for choosing abstract cards (all members of team must select it)
 // if leader leaves a game, need to assign remaining player the leader position
 // require minimum num players for hunt (remove error message in abstract when cleared)
 // add snackbar when auto exiting to lobby or main menu
@@ -43,6 +36,13 @@ Will need a voting system to pick best drawing/description per phase
 // periodically check if player info isn't true? check current game and see if player is in it
 // BIG: add statistics for player accounts (number of games won, etc.)
 // attribute icon: Icons made by "https://www.flaticon.com/authors/freepik
+
+// fake users:
+// cassie@g.com  F3cbzZifAqWWM2eyab6x6WvdkyL2
+// henry@g.com  LoTLbkqfQWcFMzjrYGEne1JhN7j2
+// markus@g.com  XMFwripPojYlcvagoiDEmyoxZyK2
+// maggie@g.com  h4BrcG93XgYsBcGpH7q2WySK8rd2
+// vanessa@g.com  z5SqbMUvLVb7CfSxQz4OEk9VyDE3
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
