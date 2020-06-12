@@ -172,7 +172,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
         if (playerIndex == data['playerIds'].length - 1) {
           nextPlayerIndex = 0;
         }
-        prompt = data['describe1Player$nextPlayerIndex'];
+        prompt = data['describe1Prompt$nextPlayerIndex'];
       }
       columnItems.add(Container(
         constraints: BoxConstraints(maxWidth: 250),
@@ -205,16 +205,28 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
             style: TextStyle(fontSize: 20),
           )));
     } else {
-      columnItems.add(Container(
+      columnItems.add(
+        Container(
           padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
           decoration: BoxDecoration(
             border: Border.all(),
             borderRadius: BorderRadius.circular(20),
           ),
-          child: Text(
-            'Vote for your favorites!',
-            style: TextStyle(fontSize: 20),
-          )));
+          child: Column(
+            children: <Widget>[
+              Text(
+                'Vote for your favorites!',
+                style: TextStyle(
+                    fontSize: 18, color: Theme.of(context).primaryColor),
+              ),
+              Text(
+                '(one choice per column)',
+                style: TextStyle(fontSize: 14, color: Colors.grey),
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
     return Column(children: columnItems);
@@ -334,13 +346,13 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
       await Firestore.instance
           .collection('sessions')
           .document(widget.sessionId)
-          .updateData({'draw1Player$playerTurn': jsonPointsList});
+          .updateData({'draw1Prompt$playerTurn': jsonPointsList});
     } else {
       // it's draw2
       await Firestore.instance
           .collection('sessions')
           .document(widget.sessionId)
-          .updateData({'draw2Player$playerTurn': jsonPointsList});
+          .updateData({'draw2Prompt$playerTurn': jsonPointsList});
     }
 
     // for every player, after submitting check if all drawings are done
@@ -352,7 +364,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
     if (data['phase'] == 'draw1') {
       bool allPlayersHaveDrawn = true;
       data['playerIds'].asMap().forEach((i, _) {
-        if (!newData.containsKey('draw1Player$i')) {
+        if (!newData.containsKey('draw1Prompt$i')) {
           print('setting false for $i');
           allPlayersHaveDrawn = false;
         }
@@ -368,7 +380,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
     } else {
       bool allPlayersHaveDrawn = true;
       data['playerIds'].asMap().forEach((i, _) {
-        if (!newData.containsKey('draw2Player$i')) {
+        if (!newData.containsKey('draw2Prompt$i')) {
           allPlayersHaveDrawn = false;
         }
       });
@@ -381,7 +393,8 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
     }
 
     setState(() {
-      pointsList = [];
+      print('clearing pointsList');
+      pointsList.clear();
       // TODO: should probably also reset painting tools?
     });
   }
@@ -389,8 +402,8 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
   getDrawing(data) {
     // if already submitted, show container just waiting
     var playerIndex = data['playerIds'].indexOf(widget.userId);
-    if ((data['phase'] == 'draw1' && data['draw1Player$playerIndex'] != null) ||
-        data['draw2Player$playerIndex'] != null) {
+    if ((data['phase'] == 'draw1' && data['draw1Prompt$playerIndex'] != null) ||
+        data['draw2Prompt$playerIndex'] != null) {
       return Container(
           decoration: BoxDecoration(
               border: Border.all(), borderRadius: BorderRadius.circular(20)),
@@ -471,11 +484,17 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
                   },
                   items: <Color>[
                     Colors.black,
+                    Colors.white,
+                    Colors.grey,
                     Colors.red,
                     Colors.blue,
                     Colors.green,
                     Colors.purple,
-                    Colors.white
+                    Colors.yellow,
+                    Colors.brown,
+                    Colors.teal,
+                    Colors.cyan,
+                    Colors.lime,
                   ].map<DropdownMenuItem<Color>>((Color value) {
                     return DropdownMenuItem<Color>(
                       value: value,
@@ -561,8 +580,8 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
     // if already submitted, show container just waiting
     var playerIndex = data['playerIds'].indexOf(widget.userId);
     if ((data['phase'] == 'describe1' &&
-            data['describe1Player$playerIndex'] != null) ||
-        data['describe2Player$playerIndex'] != null) {
+            data['describe1Prompt$playerIndex'] != null) ||
+        data['describe2Prompt$playerIndex'] != null) {
       return Container(
           decoration: BoxDecoration(
               border: Border.all(), borderRadius: BorderRadius.circular(20)),
@@ -572,15 +591,18 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
 
     // get appropriate drawing
     var jsonPointsList;
-    var nextPlayerIndex = playerIndex + 1;
-    if (playerIndex == data['playerIds'].length - 1) {
-      // close the loop
-      nextPlayerIndex = 0;
+    var promptIndex = playerIndex + 1;  // 
+    if (playerIndex > data['playerIds'].length - 1) {
+      promptIndex = promptIndex - data['playerIds'].length;
     }
     if (data['phase'] == 'describe1') {
-      jsonPointsList = data['draw1Player$nextPlayerIndex'];
+      jsonPointsList = data['draw1Prompt$promptIndex'];
     } else {
-      jsonPointsList = data['draw2Player$nextPlayerIndex'];
+      promptIndex = playerIndex + 3;
+    if (playerIndex > data['playerIds'].length - 1) {
+      promptIndex = promptIndex - data['playerIds'].length;
+    }
+      jsonPointsList = data['draw2Prompt$promptIndex'];
     }
 
     // decode json
@@ -594,8 +616,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
         var paint = Paint()
           ..strokeCap = StrokeCap.round
           ..isAntiAlias = true
-          ..color = Color(
-              int.parse(valueString, radix: 16)) //Colors.black // TODO: fix
+          ..color = Color(int.parse(valueString, radix: 16))
           ..strokeWidth = pointData['width'];
         pointsList.add(DrawingPoint(point: point, paint: paint));
       }
@@ -610,13 +631,13 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
             .collection('sessions')
             .document(widget.sessionId)
             .updateData(
-                {'describe1Player$playerTurn': descriptionController.text});
+                {'describe1Prompt$playerTurn': descriptionController.text});
       } else {
         await Firestore.instance
             .collection('sessions')
             .document(widget.sessionId)
             .updateData(
-                {'describe2Player$playerTurn': descriptionController.text});
+                {'describe2Prompt$playerTurn': descriptionController.text});
       }
 
       // for every player, after submitting check if all drawings are done
@@ -628,7 +649,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
       if (data['phase'] == 'describe1') {
         bool allPlayersHaveDescribed = true;
         data['playerIds'].asMap().forEach((i, _) {
-          if (!newData.containsKey('describe1Player$i')) {
+          if (!newData.containsKey('describe1Prompt$i')) {
             allPlayersHaveDescribed = false;
           }
         });
@@ -642,7 +663,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
       } else {
         bool allPlayersHaveDescribed = true;
         data['playerIds'].asMap().forEach((i, _) {
-          if (!newData.containsKey('describe2Player$i')) {
+          if (!newData.containsKey('describe2Prompt$i')) {
             allPlayersHaveDescribed = false;
           }
         });
@@ -707,48 +728,194 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
     );
   }
 
-  List<Widget> _buildCells(int playerIndex) {
-    return List.generate(
-      4,
-      (index) => Container(
-        decoration: BoxDecoration(
-          border: Border.all(),
-        ),
-        alignment: Alignment.center,
-        width: 200.0,
-        height: 240.0,
-        child: Text("${index + 1}"),
+  List<Widget> _buildRow(int promptIndex, data) {
+    List<Widget> row = [];
+    // add drawing1
+    var jsonPointsList = data['draw1Prompt$promptIndex'];
+    pointsList = [];
+    for (var pointData in jsonPointsList) {
+      if (pointData['isNull'] != null) {
+        pointsList.add(null);
+      } else {
+        var point = Offset(pointData['x'] * 2 / 3, pointData['y'] * 2 / 3);
+        var valueString = pointData['color'].split('(0x')[1].split(')')[0];
+        var paint = Paint()
+          ..strokeCap = StrokeCap.round
+          ..isAntiAlias = true
+          ..color = Color(int.parse(valueString, radix: 16))
+          ..strokeWidth = pointData['width'];
+        pointsList.add(DrawingPoint(point: point, paint: paint));
+      }
+    }
+    row.add(
+      Column(
+        children: <Widget>[
+          SizedBox(height: 40),
+          CustomPaint(
+            size: Size(200, 200),
+            painter: DrawingPainter(
+              pointsList: pointsList,
+            ),
+            child: Container(
+              height: 200,
+              width: 200,
+              decoration: BoxDecoration(border: Border.all()),
+            ),
+          ),
+        ],
       ),
     );
+    // add describe1
+    var adjustedIndex = promptIndex + 1;
+    if (adjustedIndex > data['playerIds'].length - 1) {
+      adjustedIndex -= data['playerIds'].length;
+    }
+    row.add(Column(
+      children: <Widget>[
+        SizedBox(height: 40),
+        Container(
+          width: 200,
+          height: 200,
+          decoration: BoxDecoration(
+            border: Border.all(),
+          ),
+          child: Container(
+            padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
+            child: Center(
+              child: Text(
+                data['describe1Prompt$adjustedIndex'],
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 24,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    ));
+    // add drawing2
+    adjustedIndex = promptIndex + 2;
+    if (adjustedIndex > data['playerIds'].length - 1) {
+      adjustedIndex -= data['playerIds'].length;
+    }
+    jsonPointsList = data['draw2Prompt$adjustedIndex'];
+    pointsList = [];
+    for (var pointData in jsonPointsList) {
+      if (pointData['isNull'] != null) {
+        pointsList.add(null);
+      } else {
+        var point = Offset(pointData['x'] * 2 / 3, pointData['y'] * 2 / 3);
+        var valueString = pointData['color'].split('(0x')[1].split(')')[0];
+        var paint = Paint()
+          ..strokeCap = StrokeCap.round
+          ..isAntiAlias = true
+          ..color = Color(int.parse(valueString, radix: 16))
+          ..strokeWidth = pointData['width'];
+        pointsList.add(DrawingPoint(point: point, paint: paint));
+      }
+    }
+    row.add(
+      Column(
+        children: <Widget>[
+          SizedBox(height: 40),
+          CustomPaint(
+            size: Size(200, 200),
+            painter: DrawingPainter(
+              pointsList: pointsList,
+            ),
+            child: Container(
+              height: 200,
+              width: 200,
+              decoration: BoxDecoration(border: Border.all()),
+            ),
+          ),
+        ],
+      ),
+    );
+    // add describe2
+    adjustedIndex = promptIndex + 3;
+    if (adjustedIndex > data['playerIds'].length - 1) {
+      adjustedIndex -= data['playerIds'].length;
+    }
+    row.add(Column(
+      children: <Widget>[
+        SizedBox(height: 40),
+        Container(
+          width: 200,
+          height: 200,
+          decoration: BoxDecoration(
+            border: Border.all(),
+          ),
+          child: Container(
+            padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
+            child: Center(
+              child: Text(
+                data['describe2Prompt$adjustedIndex'],
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 24,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    ));
+    return row;
   }
 
   getVotes(data) {
     // construct a row of columns (scrollable left/right all together)
     // Original Prompt -> 1st Drawing -> 1st description -> 2nd Drawing -> 2nd prompt  (original prompt)
-    var promptsColumn = [];
-    var draw1Column = [];
-    var describe1Column = [];
-    var draw2Column = [];
-    var describe2Column = [];
-    data['playerIds'].asMap().forEach((i, val) {
-      promptsColumn.add('prompt $i');
-    });
-    return SingleChildScrollView(
-      child: Stack(
-        children: <Widget>[
+    var promptsColumn = data['rules']['prompts'][0]
+        ['prompts']; // TODO: round needs to be dynamic here
+    var screenWidth = MediaQuery.of(context).size.width;
 
-        Container(height: 10, width: 10, decoration: BoxDecoration(border: Border.all()),),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: List.generate(
-                4,
-                (index) => Row(
-                  children: _buildCells(4),
-                ),
+    // create column items
+    List<Widget> stack = [];
+    stack.add(
+      SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Column(
+          children: List.generate(
+            4,
+            (index) => Container(
+              height: 240,
+              child: Row(
+                children: _buildRow(index, data),
               ),
             ),
+          ),
+        ),
+      ),
+    );
+    for (var i = 0; i < 4; i++) {
+      stack.add(
+        Positioned(
+          left: 0,
+          top: i.toDouble() * 240,
+          child: Container(
+              width: screenWidth,
+              height: 40,
+              decoration: BoxDecoration(
+                border: Border.all(),
+                color: Theme.of(context).primaryColor,
+              ),
+              child: Center(
+                  child: Text(
+                promptsColumn[i],
+                style: TextStyle(fontSize: 15, color: Colors.white),
+              ))),
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      child: Column(
+        children: <Widget>[
+          Stack(
+            children: stack,
           ),
         ],
       ),

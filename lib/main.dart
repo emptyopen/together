@@ -6,21 +6,16 @@ import 'screens/root_screen.dart';
 void main() => runApp(MyApp());
 
 // done:
-// add optional to password
 
 // next up:
 // BIG: add bananaphone 
-// ability to leave a game (also delete session if last one out) - dialog on back button (leave game or just go to main menu)
-// add timer to the hunt
-// abstract:
-//  - add turn timer
-//  - add help screen: any number of teams can win with rebuttal
-//  - or tiebreaker, with total time used as second marker
-//  - max time limit per session of 30 seconds per remaining word
-// fix abstract end game logic (simplify and clean up)
-// add indicators to words that have been flipped this turn - use an additional property when storing it - might need to loop over all letters to set old ones false
+// add ability to edit time per round for abstract
+// tiebreaker for abstract, with total time used as second marker
 
 // TODO:
+// orange team needs to win when green wins for them
+// ability to leave a game (also delete session if last one out) - dialog on back button (leave game or just go to main menu)
+// add timer to the hunt
 // abstract: ability to manually change teams (people can just join the team they want to be on?)
 // abstract should show leader view at end of game (not just solid blocks)
 // probably don't need setupComplete flag, games can only be configured from the lobby

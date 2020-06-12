@@ -42,10 +42,10 @@ class _EndGameDialogState extends State<EndGameDialog> {
     if (widget.game == 'Bananaphone') {
       var data = (await Firestore.instance.collection('sessions').document(widget.sessionId).get()).data;
       data['playerIds'].asMap().forEach((i, val) {
-        data.remove('draw1Player$i');
-        data.remove('describe1Player$i');
-        data.remove('draw2Player$i');
-        data.remove('describe2Player$i');
+        data.remove('draw1Prompt$i');
+        data.remove('describe1Prompt$i');
+        data.remove('draw2Prompt$i');
+        data.remove('describe2Prompt$i');
         data['phase'] = 'draw1';
       });
       await Firestore.instance.collection('sessions').document(widget.sessionId).setData(data);

@@ -2,24 +2,24 @@ import 'package:flutter/material.dart';
 
 class Word {
 
-  Word({this.name, this.flipped, this.flippedThisTurn, this.color});
+  Word({this.name, this.flipped, this.flippedTurns, this.color});
 
   String name;
   bool flipped;
-  bool flippedThisTurn;
+  int flippedTurns;
   String color;
 
   Word.fromJson(Map<String, dynamic> json)
       : name = json['name'],
       flipped = json['flipped'],
-      flippedThisTurn = json['flippedThisTurn'],
+      flippedTurns = json['flippedTurns'],
       color = json['color'];
 
   Map<String, dynamic> toJson() =>
     {
       'name': name,
       'flipped': flipped,
-      'flippedThisTurn': flippedThisTurn,
+      'flippedTurns': flippedTurns,
       'color': color,
     };
 }
@@ -31,7 +31,7 @@ class RowList {
   List<dynamic> rowWords = [];
 
   add(String word) {
-    rowWords.add(Word(name: word, flipped: false, flippedThisTurn: false, color: 'grey').toJson());
+    rowWords.add(Word(name: word, flipped: false, flippedTurns: 0, color: 'grey').toJson());
   }
 
   RowList.fromJson(Map<String, dynamic> json)

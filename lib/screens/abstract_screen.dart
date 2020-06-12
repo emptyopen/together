@@ -132,20 +132,6 @@ class _AbstractScreenState extends State<AbstractScreen> {
       }
     }
 
-    // clear out all flippedThisTurns
-    var rules = data['rules'];
-    for (var x = 0; x < (numTeams == 2 ? 5 : 6); x++) {
-      for (var y = 0; y < (numTeams == 2 ? 5 : 6); y++) {
-        if (rules['words'][x]['rowWords'][y]['flippedThisTurn']) {
-          rules['words'][x]['rowWords'][y]['flippedThisTurn'] = false;
-        }
-      }
-    }
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .updateData({'rules': rules});
-
     // figure out next team and update cumulative team times
     var currActiveTeam = data['turn'];
     var nextActiveTeam = '';
@@ -206,8 +192,8 @@ class _AbstractScreenState extends State<AbstractScreen> {
         .document(widget.sessionId)
         .updateData({
       'turn': nextActiveTeam,
-      'timer': DateTime.now()
-          .add(Duration(seconds: 10 + int.parse(increment) * numUnflipped))
+      'timer': DateTime.now().add(
+          Duration(seconds: 20)) // 10 + int.parse(increment) * numUnflipped))
     });
 
     isUpdating = false;
@@ -388,7 +374,16 @@ class _AbstractScreenState extends State<AbstractScreen> {
 
     // flip card
     data['rules']['words'][x]['rowWords'][y]['flipped'] = true;
-    data['rules']['words'][x]['rowWords'][y]['flippedThisTurn'] = true;
+    data['rules']['words'][x]['rowWords'][y]['flippedTurns'] = 5;
+
+    // reduce recently flipped cards
+    for (var x = 0; x < (numTeams == 2 ? 5 : 6); x++) {
+      for (var y = 0; y < (numTeams == 2 ? 5 : 6); y++) {
+        if (data['rules']['words'][x]['rowWords'][y]['flippedTurns'] > 0) {
+          data['rules']['words'][x]['rowWords'][y]['flippedTurns'] -= 1;
+        }
+      }
+    }
     await Firestore.instance
         .collection('sessions')
         .document(widget.sessionId)
@@ -587,9 +582,12 @@ class _AbstractScreenState extends State<AbstractScreen> {
                       ),
               ),
             ),
-            words[x]['rowWords'][y]['flippedThisTurn']
+            words[x]['rowWords'][y]['flippedTurns'] > 0
                 ? Positioned(
-                    child: Icon(MdiIcons.sproutOutline, size: 16, color: Colors.black), // alertDecagramOutline, magnifyPlusOutline
+                    child: Icon(MdiIcons.sproutOutline,
+                        size: 16,
+                        color: Colors
+                            .black.withAlpha(255 - (5 - words[x]['rowWords'][y]['flippedTurns']) * 50)), // alertDecagramOutline, magnifyPlusOutline
                     right: 5,
                     bottom: 5)
                 : Container(),
