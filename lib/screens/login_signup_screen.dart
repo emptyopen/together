@@ -55,8 +55,10 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
           //_showVerifyEmailSentDialog();
 
           // update users collection
-          Firestore.instance.collection('users').document(userId)
-            .setData({'name': _displayName});
+          Firestore.instance
+              .collection('users')
+              .document(userId)
+              .setData({'name': _displayName});
           print('Signed up user: $userId $_displayName');
           userId = await widget.auth.signIn(_email, _password);
         }
@@ -105,7 +107,7 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
           title: new Text('Together: Sign In'),
         ),
         body: SingleChildScrollView(
-                  child: Center(
+          child: Center(
             child: Column(
               children: <Widget>[
                 _showForm(),
@@ -117,11 +119,18 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
 
   Widget _showCircularProgress() {
     if (_isLoading) {
-      return Container(padding: EdgeInsets.all(10) ,child: Center(child: CircularProgressIndicator()));
+      return Center(
+        child: SizedBox(
+          height: 100,
+          width: 100,
+          child: CircularProgressIndicator(
+            strokeWidth: 20,
+          ),
+        ),
+      );
     }
     return Container(
       height: 10.0,
-      width: 0.0,
     );
   }
 
@@ -159,10 +168,12 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
               _isLoginForm ? Container() : showDisplayNameInput(),
               showEmailInput(),
               showPasswordInput(),
-              _showCircularProgress(),
+              SizedBox(height: 30),
               showPrimaryButton(),
               showSecondaryButton(),
               showErrorMessage(),
+              SizedBox(height: 40),
+              _showCircularProgress(),
             ],
           ),
         ));
@@ -198,7 +209,8 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
               Icons.beach_access,
               color: Colors.grey,
             )),
-        validator: (value) => value.isEmpty ? 'Display name can\'t be empty' : null,
+        validator: (value) =>
+            value.isEmpty ? 'Display name can\'t be empty' : null,
         onSaved: (value) => _displayName = value.trim(),
       ),
     );
@@ -251,19 +263,17 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
   }
 
   Widget showPrimaryButton() {
-    return new Padding(
-        padding: EdgeInsets.fromLTRB(0.0, 45.0, 0.0, 0.0),
-        child: SizedBox(
-          height: 40.0,
-          child: new RaisedButton(
-            elevation: 5.0,
-            shape: new RoundedRectangleBorder(
-                borderRadius: new BorderRadius.circular(30.0)),
-            color: Colors.blue,
-            child: new Text(_isLoginForm ? 'Login' : 'Create account',
-                style: new TextStyle(fontSize: 20.0, color: Colors.white)),
-            onPressed: validateAndSubmit,
-          ),
-        ));
+    return SizedBox(
+      height: 40.0,
+      child: new RaisedButton(
+        elevation: 5.0,
+        shape: new RoundedRectangleBorder(
+            borderRadius: new BorderRadius.circular(30.0)),
+        color: Colors.blue,
+        child: new Text(_isLoginForm ? 'Login' : 'Create account',
+            style: new TextStyle(fontSize: 20.0, color: Colors.white)),
+        onPressed: validateAndSubmit,
+      ),
+    );
   }
 }

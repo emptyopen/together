@@ -28,6 +28,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
   double strokeWidth = 5;
   GlobalKey _key = GlobalKey();
   final descriptionController = TextEditingController();
+  var votes = {};
 
   @override
   void dispose() {
@@ -164,16 +165,13 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
     var playerIndex = data['playerIds'].indexOf(widget.userId);
     var phase = data['phase'];
     if (phase == 'draw1' || phase == 'draw2') {
+      var promptIndex = getPromptIndex(data);
       var prompt =
           data['rules']['prompts'][data['round']]['prompts'][playerIndex];
       if (phase == 'draw2') {
-        // get previous description: 4 players: player2 describes player1 drawing. then player3 draws player2 drawing, and player4 describes player3 drawing.
-        var nextPlayerIndex = playerIndex + 1;
-        if (playerIndex == data['playerIds'].length - 1) {
-          nextPlayerIndex = 0;
-        }
-        prompt = data['describe1Prompt$nextPlayerIndex'];
+        prompt = data['describe1Prompt$promptIndex'];
       }
+      print('prompt is from pI $promptIndex');
       columnItems.add(Container(
         constraints: BoxConstraints(maxWidth: 250),
         padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
@@ -220,8 +218,20 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
                     fontSize: 18, color: Theme.of(context).primaryColor),
               ),
               Text(
-                '(one choice per column)',
-                style: TextStyle(fontSize: 14, color: Colors.grey),
+                'One choice per round (column).',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+              Text(
+                'Long press to select your favorite!',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+              Text(
+                'Scroll right for progression,',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+              Text(
+                'scroll down to see all prompts.',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ],
           ),
@@ -338,21 +348,20 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
 
   submitDrawing(data) async {
     // send pointsList to Firestore sessions collection
-    print('submitting drawing...');
-    var playerTurn = data['playerIds'].indexOf(widget.userId);
+    var promptIndex = getPromptIndex(data);
     var jsonPointsList = listPointsToJson(pointsList);
 
     if (data['phase'] == 'draw1') {
       await Firestore.instance
           .collection('sessions')
           .document(widget.sessionId)
-          .updateData({'draw1Prompt$playerTurn': jsonPointsList});
+          .updateData({'draw1Prompt$promptIndex': jsonPointsList});
     } else {
       // it's draw2
       await Firestore.instance
           .collection('sessions')
           .document(widget.sessionId)
-          .updateData({'draw2Prompt$playerTurn': jsonPointsList});
+          .updateData({'draw2Prompt$promptIndex': jsonPointsList});
     }
 
     // for every player, after submitting check if all drawings are done
@@ -365,7 +374,6 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
       bool allPlayersHaveDrawn = true;
       data['playerIds'].asMap().forEach((i, _) {
         if (!newData.containsKey('draw1Prompt$i')) {
-          print('setting false for $i');
           allPlayersHaveDrawn = false;
         }
       });
@@ -393,7 +401,6 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
     }
 
     setState(() {
-      print('clearing pointsList');
       pointsList.clear();
       // TODO: should probably also reset painting tools?
     });
@@ -401,9 +408,9 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
 
   getDrawing(data) {
     // if already submitted, show container just waiting
-    var playerIndex = data['playerIds'].indexOf(widget.userId);
-    if ((data['phase'] == 'draw1' && data['draw1Prompt$playerIndex'] != null) ||
-        data['draw2Prompt$playerIndex'] != null) {
+    var promptIndex = getPromptIndex(data);
+    if ((data['phase'] == 'draw1' && data['draw1Prompt$promptIndex'] != null) ||
+        data['draw2Prompt$promptIndex'] != null) {
       return Container(
           decoration: BoxDecoration(
               border: Border.all(), borderRadius: BorderRadius.circular(20)),
@@ -576,12 +583,35 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
     );
   }
 
-  getDescription(data) {
-    // if already submitted, show container just waiting
+  getPromptIndex(data) {
+    // establish prompt index
     var playerIndex = data['playerIds'].indexOf(widget.userId);
+    var promptIndex = playerIndex;
+    switch (data['phase']) {
+      case 'describe1':
+        promptIndex += 1;
+        break;
+      case 'draw2':
+        promptIndex += 2;
+        break;
+      case 'describe2':
+        promptIndex += 3;
+        break;
+    }
+    // handle wraparound
+    if (promptIndex > data['playerIds'].length - 1) {
+      promptIndex = promptIndex - data['playerIds'].length;
+    }
+    return promptIndex;
+  }
+
+  getDescription(data) {
+    var promptIndex = getPromptIndex(data);
+
+    // if already submitted, show container just waiting
     if ((data['phase'] == 'describe1' &&
-            data['describe1Prompt$playerIndex'] != null) ||
-        data['describe2Prompt$playerIndex'] != null) {
+            data['describe1Prompt$promptIndex'] != null) ||
+        data['describe2Prompt$promptIndex'] != null) {
       return Container(
           decoration: BoxDecoration(
               border: Border.all(), borderRadius: BorderRadius.circular(20)),
@@ -591,17 +621,9 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
 
     // get appropriate drawing
     var jsonPointsList;
-    var promptIndex = playerIndex + 1;  // 
-    if (playerIndex > data['playerIds'].length - 1) {
-      promptIndex = promptIndex - data['playerIds'].length;
-    }
     if (data['phase'] == 'describe1') {
       jsonPointsList = data['draw1Prompt$promptIndex'];
     } else {
-      promptIndex = playerIndex + 3;
-    if (playerIndex > data['playerIds'].length - 1) {
-      promptIndex = promptIndex - data['playerIds'].length;
-    }
       jsonPointsList = data['draw2Prompt$promptIndex'];
     }
 
@@ -620,65 +642,6 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
           ..strokeWidth = pointData['width'];
         pointsList.add(DrawingPoint(point: point, paint: paint));
       }
-    }
-
-    submitDescription(data) async {
-      // send pointsList to Firestore sessions collection
-      print('submitting description...');
-      var playerTurn = data['playerIds'].indexOf(widget.userId);
-      if (data['phase'] == 'describe1') {
-        await Firestore.instance
-            .collection('sessions')
-            .document(widget.sessionId)
-            .updateData(
-                {'describe1Prompt$playerTurn': descriptionController.text});
-      } else {
-        await Firestore.instance
-            .collection('sessions')
-            .document(widget.sessionId)
-            .updateData(
-                {'describe2Prompt$playerTurn': descriptionController.text});
-      }
-
-      // for every player, after submitting check if all drawings are done
-      var newData = (await Firestore.instance
-              .collection('sessions')
-              .document(widget.sessionId)
-              .get())
-          .data;
-      if (data['phase'] == 'describe1') {
-        bool allPlayersHaveDescribed = true;
-        data['playerIds'].asMap().forEach((i, _) {
-          if (!newData.containsKey('describe1Prompt$i')) {
-            allPlayersHaveDescribed = false;
-          }
-        });
-        if (allPlayersHaveDescribed) {
-          print('will update phase to draw2');
-          await Firestore.instance
-              .collection('sessions')
-              .document(widget.sessionId)
-              .updateData({'phase': 'draw2'});
-        }
-      } else {
-        bool allPlayersHaveDescribed = true;
-        data['playerIds'].asMap().forEach((i, _) {
-          if (!newData.containsKey('describe2Prompt$i')) {
-            allPlayersHaveDescribed = false;
-          }
-        });
-        if (allPlayersHaveDescribed) {
-          print('will update phase to vote');
-          await Firestore.instance
-              .collection('sessions')
-              .document(widget.sessionId)
-              .updateData({'phase': 'vote'});
-        }
-      }
-
-      setState(() {
-        descriptionController.text = '';
-      });
     }
 
     return Column(
@@ -728,6 +691,73 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
     );
   }
 
+  submitDescription(data) async {
+    var promptIndex = getPromptIndex(data);
+
+    // send pointsList to Firestore sessions collection
+    if (data['phase'] == 'describe1') {
+      await Firestore.instance
+          .collection('sessions')
+          .document(widget.sessionId)
+          .updateData(
+              {'describe1Prompt$promptIndex': descriptionController.text});
+    } else {
+      await Firestore.instance
+          .collection('sessions')
+          .document(widget.sessionId)
+          .updateData(
+              {'describe2Prompt$promptIndex': descriptionController.text});
+    }
+
+    // for every player, after submitting check if all drawings are done
+    var newData = (await Firestore.instance
+            .collection('sessions')
+            .document(widget.sessionId)
+            .get())
+        .data;
+    if (data['phase'] == 'describe1') {
+      bool allPlayersHaveDescribed = true;
+      data['playerIds'].asMap().forEach((i, _) {
+        if (!newData.containsKey('describe1Prompt$i')) {
+          allPlayersHaveDescribed = false;
+        }
+      });
+      if (allPlayersHaveDescribed) {
+        print('will update phase to draw2');
+        await Firestore.instance
+            .collection('sessions')
+            .document(widget.sessionId)
+            .updateData({'phase': 'draw2'});
+      }
+    } else {
+      bool allPlayersHaveDescribed = true;
+      data['playerIds'].asMap().forEach((i, _) {
+        if (!newData.containsKey('describe2Prompt$i')) {
+          allPlayersHaveDescribed = false;
+        }
+      });
+      if (allPlayersHaveDescribed) {
+        print('will update phase to vote');
+        await Firestore.instance
+            .collection('sessions')
+            .document(widget.sessionId)
+            .updateData({'phase': 'vote'});
+      }
+    }
+
+    setState(() {
+      descriptionController.text = '';
+      // clear drawing
+      pointsList.clear();
+    });
+  }
+
+  updateVotingIndex(String phase, int promptIndex) {
+    setState(() {
+      votes[phase] = promptIndex;
+    });
+  }
+
   List<Widget> _buildRow(int promptIndex, data) {
     List<Widget> row = [];
     // add drawing1
@@ -748,32 +778,32 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
       }
     }
     row.add(
-      Column(
-        children: <Widget>[
-          SizedBox(height: 40),
-          CustomPaint(
-            size: Size(200, 200),
-            painter: DrawingPainter(
-              pointsList: pointsList,
-            ),
-            child: Container(
-              height: 200,
-              width: 200,
-              decoration: BoxDecoration(border: Border.all()),
-            ),
+      VotableSquare(
+        indexUpdateCallback: () => updateVotingIndex('draw1', promptIndex),
+        votes: votes,
+        phase: 'draw1', 
+        promptIndex: promptIndex,
+        child: CustomPaint(
+          size: Size(200, 200),
+          painter: DrawingPainter(
+            pointsList: pointsList,
           ),
-        ],
+          child: Container(
+            height: 200,
+            width: 200,
+            decoration: BoxDecoration(border: Border.all()),
+          ),
+        ),
       ),
     );
     // add describe1
-    var adjustedIndex = promptIndex + 1;
-    if (adjustedIndex > data['playerIds'].length - 1) {
-      adjustedIndex -= data['playerIds'].length;
-    }
-    row.add(Column(
-      children: <Widget>[
-        SizedBox(height: 40),
-        Container(
+    row.add(
+      VotableSquare(
+        indexUpdateCallback: () => updateVotingIndex('describe1', promptIndex),
+        votes: votes,
+        phase: 'describe1', 
+        promptIndex: promptIndex,
+        child: Container(
           width: 200,
           height: 200,
           decoration: BoxDecoration(
@@ -783,7 +813,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
             padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
             child: Center(
               child: Text(
-                data['describe1Prompt$adjustedIndex'],
+                data['describe1Prompt$promptIndex'],
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 24,
@@ -792,14 +822,10 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
             ),
           ),
         ),
-      ],
-    ));
+      ),
+    );
     // add drawing2
-    adjustedIndex = promptIndex + 2;
-    if (adjustedIndex > data['playerIds'].length - 1) {
-      adjustedIndex -= data['playerIds'].length;
-    }
-    jsonPointsList = data['draw2Prompt$adjustedIndex'];
+    jsonPointsList = data['draw2Prompt$promptIndex'];
     pointsList = [];
     for (var pointData in jsonPointsList) {
       if (pointData['isNull'] != null) {
@@ -816,32 +842,32 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
       }
     }
     row.add(
-      Column(
-        children: <Widget>[
-          SizedBox(height: 40),
-          CustomPaint(
-            size: Size(200, 200),
-            painter: DrawingPainter(
-              pointsList: pointsList,
-            ),
-            child: Container(
-              height: 200,
-              width: 200,
-              decoration: BoxDecoration(border: Border.all()),
-            ),
+      VotableSquare(
+        indexUpdateCallback: () => updateVotingIndex('draw2', promptIndex),
+        votes: votes,
+        phase: 'draw2', 
+        promptIndex: promptIndex,
+        child: CustomPaint(
+          size: Size(200, 200),
+          painter: DrawingPainter(
+            pointsList: pointsList,
           ),
-        ],
+          child: Container(
+            height: 200,
+            width: 200,
+            decoration: BoxDecoration(border: Border.all()),
+          ),
+        ),
       ),
     );
     // add describe2
-    adjustedIndex = promptIndex + 3;
-    if (adjustedIndex > data['playerIds'].length - 1) {
-      adjustedIndex -= data['playerIds'].length;
-    }
-    row.add(Column(
-      children: <Widget>[
-        SizedBox(height: 40),
-        Container(
+    row.add(
+      VotableSquare(
+        indexUpdateCallback: () => updateVotingIndex('describe2', promptIndex),
+        votes: votes,
+        phase: 'describe2', 
+        promptIndex: promptIndex,
+        child: Container(
           width: 200,
           height: 200,
           decoration: BoxDecoration(
@@ -851,7 +877,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
             padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
             child: Center(
               child: Text(
-                data['describe2Prompt$adjustedIndex'],
+                data['describe2Prompt$promptIndex'],
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 24,
@@ -860,8 +886,8 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
             ),
           ),
         ),
-      ],
-    ));
+      ),
+    );
     return row;
   }
 
@@ -881,7 +907,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
           children: List.generate(
             4,
             (index) => Container(
-              height: 240,
+              height: 250,
               child: Row(
                 children: _buildRow(index, data),
               ),
@@ -894,7 +920,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
       stack.add(
         Positioned(
           left: 0,
-          top: i.toDouble() * 240,
+          top: i.toDouble() * 250,
           child: Container(
               width: screenWidth,
               height: 40,
@@ -1052,4 +1078,49 @@ class DrawingPainter extends CustomPainter {
   @override
   bool shouldRepaint(DrawingPainter oldDelegate) =>
       oldDelegate.pointsList != pointsList;
+}
+
+class VotableSquare extends StatelessWidget {
+  final Widget child;
+  final Function indexUpdateCallback;
+  final Map votes;
+  final String phase;
+  final int promptIndex;
+
+  VotableSquare({this.child, this.indexUpdateCallback, this.votes, this.phase, this.promptIndex});
+
+  @override
+  Widget build(BuildContext context) {
+    // check if this cell is in the map
+    bool isVoted = false;
+    if (votes.containsKey(phase) && votes[phase] == promptIndex) {
+      isVoted = true;
+    }
+
+    Color color = Colors.greenAccent;
+    switch(phase) {
+      case 'describe1':
+        color = Colors.amberAccent;
+        break;
+      case 'draw2':
+        color = Colors.blueAccent;
+        break;
+      case 'describe2':
+        color = Colors.deepPurpleAccent;
+        break;
+    }
+
+    return GestureDetector(
+      onLongPress: indexUpdateCallback,
+      child: Column(
+        children: <Widget>[
+          SizedBox(height: 40),
+          Container(
+              decoration: BoxDecoration(
+                  border: Border.all(width: 5, color: isVoted ? color : Colors.white)),
+              child: child),
+        ],
+      ),
+    );
+  }
 }
