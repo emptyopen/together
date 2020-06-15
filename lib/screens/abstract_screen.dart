@@ -193,7 +193,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
         .updateData({
       'turn': nextActiveTeam,
       'timer': DateTime.now().add(
-          Duration(seconds: 20)) // 10 + int.parse(increment) * numUnflipped))
+          Duration(seconds: 10 + int.parse(increment) * numUnflipped))
     });
 
     isUpdating = false;

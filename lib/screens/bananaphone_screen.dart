@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:together/components/buttons.dart';
 import 'dart:ui';
+import 'dart:convert';
 
 import 'package:together/models/models.dart';
 import 'package:together/components/dialogs.dart';
@@ -171,7 +172,6 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
       if (phase == 'draw2') {
         prompt = data['describe1Prompt$promptIndex'];
       }
-      print('prompt is from pI $promptIndex');
       columnItems.add(Container(
         constraints: BoxConstraints(maxWidth: 250),
         padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
@@ -349,19 +349,20 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
   submitDrawing(data) async {
     // send pointsList to Firestore sessions collection
     var promptIndex = getPromptIndex(data);
-    var jsonPointsList = listPointsToJson(pointsList);
+    var jsonPointsList = listPointsToJson(pointsList);  // to string
+    var stringPointsList = jsonEncode(jsonPointsList);
 
     if (data['phase'] == 'draw1') {
       await Firestore.instance
           .collection('sessions')
           .document(widget.sessionId)
-          .updateData({'draw1Prompt$promptIndex': jsonPointsList});
+          .updateData({'draw1Prompt$promptIndex': stringPointsList});
     } else {
       // it's draw2
       await Firestore.instance
           .collection('sessions')
           .document(widget.sessionId)
-          .updateData({'draw2Prompt$promptIndex': jsonPointsList});
+          .updateData({'draw2Prompt$promptIndex': stringPointsList});
     }
 
     // for every player, after submitting check if all drawings are done
@@ -622,9 +623,9 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
     // get appropriate drawing
     var jsonPointsList;
     if (data['phase'] == 'describe1') {
-      jsonPointsList = data['draw1Prompt$promptIndex'];
+      jsonPointsList = jsonDecode(data['draw1Prompt$promptIndex']);
     } else {
-      jsonPointsList = data['draw2Prompt$promptIndex'];
+      jsonPointsList = jsonDecode(data['draw2Prompt$promptIndex']);
     }
 
     // decode json
@@ -761,7 +762,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
   List<Widget> _buildRow(int promptIndex, data) {
     List<Widget> row = [];
     // add drawing1
-    var jsonPointsList = data['draw1Prompt$promptIndex'];
+    var jsonPointsList = jsonDecode(data['draw1Prompt$promptIndex']);
     pointsList = [];
     for (var pointData in jsonPointsList) {
       if (pointData['isNull'] != null) {
@@ -825,7 +826,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
       ),
     );
     // add drawing2
-    jsonPointsList = data['draw2Prompt$promptIndex'];
+    jsonPointsList = jsonDecode(data['draw2Prompt$promptIndex']);
     pointsList = [];
     for (var pointData in jsonPointsList) {
       if (pointData['isNull'] != null) {

@@ -56,87 +56,148 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Together: Main Menu',
-        ),
-        actions: <Widget>[
-          IconButton(
-            icon: Icon(Icons.settings),
-            onPressed: () {
-              slideTransition(
-                context,
-                SettingsScreen(
-                  auth: widget.auth,
-                  logoutCallback: signOutCallback,
+    return StreamBuilder(
+        stream: Firestore.instance
+            .collection('users')
+            .document(widget.userId)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return Scaffold(
+                appBar: AppBar(
+                  title: Text(
+                    'Main Menu',
+                  ),
                 ),
-              );
-            },
-          ),
-        ],
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            RaisedGradientButton(
-              child: Text(
-                'Create a game',
-                style: TextStyle(
-                  fontSize: 20,
-                  color: Colors.white,
-                ),
+                body: Container());
+          }
+          // all data for all components
+          var userData = snapshot.data.data;
+          return Scaffold(
+            appBar: AppBar(
+              title: Text(
+                'Main Menu',
               ),
-              height: 60,
-              width: 200,
-              gradient: LinearGradient(
-                colors: <Color>[
-                  Theme.of(context).primaryColor,
-                  Theme.of(context).accentColor,
+              actions: <Widget>[
+                IconButton(
+                  icon: Icon(Icons.settings),
+                  onPressed: () {
+                    slideTransition(
+                      context,
+                      SettingsScreen(
+                        auth: widget.auth,
+                        logoutCallback: signOutCallback,
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  RaisedGradientButton(
+                    child: Text(
+                      'Create a game',
+                      style: TextStyle(
+                        fontSize: 20,
+                        color: Colors.white,
+                      ),
+                    ),
+                    height: 60,
+                    width: 200,
+                    gradient: LinearGradient(
+                      colors: <Color>[
+                        Theme.of(context).primaryColor,
+                        Theme.of(context).accentColor,
+                      ],
+                    ),
+                    onPressed: () {
+                      showDialog<Null>(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return LobbyDialog(isJoin: false);
+                        },
+                      );
+                    },
+                  ),
+                  SizedBox(
+                    height: 40,
+                  ),
+                  RaisedGradientButton(
+                    child: Text(
+                      'Join a game',
+                      style: TextStyle(
+                        fontSize: 20,
+                        color: Colors.white,
+                      ),
+                    ),
+                    height: 60,
+                    width: 200,
+                    gradient: LinearGradient(
+                      colors: <Color>[
+                        Theme.of(context).primaryColor,
+                        Theme.of(context).accentColor,
+                      ],
+                    ),
+                    onPressed: () {
+                      showDialog<Null>(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return LobbyDialog(isJoin: true);
+                        },
+                      );
+                    },
+                  ),
+                  // if player has existing game, allow rejoin
+                  StreamBuilder(
+                      stream: Firestore.instance
+                          .collection('sessions')
+                          .document(userData['currentGame'])
+                          .snapshots(),
+                      builder: (context, sessionSnapshot) {
+                        if (sessionSnapshot.data.data == null) {
+                          return Container();
+                        }
+                        return Column(
+                          children: <Widget>[
+                            SizedBox(
+                              height: 40,
+                            ),
+                            RaisedGradientButton(
+                              child: Text(
+                                'Rejoin game',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  color: Colors.black,
+                                ),
+                              ),
+                              height: 60,
+                              width: 200,
+                              gradient: LinearGradient(
+                                colors: <Color>[
+                                  Color.fromARGB(255, 255, 185, 0),
+                                  Color.fromARGB(255, 255, 213, 0),
+                                ],
+                              ),
+                              onPressed: () {
+                                slideTransition(
+                                  context,
+                                  LobbyScreen(
+                                    roomCode: sessionSnapshot.data.data['roomCode'],
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        );
+                      }),
                 ],
               ),
-              onPressed: () {
-                showDialog<Null>(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return LobbyDialog(isJoin: false);
-                  },
-                );
-              },
             ),
-            SizedBox(
-              height: 40,
-            ),
-            RaisedGradientButton(
-              child: Text(
-                'Join a game',
-                style: TextStyle(
-                  fontSize: 20,
-                  color: Colors.white,
-                ),
-              ),
-              height: 60,
-              width: 200,
-              gradient: LinearGradient(
-                colors: <Color>[
-                  Theme.of(context).primaryColor,
-                  Theme.of(context).accentColor,
-                ],
-              ),
-              onPressed: () {
-                showDialog<Null>(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return LobbyDialog(isJoin: true);
-                  },
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
+          );
+        });
   }
 }
 
@@ -188,13 +249,14 @@ class _LobbyDialogState extends State<LobbyDialog> {
     if (userData.containsKey('currentGame')) {
       print('user is still in game ${userData['currentGame']}, will remove');
       var session = await Firestore.instance
-              .collection('sessions')
-              .document(userData['currentGame'])
-              .get();
+          .collection('sessions')
+          .document(userData['currentGame'])
+          .get();
       var sessionData = session.data;
 
       // if old game still exists and is not this game
-      if (sessionData != null && (sessionId == '' || sessionId != session.documentID)) {
+      if (sessionData != null &&
+          (sessionId == '' || sessionId != session.documentID)) {
         // remove user from playerIds in old game
         await Firestore.instance
             .collection('sessions')
@@ -261,7 +323,7 @@ class _LobbyDialogState extends State<LobbyDialog> {
       'dateCreated': DateTime.now(),
       'setupComplete': false,
     };
-    switch(game) {
+    switch (game) {
       case 'The Hunt':
         sessionContents['turn'] = userId;
         break;
@@ -273,7 +335,8 @@ class _LobbyDialogState extends State<LobbyDialog> {
         sessionContents['round'] = 0;
         break;
     }
-    var result = await Firestore.instance.collection('sessions').add(sessionContents);
+    var result =
+        await Firestore.instance.collection('sessions').add(sessionContents);
 
     // update user's current game
     await Firestore.instance
@@ -326,7 +389,8 @@ class _LobbyDialogState extends State<LobbyDialog> {
         }
 
         // remove player from previous game
-        await checkUserInGame(userId: userId, sessionId: event.documents.single.documentID);
+        await checkUserInGame(
+            userId: userId, sessionId: event.documents.single.documentID);
 
         // otherwise, append playerId to session
         String sessionId = event.documents.single.documentID;
@@ -423,7 +487,9 @@ class _LobbyDialogState extends State<LobbyDialog> {
                 });
               },
               controller: _passwordController,
-              decoration: InputDecoration(labelText: 'Password (optional):',),
+              decoration: InputDecoration(
+                labelText: 'Password (optional):',
+              ),
             ),
             SizedBox(height: 8),
             isFormError

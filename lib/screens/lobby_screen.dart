@@ -510,7 +510,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
     return Column(
       children: <Widget>[
         Text(
-          (startTime == null || _now == null) && startTime.difference(_now).inSeconds < 0
+          (startTime == null || _now == null) &&
+                  startTime.difference(_now).inSeconds < 0
               ? ''
               : 'Game is starting in ${startTime.difference(_now).inSeconds}',
           style: TextStyle(
@@ -568,7 +569,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                   style: TextStyle(fontSize: 12, color: Colors.grey),
                 ),
                 Text(
-                  rules['turnTimer'],
+                  rules['turnTimer'].toString(),
                   style: TextStyle(fontSize: 18),
                 ),
               ],
@@ -577,14 +578,9 @@ class _LobbyScreenState extends State<LobbyScreen> {
         );
         break;
       case 'Bananaphone':
-        return Container(
-          width: 250,
-          child: Column(
-            children: <Widget>[
-              Text('Number of rounds: ${rules['numRounds']}'),
-            ],
-          ),
-        );
+        return RulesContainer(rules: <Widget>[
+          Text('Number of rounds: ${rules['numRounds']}'),
+        ]);
         break;
       default:
         return Text('Unknown game');
@@ -895,6 +891,7 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
         break;
       case 'Abstract':
         rules['numTeams'] = sessionData['rules']['numTeams'];
+        rules['turnTimer'] = sessionData['rules']['turnTimer'];
         break;
       case 'Bananaphone':
         rules['numRounds'] = sessionData['rules']['numRounds'];
@@ -1074,6 +1071,34 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
                       });
                     },
                     items: <int>[2, 3].map<DropdownMenuItem<int>>((int value) {
+                      return DropdownMenuItem<int>(
+                        value: value,
+                        child: Text(value.toString(),
+                            style: TextStyle(fontFamily: 'Balsamiq')),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                SizedBox(height: 20),
+                Text('Turn timer:'),
+                Container(
+                  width: 80,
+                  child: DropdownButton<int>(
+                    isExpanded: true,
+                    value: rules['turnTimer'],
+                    iconSize: 24,
+                    elevation: 16,
+                    style: TextStyle(color: Theme.of(context).primaryColor),
+                    underline: Container(
+                      height: 2,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    onChanged: (int newValue) {
+                      setState(() {
+                        rules['turnTimer'] = newValue;
+                      });
+                    },
+                    items: <int>[20, 30, 40, 50].map<DropdownMenuItem<int>>((int value) {
                       return DropdownMenuItem<int>(
                         value: value,
                         child: Text(value.toString(),

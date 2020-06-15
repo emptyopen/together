@@ -8,7 +8,12 @@ void main() => runApp(MyApp());
 // done:
 
 // next up:
+// add 'rejoin' button in main menu
+// add vibration - when it becomes your turn
 // BIG: add bananaphone 
+//  figure out voting system
+//  add additional draw/describe to round
+//  handle rounds 
 // add ability to edit time per round for abstract
 // tiebreaker for abstract, with total time used as second marker
 
@@ -39,11 +44,11 @@ void main() => runApp(MyApp());
 // maggie@g.com  h4BrcG93XgYsBcGpH7q2WySK8rd2
 // vanessa@g.com  z5SqbMUvLVb7CfSxQz4OEk9VyDE3
 
-// temp banana: 
+// temp banana: UMR
 // Markus
 // Cassie
 // Henry
-// Maggie
+// Vanessa
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
@@ -60,17 +65,12 @@ class MyApp extends StatelessWidget {
         brightness: Brightness.light,
       ),
       darkTheme: ThemeData(
-        primaryColor: Colors.pinkAccent,
+        primaryColor: Colors.pinkAccent[600],
+        accentColor: Colors.pinkAccent[200],
         fontFamily: 'Balsamiq',
         brightness: Brightness.dark,
       ),
       home: RootScreen(auth: new Auth()),
-      // home: Scaffold(
-      //   body: Container(
-      //     alignment: Alignment.center,
-      //     child: Text('hi yo'),
-      //   ),
-      // ),
     );
   }
 }
