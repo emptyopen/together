@@ -6,18 +6,20 @@ import 'screens/root_screen.dart';
 void main() => runApp(MyApp());
 
 // done:
+// add 'rejoin' button in main menu
+// add ability to edit time per round for abstract
 
 // next up:
-// add 'rejoin' button in main menu
-// add vibration - when it becomes your turn
+// add vibration - when it becomes your turn, when a game is starting
 // BIG: add bananaphone 
 //  figure out voting system
 //  add additional draw/describe to round
 //  handle rounds 
-// add ability to edit time per round for abstract
-// tiebreaker for abstract, with total time used as second marker
+//  for each vote, increment the correct player's score - once all rounds are completed (round > numRounds), move to score view
+// add credits screen for winners and losers (template) (mode of "ending" with new time limit of when to go to lobby / main menu)
 
 // TODO:
+// tiebreaker for abstract, with total time used as second marker
 // orange team needs to win when green wins for them
 // ability to leave a game (also delete session if last one out) - dialog on back button (leave game or just go to main menu)
 // add timer to the hunt
@@ -26,9 +28,7 @@ void main() => runApp(MyApp());
 // probably don't need setupComplete flag, games can only be configured from the lobby
 // abstract: add voting system for choosing abstract cards (all members of team must select it)
 // if leader leaves a game, need to assign remaining player the leader position
-// require minimum num players for hunt (remove error message in abstract when cleared)
 // add snackbar when auto exiting to lobby or main menu
-// add credits screen for winners and losers (template) (mode of "ending" with new time limit of when to go to lobby / main menu)
 // add password reset option
 // clean up games that are finished/old (might need backend service)
 // add ability to join current game (in case of crash, accidental) in main menu (3rd option if available)

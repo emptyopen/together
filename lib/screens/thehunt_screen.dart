@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:together/components/buttons.dart';
+import 'package:flutter/services.dart';
 
 import 'package:together/components/misc.dart';
 import 'package:together/components/layouts.dart';
@@ -29,6 +29,7 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
   String userRole;
   String location;
   bool roleIsVisible = false;
+  String currPlayer = '';
 
   @override
   void initState() {
@@ -56,6 +57,15 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
           roomCode: widget.roomCode,
         ),
       );
+    }
+  }
+
+  checkIfVibrate(data) {
+    if (currPlayer != data['turn']) {
+      currPlayer = data['turn'];
+      if (currPlayer == widget.userId) {
+        HapticFeedback.vibrate();
+      }
     }
   }
 
@@ -211,6 +221,8 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
           // all data for all components
           DocumentSnapshot data = snapshot.data;
           checkIfExit(data);
+          // check if current player's turn
+          checkIfVibrate(data);
           return Scaffold(
               appBar: AppBar(
                 title: Text(

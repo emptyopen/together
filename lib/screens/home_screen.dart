@@ -344,6 +344,9 @@ class _LobbyDialogState extends State<LobbyDialog> {
         .document(userId)
         .updateData({'currentGame': result.documentID});
 
+    // vibrate
+    HapticFeedback.vibrate();
+
     // navigate to lobby
     Navigator.of(context).pop();
     slideTransition(

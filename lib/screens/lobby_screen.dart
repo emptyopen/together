@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'dart:collection';
 import 'dart:math';
+import 'package:flutter/services.dart';
 
 import '../components/buttons.dart';
 import '../components/layouts.dart';
@@ -37,6 +38,9 @@ class _LobbyScreenState extends State<LobbyScreen> {
   bool calledGameRoom = false;
   bool isLoading = true;
   String startError = '';
+  bool willVibrate1 = true;
+  bool willVibrate2 = true;
+  bool willVibrate3 = true;
 
   @override
   void initState() {
@@ -53,6 +57,24 @@ class _LobbyScreenState extends State<LobbyScreen> {
           !calledGameRoom &&
           sessionId != null &&
           userId != null) {
+        if (startTime.difference(_now).inSeconds == 1) {
+          if (willVibrate1) {
+            HapticFeedback.vibrate();
+            willVibrate1 = false;
+          }
+        }
+        if (startTime.difference(_now).inSeconds == 2) {
+          if (willVibrate2) {
+            HapticFeedback.vibrate();
+            willVibrate2 = false;
+          }
+        }
+        if (startTime.difference(_now).inSeconds == 3) {
+          if (willVibrate3) {
+            HapticFeedback.vibrate();
+            willVibrate3 = false;
+          }
+        }
         if (startTime.difference(_now).inSeconds < 0) {
           setState(() {
             calledGameRoom = true;
@@ -151,9 +173,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
           // verify that there are sufficient number of players
           if (data['playerIds'].length < 3) {
             setState(() {
-              if (rules['numTeams'] == 2) {
-                startError = 'Need at least 3 players';
-              }
+              startError = 'Need at least 3 players';
             });
             return;
           }

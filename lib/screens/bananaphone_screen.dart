@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:together/components/buttons.dart';
 import 'dart:ui';
 import 'dart:convert';
+import 'package:flutter/services.dart';
 
 import 'package:together/models/models.dart';
 import 'package:together/components/dialogs.dart';
@@ -30,6 +31,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
   GlobalKey _key = GlobalKey();
   final descriptionController = TextEditingController();
   var votes = {};
+  String currPhase = 'draw1';
 
   @override
   void dispose() {
@@ -60,6 +62,13 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
           roomCode: widget.roomCode,
         ),
       );
+    }
+  }
+
+  checkIfNewPhase(data) {
+    if (currPhase != data['phase']) {
+      HapticFeedback.vibrate();
+      currPhase = data['phase'];
     }
   }
 
@@ -754,6 +763,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
   }
 
   updateVotingIndex(String phase, int promptIndex) {
+    HapticFeedback.vibrate();
     setState(() {
       votes[phase] = promptIndex;
     });
@@ -979,6 +989,8 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
           // all data for all components
           DocumentSnapshot data = snapshot.data;
           checkIfExit(data);
+          // check for change in phase
+          checkIfNewPhase(data);
           return Scaffold(
               appBar: AppBar(
                 title: Text(

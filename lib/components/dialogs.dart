@@ -65,6 +65,7 @@ class _EndGameDialogState extends State<EndGameDialog> {
           .document(widget.sessionId)
           .delete();
       Navigator.of(context).pop();
+      Navigator.of(context).pop();
     }
   }
 

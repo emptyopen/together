@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:shimmer/shimmer.dart';
 import 'dart:async';
+import 'package:flutter/services.dart';
 
 import 'package:together/components/dialogs.dart';
 import 'package:together/services/services.dart';
@@ -30,6 +31,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
   Timer _timer;
   DateTime _now;
   bool isUpdating = false;
+  String currTeam = '';
 
   @override
   void initState() {
@@ -78,6 +80,15 @@ class _AbstractScreenState extends State<AbstractScreen> {
           roomCode: widget.roomCode,
         ),
       );
+    }
+  }
+
+  checkIfVibrate(data) {
+    if (currTeam != data['turn']) {
+      currTeam = data['turn'];
+      if (currTeam == userTeam) {
+        HapticFeedback.vibrate();
+      }
     }
   }
 
@@ -668,7 +679,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
                   ],
                 ),
         ),
-        SizedBox(width: 30),
+        SizedBox(width: 10),
         Container(
           decoration: BoxDecoration(
             border: Border.all(),
@@ -693,7 +704,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
             ],
           ),
         ),
-        SizedBox(width: 30),
+        SizedBox(width: 10),
         userTeam == data['turn'] && data['state'] != 'complete'
             ? Row(
                 children: <Widget>[
@@ -703,8 +714,8 @@ class _AbstractScreenState extends State<AbstractScreen> {
                       style: TextStyle(fontSize: 16),
                     ),
                     onPressed: () => updateTurn(data),
-                    height: 40,
-                    width: 110,
+                    height: 35,
+                    width: 100,
                     gradient: LinearGradient(
                       colors: <Color>[
                         Colors.blue,
@@ -712,7 +723,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
                       ],
                     ),
                   ),
-                  SizedBox(width: 30),
+                  SizedBox(width: 10),
                 ],
               )
             : Container(),
@@ -734,8 +745,8 @@ class _AbstractScreenState extends State<AbstractScreen> {
                     },
                   );
                 },
-                height: 40,
-                width: 140,
+                height: 35,
+                width: 110,
                 gradient: LinearGradient(
                   colors: <Color>[
                     Color.fromARGB(255, 255, 185, 0),
@@ -982,9 +993,9 @@ class _AbstractScreenState extends State<AbstractScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
         getTimer(data),
-        SizedBox(width: 30),
+        SizedBox(width: 10),
         getScores(data),
-        SizedBox(width: 30),
+        SizedBox(width: 10),
         showTeams(data),
       ],
     );
@@ -1010,6 +1021,8 @@ class _AbstractScreenState extends State<AbstractScreen> {
           // all data for all components
           DocumentSnapshot data = snapshot.data;
           checkIfExit(data);
+          // check if vibrate
+          checkIfVibrate(data);
           return Scaffold(
               appBar: AppBar(
                 title: Text(
