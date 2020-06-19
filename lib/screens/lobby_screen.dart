@@ -463,9 +463,9 @@ class _LobbyScreenState extends State<LobbyScreen> {
           print('Setting up Bananaphone game...');
 
           // verify that there are sufficient number of players
-          if (data['playerIds'].length < 4) {
+          if (data['playerIds'].length < 6) {
             setState(() {
-              startError = 'Need at least 4 players';
+              startError = 'Need at least 6 players';
             });
             return;
           }
@@ -477,6 +477,16 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
           // initialize random tool
           final _random = new Random();
+
+          // initialize score per player
+          var scores = []; 
+          data['playerIds'].asMap().forEach((i, v) async {
+            scores[i] = 0;
+          });
+          await Firestore.instance
+                        .collection('sessions')
+                        .document(sessionId)
+                        .updateData({'scores': scores});
 
           // set prompts (one per player per round)
           var prompts = [];

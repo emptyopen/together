@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:math';
 import 'package:flutter/services.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 import '../services/services.dart';
 import '../services/authentication.dart';
@@ -157,7 +158,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           .document(userData['currentGame'])
                           .snapshots(),
                       builder: (context, sessionSnapshot) {
-                        if (sessionSnapshot.data.data == null) {
+                        if (sessionSnapshot.hasData && sessionSnapshot.data.data == null) {
                           return Container();
                         }
                         return Column(
@@ -185,7 +186,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 slideTransition(
                                   context,
                                   LobbyScreen(
-                                    roomCode: sessionSnapshot.data.data['roomCode'],
+                                    roomCode:
+                                        sessionSnapshot.data.data['roomCode'],
                                   ),
                                 );
                               },
@@ -436,6 +438,28 @@ class _LobbyDialogState extends State<LobbyDialog> {
     // update player document's current game to none
   }
 
+  getDropdownWithIcon(value) {
+    var icon = Icon(MdiIcons.incognito);  // default hunt
+    Color color = Colors.black;
+    switch (value) {
+      case 'Abstract':
+        color = Colors.green;
+        icon = Icon(MdiIcons.resistorNodes, color: color);
+        break;
+      case 'Bananaphone':
+        color = Colors.blue;
+        icon = Icon(MdiIcons.phoneSettingsOutline, color: color);
+        break;
+    }
+    return Row(
+      children: <Widget>[
+        icon,
+        SizedBox(width: 30),
+        Text(value, style: TextStyle(fontFamily: 'Balsamiq', color: color),),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -465,8 +489,7 @@ class _LobbyDialogState extends State<LobbyDialog> {
                         .map<DropdownMenuItem<String>>((String value) {
                       return DropdownMenuItem<String>(
                         value: value,
-                        child: Text(value,
-                            style: TextStyle(fontFamily: 'Balsamiq')),
+                        child: getDropdownWithIcon(value),
                       );
                     }).toList(),
                   ),

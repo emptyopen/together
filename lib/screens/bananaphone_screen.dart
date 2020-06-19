@@ -4,9 +4,11 @@ import 'package:together/components/buttons.dart';
 import 'dart:ui';
 import 'dart:convert';
 import 'package:flutter/services.dart';
+import 'dart:collection';
 
 import 'package:together/models/models.dart';
 import 'package:together/components/dialogs.dart';
+import 'package:together/components/misc.dart';
 import 'package:together/services/services.dart';
 import 'template/help_screen.dart';
 import 'lobby_screen.dart';
@@ -32,6 +34,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
   final descriptionController = TextEditingController();
   var votes = {};
   String currPhase = 'draw1';
+  final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
 
   @override
   void dispose() {
@@ -81,6 +84,10 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
       nextPhase = 'draw2';
     } else if (currPhase == 'draw2') {
       nextPhase = 'describe2';
+    } else if (currPhase == 'describe2') {
+      nextPhase = 'draw3';
+    } else if (currPhase == 'draw3') {
+      nextPhase = 'describe3';
     } else {
       nextPhase = 'vote';
     }
@@ -149,6 +156,21 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
                             fontSize: 18, color: Theme.of(context).primaryColor)
                         : TextStyle(fontSize: 12, color: Colors.grey)),
                 Text(' > ', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              ]),
+              Row(mainAxisAlignment: MainAxisAlignment.center, children: <
+                  Widget>[
+                Text('Draw',
+                    style: data['phase'] == 'draw3'
+                        ? TextStyle(
+                            fontSize: 18, color: Theme.of(context).primaryColor)
+                        : TextStyle(fontSize: 12, color: Colors.grey)),
+                Text(' > ', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                Text('Describe',
+                    style: data['phase'] == 'describe3'
+                        ? TextStyle(
+                            fontSize: 18, color: Theme.of(context).primaryColor)
+                        : TextStyle(fontSize: 12, color: Colors.grey)),
+                Text(' > ', style: TextStyle(fontSize: 12, color: Colors.grey)),
                 Text('Vote',
                     style: data['phase'] == 'vote'
                         ? TextStyle(
@@ -159,7 +181,40 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
           ),
         ),
         SizedBox(width: 10),
-        getRoomCode(),
+        Column(
+          children: <Widget>[
+            getRoomCode(),
+            SizedBox(height: 5),
+            widget.userId == data['leader']
+                ? RaisedGradientButton(
+                    child: Text(
+                      'End game',
+                      style: TextStyle(fontSize: 14),
+                    ),
+                    onPressed: () {
+                      showDialog<Null>(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return EndGameDialog(
+                            game: 'Bananaphone',
+                            sessionId: widget.sessionId,
+                            winnerAlreadyDecided: true,
+                          );
+                        },
+                      );
+                    },
+                    height: 30,
+                    width: 100,
+                    gradient: LinearGradient(
+                      colors: <Color>[
+                        Color.fromARGB(255, 255, 185, 0),
+                        Color.fromARGB(255, 255, 213, 0),
+                      ],
+                    ),
+                  )
+                : Container(),
+          ],
+        ),
       ],
     );
   }
@@ -174,12 +229,16 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
     // get index of player in order, pull prompt (or image)
     var playerIndex = data['playerIds'].indexOf(widget.userId);
     var phase = data['phase'];
-    if (phase == 'draw1' || phase == 'draw2') {
+    if (phase == 'draw1' || phase == 'draw2' || phase == 'draw3') {
+      // --------------------
       var promptIndex = getPromptIndex(data);
       var prompt =
           data['rules']['prompts'][data['round']]['prompts'][playerIndex];
       if (phase == 'draw2') {
         prompt = data['describe1Prompt$promptIndex'];
+      }
+      if (phase == 'draw3') {
+        prompt = data['describe2Prompt$promptIndex'];
       }
       columnItems.add(Container(
         constraints: BoxConstraints(maxWidth: 250),
@@ -200,7 +259,9 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
           ],
         ),
       ));
-    } else if (phase == 'describe1' || phase == 'describe2') {
+    } else if (phase == 'describe1' ||
+        phase == 'describe2' ||
+        phase == 'describe3') {
       columnItems.add(Container(
           padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
           decoration: BoxDecoration(
@@ -227,8 +288,9 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
                     fontSize: 18, color: Theme.of(context).primaryColor),
               ),
               Text(
-                'One choice per round (column).',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
+                'One choice per column (round).',
+                style: TextStyle(
+                    fontSize: 14, color: Theme.of(context).primaryColor),
               ),
               Text(
                 'Long press to select your favorite!',
@@ -323,13 +385,13 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
           Text(
             'Room Code:',
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 11,
             ),
           ),
           Text(
             widget.roomCode,
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 14,
               color: Theme.of(context).primaryColor,
             ),
           ),
@@ -358,7 +420,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
   submitDrawing(data) async {
     // send pointsList to Firestore sessions collection
     var promptIndex = getPromptIndex(data);
-    var jsonPointsList = listPointsToJson(pointsList);  // to string
+    var jsonPointsList = listPointsToJson(pointsList); // to string
     var stringPointsList = jsonEncode(jsonPointsList);
 
     if (data['phase'] == 'draw1') {
@@ -366,12 +428,17 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
           .collection('sessions')
           .document(widget.sessionId)
           .updateData({'draw1Prompt$promptIndex': stringPointsList});
-    } else {
-      // it's draw2
+    } else if (data['phase'] == 'draw2') {
       await Firestore.instance
           .collection('sessions')
           .document(widget.sessionId)
           .updateData({'draw2Prompt$promptIndex': stringPointsList});
+    } else {
+      // it's draw3
+      await Firestore.instance
+          .collection('sessions')
+          .document(widget.sessionId)
+          .updateData({'draw3Prompt$promptIndex': stringPointsList});
     }
 
     // for every player, after submitting check if all drawings are done
@@ -395,7 +462,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
             .document(widget.sessionId)
             .updateData({'phase': 'describe1'});
       }
-    } else {
+    } else if (data['phase'] == 'draw2') {
       bool allPlayersHaveDrawn = true;
       data['playerIds'].asMap().forEach((i, _) {
         if (!newData.containsKey('draw2Prompt$i')) {
@@ -407,6 +474,20 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
             .collection('sessions')
             .document(widget.sessionId)
             .updateData({'phase': 'describe2'});
+      }
+    } else {
+      // draw3
+      bool allPlayersHaveDrawn = true;
+      data['playerIds'].asMap().forEach((i, _) {
+        if (!newData.containsKey('draw3Prompt$i')) {
+          allPlayersHaveDrawn = false;
+        }
+      });
+      if (allPlayersHaveDrawn) {
+        await Firestore.instance
+            .collection('sessions')
+            .document(widget.sessionId)
+            .updateData({'phase': 'describe3'});
       }
     }
 
@@ -420,7 +501,8 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
     // if already submitted, show container just waiting
     var promptIndex = getPromptIndex(data);
     if ((data['phase'] == 'draw1' && data['draw1Prompt$promptIndex'] != null) ||
-        data['draw2Prompt$promptIndex'] != null) {
+        (data['phase'] == 'draw2' && data['draw2Prompt$promptIndex'] != null) ||
+        (data['phase'] == 'draw3' && data['draw3Prompt$promptIndex'] != null)) {
       return Container(
           decoration: BoxDecoration(
               border: Border.all(), borderRadius: BorderRadius.circular(20)),
@@ -607,9 +689,15 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
       case 'describe2':
         promptIndex += 3;
         break;
+      case 'draw3':
+        promptIndex += 4;
+        break;
+      case 'describe3':
+        promptIndex += 5;
+        break;
     }
     // handle wraparound
-    if (promptIndex > data['playerIds'].length - 1) {
+    while (promptIndex > data['playerIds'].length - 1) {
       promptIndex = promptIndex - data['playerIds'].length;
     }
     return promptIndex;
@@ -621,7 +709,10 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
     // if already submitted, show container just waiting
     if ((data['phase'] == 'describe1' &&
             data['describe1Prompt$promptIndex'] != null) ||
-        data['describe2Prompt$promptIndex'] != null) {
+        (data['phase'] == 'describe2' &&
+            data['describe2Prompt$promptIndex'] != null) ||
+        (data['phase'] == 'describe3' &&
+            data['describe3Prompt$promptIndex'] != null)) {
       return Container(
           decoration: BoxDecoration(
               border: Border.all(), borderRadius: BorderRadius.circular(20)),
@@ -633,8 +724,10 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
     var jsonPointsList;
     if (data['phase'] == 'describe1') {
       jsonPointsList = jsonDecode(data['draw1Prompt$promptIndex']);
-    } else {
+    } else if (data['phase'] == 'describe2') {
       jsonPointsList = jsonDecode(data['draw2Prompt$promptIndex']);
+    } else if (data['phase'] == 'describe3') {
+      jsonPointsList = jsonDecode(data['draw3Prompt$promptIndex']);
     }
 
     // decode json
@@ -711,12 +804,18 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
           .document(widget.sessionId)
           .updateData(
               {'describe1Prompt$promptIndex': descriptionController.text});
-    } else {
+    } else if (data['phase'] == 'describe2') {
       await Firestore.instance
           .collection('sessions')
           .document(widget.sessionId)
           .updateData(
               {'describe2Prompt$promptIndex': descriptionController.text});
+    } else if (data['phase'] == 'describe3') {
+      await Firestore.instance
+          .collection('sessions')
+          .document(widget.sessionId)
+          .updateData(
+              {'describe3Prompt$promptIndex': descriptionController.text});
     }
 
     // for every player, after submitting check if all drawings are done
@@ -739,10 +838,24 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
             .document(widget.sessionId)
             .updateData({'phase': 'draw2'});
       }
-    } else {
+    } else if (data['phase'] == 'describe2') {
       bool allPlayersHaveDescribed = true;
       data['playerIds'].asMap().forEach((i, _) {
         if (!newData.containsKey('describe2Prompt$i')) {
+          allPlayersHaveDescribed = false;
+        }
+      });
+      if (allPlayersHaveDescribed) {
+        print('will update phase to draw3');
+        await Firestore.instance
+            .collection('sessions')
+            .document(widget.sessionId)
+            .updateData({'phase': 'draw3'});
+      }
+    } else if (data['phase'] == 'describe3') {
+      bool allPlayersHaveDescribed = true;
+      data['playerIds'].asMap().forEach((i, _) {
+        if (!newData.containsKey('describe3Prompt$i')) {
           allPlayersHaveDescribed = false;
         }
       });
@@ -762,11 +875,20 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
     });
   }
 
-  updateVotingIndex(String phase, int promptIndex) {
-    HapticFeedback.vibrate();
-    setState(() {
-      votes[phase] = promptIndex;
-    });
+  indexUpdateCallback(String phase, int promptIndex, data) {
+    // show snackbar and not allow voting for yourself
+    var playerIndex = data['playerIds'].indexOf(widget.userId);
+    if (getSubmitterIndex(phase, promptIndex, data) == playerIndex) {
+      _scaffoldKey.currentState.showSnackBar(SnackBar(
+        content: Text('Can\'t vote for yourself!'),
+        duration: Duration(seconds: 3),
+      ));
+    } else {
+      HapticFeedback.vibrate();
+      setState(() {
+        votes[phase] = promptIndex;
+      });
+    }
   }
 
   List<Widget> _buildRow(int promptIndex, data) {
@@ -790,9 +912,12 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
     }
     row.add(
       VotableSquare(
-        indexUpdateCallback: () => updateVotingIndex('draw1', promptIndex),
+        indexUpdateCallback: () =>
+            indexUpdateCallback('draw1', promptIndex, data),
         votes: votes,
-        phase: 'draw1', 
+        phase: 'draw1',
+        data: data,
+        userId: widget.userId,
         promptIndex: promptIndex,
         child: CustomPaint(
           size: Size(200, 200),
@@ -810,9 +935,12 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
     // add describe1
     row.add(
       VotableSquare(
-        indexUpdateCallback: () => updateVotingIndex('describe1', promptIndex),
+        indexUpdateCallback: () =>
+            indexUpdateCallback('describe1', promptIndex, data),
         votes: votes,
-        phase: 'describe1', 
+        phase: 'describe1',
+        data: data,
+        userId: widget.userId,
         promptIndex: promptIndex,
         child: Container(
           width: 200,
@@ -854,9 +982,12 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
     }
     row.add(
       VotableSquare(
-        indexUpdateCallback: () => updateVotingIndex('draw2', promptIndex),
+        indexUpdateCallback: () =>
+            indexUpdateCallback('draw2', promptIndex, data),
         votes: votes,
-        phase: 'draw2', 
+        phase: 'draw2',
+        data: data,
+        userId: widget.userId,
         promptIndex: promptIndex,
         child: CustomPaint(
           size: Size(200, 200),
@@ -874,9 +1005,12 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
     // add describe2
     row.add(
       VotableSquare(
-        indexUpdateCallback: () => updateVotingIndex('describe2', promptIndex),
+        indexUpdateCallback: () =>
+            indexUpdateCallback('describe2', promptIndex, data),
         votes: votes,
-        phase: 'describe2', 
+        phase: 'describe2',
+        data: data,
+        userId: widget.userId,
         promptIndex: promptIndex,
         child: Container(
           width: 200,
@@ -899,7 +1033,157 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
         ),
       ),
     );
+    // add drawing3
+    jsonPointsList = jsonDecode(data['draw3Prompt$promptIndex']);
+    pointsList = [];
+    for (var pointData in jsonPointsList) {
+      if (pointData['isNull'] != null) {
+        pointsList.add(null);
+      } else {
+        var point = Offset(pointData['x'] * 2 / 3, pointData['y'] * 2 / 3);
+        var valueString = pointData['color'].split('(0x')[1].split(')')[0];
+        var paint = Paint()
+          ..strokeCap = StrokeCap.round
+          ..isAntiAlias = true
+          ..color = Color(int.parse(valueString, radix: 16))
+          ..strokeWidth = pointData['width'];
+        pointsList.add(DrawingPoint(point: point, paint: paint));
+      }
+    }
+    row.add(
+      VotableSquare(
+        indexUpdateCallback: () =>
+            indexUpdateCallback('draw3', promptIndex, data),
+        votes: votes,
+        phase: 'draw3',
+        data: data,
+        userId: widget.userId,
+        promptIndex: promptIndex,
+        child: CustomPaint(
+          size: Size(200, 200),
+          painter: DrawingPainter(
+            pointsList: pointsList,
+          ),
+          child: Container(
+            height: 200,
+            width: 200,
+            decoration: BoxDecoration(border: Border.all()),
+          ),
+        ),
+      ),
+    );
+    // add describe3
+    row.add(
+      VotableSquare(
+        indexUpdateCallback: () =>
+            indexUpdateCallback('describe3', promptIndex, data),
+        votes: votes,
+        phase: 'describe3',
+        data: data,
+        userId: widget.userId,
+        promptIndex: promptIndex,
+        child: Container(
+          width: 200,
+          height: 200,
+          decoration: BoxDecoration(
+            border: Border.all(),
+          ),
+          child: Container(
+            padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
+            child: Center(
+              child: Text(
+                data['describe3Prompt$promptIndex'],
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 24,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
     return row;
+  }
+
+  submitVotes(data) async {
+    data = data.data;
+
+    // check if all phases were voted on
+    if (votes.length < 6) {
+      // iterate over phases, add missing phases to list
+      var missingPhases = [];
+      var possiblePhases = [
+        'draw1',
+        'describe1',
+        'draw2',
+        'describe2',
+        'draw3',
+        'describe3'
+      ];
+      possiblePhases.asMap().forEach((i, v) {
+        if (votes[possiblePhases[i]] == null) {
+          missingPhases.add(phaseToEnglish(v));
+        }
+      });
+      _scaffoldKey.currentState.showSnackBar(SnackBar(
+        content: Text('Missing votes for: $missingPhases'),
+        duration: Duration(seconds: 3),
+      ));
+      return;
+    }
+
+    // increment each relevant players score
+    // figure out which players get incremented
+    var draw1Vote = getSubmitterIndex(data['draw1'], votes['draw1'], data);
+    var describe1Vote =
+        getSubmitterIndex(data['describe1'], votes['describe1'], data);
+    var draw2Vote = getSubmitterIndex(data['draw2'], votes['draw2'], data);
+    var describe2Vote =
+        getSubmitterIndex(data['describe2'], votes['describe2'], data);
+    var draw3Vote = getSubmitterIndex(data['draw3'], votes['draw3'], data);
+    var describe3Vote =
+        getSubmitterIndex(data['describe3'], votes['describe3'], data);
+    var scores = data['scores'];
+    scores[draw1Vote] += 1;
+    scores[describe1Vote] += 1;
+    scores[draw2Vote] += 1;
+    scores[describe2Vote] += 1;
+    scores[draw3Vote] += 1;
+    scores[describe3Vote] += 1;
+    await Firestore.instance
+        .collection('sessions')
+        .document(widget.sessionId)
+        .updateData({'scores': scores});
+
+    // check if all votes are in
+    var sum = scores.reduce((a, b) => a + b);
+    var expectedSum = data['playerIds'].length * 6;
+    if (sum >= expectedSum) {
+      // if so, check if there is another round
+      // new round = increment round and reset all submissions
+
+      data['playerIds'].asMap().forEach((i, _) {
+        data.remove('draw1Prompt$i');
+        data.remove('describe1Prompt$i');
+        data.remove('draw2Prompt$i');
+        data.remove('describe2Prompt$i');
+        data.remove('draw3Prompt$i');
+        data.remove('describe3Prompt$i');
+      });
+      data['round'] += 1;
+      data['phase'] = 'draw1';
+
+      if (data['round'] >= data['rules']['numRounds']) {
+        // end game = final scoreboard
+        data['phase'] = 'scoreboard';
+      }
+
+      await Firestore.instance
+          .collection('sessions')
+          .document(widget.sessionId)
+          .setData(data);
+    }
   }
 
   getVotes(data) {
@@ -918,7 +1202,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
           children: List.generate(
             4,
             (index) => Container(
-              height: 250,
+              height: 270,
               child: Row(
                 children: _buildRow(index, data),
               ),
@@ -931,7 +1215,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
       stack.add(
         Positioned(
           left: 0,
-          top: i.toDouble() * 250,
+          top: i.toDouble() * 270,
           child: Container(
               width: screenWidth,
               height: 40,
@@ -954,19 +1238,139 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
           Stack(
             children: stack,
           ),
+          SizedBox(height: 30),
+          RaisedGradientButton(
+            child: Text('Submit votes'),
+            height: 40,
+            width: 140,
+            gradient: LinearGradient(
+              colors: <Color>[
+                Color.fromARGB(255, 255, 185, 0),
+                Color.fromARGB(255, 255, 213, 0),
+              ],
+            ),
+            onPressed: () {
+              submitVotes(data);
+            },
+          ),
+          SizedBox(height: 10)
         ],
       ),
     );
   }
 
   Widget getUserAction(data) {
-    if (data['phase'] == 'draw1' || data['phase'] == 'draw2') {
+    if (data['phase'] == 'draw1' ||
+        data['phase'] == 'draw2' ||
+        data['phase'] == 'draw3') {
       return getDrawing(data);
-    } else if (data['phase'] == 'describe1' || data['phase'] == 'describe2') {
+    } else if (data['phase'] == 'describe1' ||
+        data['phase'] == 'describe2' ||
+        data['phase'] == 'describe3') {
       return getDescription(data);
     } else {
       return getVotes(data);
     }
+  }
+
+  getScoreboard(data) {
+    // create mapping of name to score
+    var playerScores = {};
+    data['playerIds'].asMap().forEach((i, playerId) {
+      playerScores[playerId] = data['scores'][i];
+    });
+    List<Widget> scores = [];
+
+    var sortedKeys = playerScores.keys.toList(growable: false)
+      ..sort((k1, k2) => playerScores[k2].compareTo(playerScores[k1]));
+    LinkedHashMap sortedPlayerScores = new LinkedHashMap.fromIterable(
+        sortedKeys,
+        key: (k) => k,
+        value: (k) => playerScores[k]);
+
+    sortedPlayerScores.forEach((playerId, score) {
+      scores.add(FutureBuilder(
+          future: Firestore.instance
+              .collection('users')
+              .document(playerId.toString())
+              .get(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return Text('');
+            }
+            return Column(
+              children: <Widget>[
+                Text(
+                  '${snapshot.data['name']}: ${playerScores[playerId].toString()}',
+                  style: TextStyle(
+                    fontSize: 26,
+                  ),
+                ),
+                SizedBox(height: 10),
+              ],
+            );
+          }));
+    });
+    var width = MediaQuery.of(context).size.width;
+    return Column(
+      children: <Widget>[
+        SizedBox(height: 50),
+        Container(
+          width: width * 0.8,
+          height: 140 + 36 * scores.length.toDouble(),
+          decoration: BoxDecoration(
+            border: Border.all(),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Text(
+                'Final scoreboard:',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 22,
+                  color: Theme.of(context).primaryColor,
+                ),
+              ),
+              PageBreak(width: 150,),
+              SizedBox(height: 20),
+              Column(children: scores),
+            ],
+          ),
+        ),
+        SizedBox(height: 20),
+        widget.userId == data['leader']
+                ? RaisedGradientButton(
+                    child: Text(
+                      'End game',
+                      style: TextStyle(fontSize: 20),
+                    ),
+                    onPressed: () {
+                      showDialog<Null>(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return EndGameDialog(
+                            game: 'Bananaphone',
+                            sessionId: widget.sessionId,
+                            winnerAlreadyDecided: true,
+                          );
+                        },
+                      );
+                    },
+                    height: 40,
+                    width: 140,
+                    gradient: LinearGradient(
+                      colors: <Color>[
+                        Color.fromARGB(255, 255, 185, 0),
+                        Color.fromARGB(255, 255, 213, 0),
+                      ],
+                    ),
+                  )
+                : Container(),
+                SizedBox(height: 10),
+      ],
+    );
   }
 
   @override
@@ -992,6 +1396,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
           // check for change in phase
           checkIfNewPhase(data);
           return Scaffold(
+              key: _scaffoldKey,
               appBar: AppBar(
                 title: Text(
                   'Bananaphone',
@@ -1015,45 +1420,18 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
               ),
               body: SingleChildScrollView(
                 child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      SizedBox(height: 20),
-                      getStatus(data),
-                      SizedBox(height: 10),
-                      getUserAction(data),
-                      SizedBox(height: 10),
-                      widget.userId == data['leader']
-                          ? RaisedGradientButton(
-                              child: Text(
-                                'End game',
-                                style: TextStyle(fontSize: 16),
-                              ),
-                              onPressed: () {
-                                showDialog<Null>(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return EndGameDialog(
-                                      game: 'Bananaphone',
-                                      sessionId: widget.sessionId,
-                                      winnerAlreadyDecided: true,
-                                    );
-                                  },
-                                );
-                              },
-                              height: 40,
-                              width: 140,
-                              gradient: LinearGradient(
-                                colors: <Color>[
-                                  Color.fromARGB(255, 255, 185, 0),
-                                  Color.fromARGB(255, 255, 213, 0),
-                                ],
-                              ),
-                            )
-                          : Container(),
-                      SizedBox(height: 40),
-                    ],
-                  ),
+                  child: data['phase'] == 'scoreboard'
+                      ? getScoreboard(data)
+                      : Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            SizedBox(height: 10),
+                            getStatus(data),
+                            SizedBox(height: 10),
+                            getUserAction(data),
+                            SizedBox(height: 5),
+                          ],
+                        ),
                 ),
               ));
         });
@@ -1099,8 +1477,17 @@ class VotableSquare extends StatelessWidget {
   final Map votes;
   final String phase;
   final int promptIndex;
+  final data;
+  final String userId;
 
-  VotableSquare({this.child, this.indexUpdateCallback, this.votes, this.phase, this.promptIndex});
+  VotableSquare(
+      {this.child,
+      this.indexUpdateCallback,
+      this.votes,
+      this.phase,
+      this.promptIndex,
+      this.data,
+      this.userId});
 
   @override
   Widget build(BuildContext context) {
@@ -1110,8 +1497,15 @@ class VotableSquare extends StatelessWidget {
       isVoted = true;
     }
 
+    // check if this cell is voted by self
+    bool isSelf = false;
+    var playerIndex = data['playerIds'].indexOf(userId);
+    if (getSubmitterIndex(phase, promptIndex, data) == playerIndex) {
+      isSelf = true;
+    }
+
     Color color = Colors.greenAccent;
-    switch(phase) {
+    switch (phase) {
       case 'describe1':
         color = Colors.amberAccent;
         break;
@@ -1119,6 +1513,12 @@ class VotableSquare extends StatelessWidget {
         color = Colors.blueAccent;
         break;
       case 'describe2':
+        color = Colors.lime;
+        break;
+      case 'draw3':
+        color = Colors.deepOrangeAccent;
+        break;
+      case 'describe3':
         color = Colors.deepPurpleAccent;
         break;
     }
@@ -1129,11 +1529,107 @@ class VotableSquare extends StatelessWidget {
         children: <Widget>[
           SizedBox(height: 40),
           Container(
-              decoration: BoxDecoration(
-                  border: Border.all(width: 5, color: isVoted ? color : Colors.white)),
-              child: child),
+            height: 20,
+            width: 210,
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey),
+            ),
+            child: Text(
+              phaseToEnglish(phase),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.grey,
+                fontSize: 12,
+              ),
+            ),
+          ),
+          Stack(
+            children: <Widget>[
+              Container(
+                decoration: BoxDecoration(
+                    border: Border.all(
+                        width: 5,
+                        color: isSelf
+                            ? Colors.grey
+                            : isVoted ? color : Colors.white)),
+                child: child,
+              ),
+              isVoted
+                  ? Positioned(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(7),
+                          border: Border.all(),
+                          color: color.withAlpha(100),
+                        ),
+                        padding: EdgeInsets.all(3),
+                        child: Text(
+                          'Voted best for ${phaseToEnglish(phase)}',
+                          style: TextStyle(
+                            fontSize: 10,
+                          ),
+                        ),
+                      ),
+                      top: 8,
+                      left: 8,
+                    )
+                  : Container(),
+            ],
+          ),
         ],
       ),
     );
   }
+}
+
+getSubmitterIndex(String phase, int promptIndex, data) {
+  var submitterIndex = promptIndex;
+  switch (phase) {
+    case 'draw1':
+      // do nothing
+      break;
+    case 'describe1':
+      submitterIndex -= 1;
+      break;
+    case 'draw2':
+      submitterIndex -= 2;
+      break;
+    case 'describe2':
+      submitterIndex -= 3;
+      break;
+    case 'draw3':
+      submitterIndex -= 4;
+      break;
+    case 'describe3':
+      submitterIndex -= 5;
+      break;
+  }
+  while (submitterIndex < 0) {
+    submitterIndex += data['playerIds'].length;
+  }
+  return submitterIndex;
+}
+
+phaseToEnglish(phase) {
+  switch (phase) {
+    case 'draw1':
+      return 'Draw (#1)';
+      break;
+    case 'describe1':
+      return 'Describe (#1)';
+      break;
+    case 'draw2':
+      return 'Draw (#2)';
+      break;
+    case 'describe2':
+      return 'Describe (#2)';
+      break;
+    case 'draw3':
+      return 'Draw (#3)';
+      break;
+    case 'describe3':
+      return 'Describe (#3)';
+      break;
+  }
+  return 'should never get this';
 }

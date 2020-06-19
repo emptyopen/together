@@ -8,33 +8,31 @@ void main() => runApp(MyApp());
 // done:
 // add 'rejoin' button in main menu
 // add ability to edit time per round for abstract
-
-// next up:
 // add vibration - when it becomes your turn, when a game is starting
 // BIG: add bananaphone 
-//  figure out voting system
-//  add additional draw/describe to round
-//  handle rounds 
-//  for each vote, increment the correct player's score - once all rounds are completed (round > numRounds), move to score view
-// add credits screen for winners and losers (template) (mode of "ending" with new time limit of when to go to lobby / main menu)
+
+// next up:
 
 // TODO:
-// tiebreaker for abstract, with total time used as second marker
+// make lobby white on a transition (while loading data)
+// BIG: add statistics for player accounts (number of games won, etc.)
+// add scores button to view scores in bananaphone
+// BIG: add spectator mode
 // orange team needs to win when green wins for them
-// ability to leave a game (also delete session if last one out) - dialog on back button (leave game or just go to main menu)
+// tiebreaker for abstract, with total time used as second marker
 // add timer to the hunt
 // abstract: ability to manually change teams (people can just join the team they want to be on?)
 // abstract should show leader view at end of game (not just solid blocks)
 // probably don't need setupComplete flag, games can only be configured from the lobby
-// abstract: add voting system for choosing abstract cards (all members of team must select it)
-// if leader leaves a game, need to assign remaining player the leader position
+// if leader leaves a game, need to assign remaining player the leader position - ORRRRR, "claim leadership" button would be more fun and easier
 // add snackbar when auto exiting to lobby or main menu
 // add password reset option
 // clean up games that are finished/old (might need backend service)
 // add ability to join current game (in case of crash, accidental) in main menu (3rd option if available)
 // React to getting kicked (timer check every 1 second to go back to lobby)
 // periodically check if player info isn't true? check current game and see if player is in it
-// BIG: add statistics for player accounts (number of games won, etc.)
+// ability to leave a game (might not need) (also delete session if last one out) - dialog on back button (leave game or just go to main menu)
+// abstract: (might not need) add voting system for choosing abstract cards (all members of team must select it)
 // attribute icon: Icons made by "https://www.flaticon.com/authors/freepik
 
 // fake users:
