@@ -61,6 +61,8 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
   }
 
   checkIfVibrate(data) {
+    print('yoyoyo $data');
+    print(data.data);
     if (currPlayer != data['turn']) {
       currPlayer = data['turn'];
       if (currPlayer == widget.userId) {
@@ -137,11 +139,13 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
                   Text(
                     snapshot.data['name'],
                     style: TextStyle(
-                        color: val == activePlayer
-                            ? Theme.of(context).primaryColor
-                            : Colors.black),
+                      color: val == activePlayer
+                          ? Theme.of(context).primaryColor
+                          : Theme.of(context).highlightColor,
+                    ),
                   ),
-                  Text(widget.userId == val ? ' (you)' : '', style: TextStyle(fontSize: 12, color: Colors.grey))
+                  Text(widget.userId == val ? ' (you)' : '',
+                      style: TextStyle(fontSize: 12, color: Colors.grey))
                 ],
               );
             }),
@@ -157,7 +161,8 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
         return Container(
           width: 250,
           decoration: BoxDecoration(
-              border: Border.all(), borderRadius: BorderRadius.circular(20)),
+              border: Border.all(color: Theme.of(context).highlightColor),
+              borderRadius: BorderRadius.circular(20)),
           padding: EdgeInsets.all(10),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -213,13 +218,22 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
             return Scaffold(
                 appBar: AppBar(
                   title: Text(
-                    'Abstract',
+                    'The Hunt!',
                   ),
                 ),
                 body: Container());
           }
           // all data for all components
           DocumentSnapshot data = snapshot.data;
+          if (data.data == null) {
+            return Scaffold(
+                appBar: AppBar(
+                  title: Text(
+                    'The Hunt!',
+                  ),
+                ),
+                body: Container());
+          }
           checkIfExit(data);
           // check if current player's turn
           checkIfVibrate(data);
@@ -263,7 +277,8 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
                         },
                         child: Container(
                           decoration: BoxDecoration(
-                            border: Border.all(),
+                            border: Border.all(
+                                color: Theme.of(context).highlightColor),
                             borderRadius: BorderRadius.circular(20),
                             color: Theme.of(context).primaryColor,
                           ),
@@ -375,32 +390,41 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
                       ),
                       SizedBox(height: 30),
                       widget.userId == data['leader']
-                          ? RaisedGradientButton(
-                              child: Text(
-                                'End game',
-                                style: TextStyle(fontSize: 16),
-                              ),
-                              onPressed: () {
-                                showDialog<Null>(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return EndGameDialog(
-                                      game: 'The Hunt',
-                                      sessionId: widget.sessionId,
-                                    );
-                                  },
-                                );
-                              },
+                          ? EndGameButton(
+                              gameName: 'The Hunt',
+                              sessionId: widget.sessionId,
+                              fontSize: 18, 
                               height: 40,
                               width: 140,
-                              gradient: LinearGradient(
-                                colors: <Color>[
-                                  Color.fromARGB(255, 255, 185, 0),
-                                  Color.fromARGB(255, 255, 213, 0),
-                                ],
-                              ),
                             )
                           : Container(),
+                      // ? RaisedGradientButton(
+                      //     child: Text(
+                      //       'End game',
+                      //       style: TextStyle(fontSize: 16),
+                      //       color:
+                      //     ),
+                      //     onPressed: () {
+                      //       showDialog<Null>(
+                      //         context: context,
+                      //         builder: (BuildContext context) {
+                      //           return EndGameDialog(
+                      //             game: 'The Hunt',
+                      //             sessionId: widget.sessionId,
+                      //           );
+                      //         },
+                      //       );
+                      //     },
+                      //     height: 40,
+                      //     width: 140,
+                      //     gradient: LinearGradient(
+                      //       colors: <Color>[
+                      //         Color.fromARGB(255, 255, 185, 0),
+                      //         Color.fromARGB(255, 255, 213, 0),
+                      //       ],
+                      //     ),
+                      //   )
+                      // : Container(),
                       SizedBox(height: 80),
                     ],
                   ),

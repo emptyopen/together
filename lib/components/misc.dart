@@ -13,7 +13,7 @@ class PageBreak extends StatelessWidget {
         Container(
           height: 2,
           width: width,
-          decoration: BoxDecoration(border: Border.all()),
+          decoration: BoxDecoration(border: Border.all(color: Theme.of(context).highlightColor)),
         ),
         SizedBox(height: 10,),
       ],

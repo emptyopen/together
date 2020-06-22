@@ -5,9 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:shimmer/shimmer.dart';
 import 'dart:async';
-import 'package:flutter/services.dart';
 
-import 'package:together/components/dialogs.dart';
 import 'package:together/services/services.dart';
 import 'template/help_screen.dart';
 import 'lobby_screen.dart';
@@ -204,7 +202,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
         .updateData({
       'turn': nextActiveTeam,
       'timer': DateTime.now().add(
-          Duration(seconds: 10 + int.parse(increment) * numUnflipped))
+          Duration(seconds: 10 + increment * numUnflipped))
     });
 
     isUpdating = false;
@@ -530,7 +528,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
                       ? true
                       : false)
               : Colors.white,
-          border: Border.all(color: Colors.black, width: 0.5),
+          border: Border.all(color: Colors.grey, width: 0.5),
         ),
         child: Stack(
           children: <Widget>[
@@ -656,7 +654,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
       children: <Widget>[
         Container(
           decoration: BoxDecoration(
-            border: Border.all(),
+            border: Border.all(color: Theme.of(context).highlightColor),
             borderRadius: BorderRadius.circular(10),
           ),
           padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
@@ -682,7 +680,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
         SizedBox(width: 10),
         Container(
           decoration: BoxDecoration(
-            border: Border.all(),
+            border: Border.all(color: Theme.of(context).highlightColor),
             borderRadius: BorderRadius.circular(10),
           ),
           padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
@@ -728,33 +726,13 @@ class _AbstractScreenState extends State<AbstractScreen> {
               )
             : Container(),
         widget.userId == data['leader']
-            ? RaisedGradientButton(
-                child: Text(
-                  'End game',
-                  style: TextStyle(fontSize: 16),
-                ),
-                onPressed: () {
-                  showDialog<Null>(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return EndGameDialog(
-                        game: 'Abstract',
-                        sessionId: widget.sessionId,
-                        winnerAlreadyDecided: true,
-                      );
-                    },
-                  );
-                },
-                height: 35,
-                width: 110,
-                gradient: LinearGradient(
-                  colors: <Color>[
-                    Color.fromARGB(255, 255, 185, 0),
-                    Color.fromARGB(255, 255, 213, 0),
-                  ],
-                ),
-              )
-            : Container(),
+            ? EndGameButton(
+              gameName: 'Abstract',
+              sessionId: widget.sessionId,
+              fontSize: 16, 
+              height: 35,
+              width: 110,
+            ) : Container() 
       ],
     );
   }
@@ -792,7 +770,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
     return Container(
       width: numTeams == 3 ? 360 : 280,
       decoration: BoxDecoration(
-        border: Border.all(),
+        border: Border.all(color: Theme.of(context).highlightColor),
         borderRadius: BorderRadius.circular(10),
       ),
       padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
@@ -965,9 +943,9 @@ class _AbstractScreenState extends State<AbstractScreen> {
       updateTurn(data);
     }
     return Container(
-      width: 150,
+      width: 170,
       decoration: BoxDecoration(
-        border: Border.all(),
+        border: Border.all(color: Theme.of(context).highlightColor),
         borderRadius: BorderRadius.circular(10),
       ),
       padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
@@ -979,9 +957,9 @@ class _AbstractScreenState extends State<AbstractScreen> {
                 seconds < 0
                     ? Text('')
                     : Text(
-                        'Time: ${secondsToTimeString(seconds)}',
+                        'Remaining:   ${secondsToTimeString(seconds)}',
                         style: TextStyle(
-                            color: seconds <= 30 ? Colors.red : Colors.black),
+                            color: seconds <= 30 ? Colors.red : Theme.of(context).highlightColor),
                       ),
               ],
             ),
@@ -1020,6 +998,15 @@ class _AbstractScreenState extends State<AbstractScreen> {
           }
           // all data for all components
           DocumentSnapshot data = snapshot.data;
+          if (data.data == null) {
+            return Scaffold(
+                appBar: AppBar(
+                  title: Text(
+                    'Abstract',
+                  ),
+                ),
+                body: Container());
+          }
           checkIfExit(data);
           // check if vibrate
           checkIfVibrate(data);
@@ -1070,8 +1057,8 @@ class AbstractScreenHelp extends StatelessWidget {
       information: [
         '    The objective of this game is to flip all cards for your team. '
             'Leaders of teams take turns giving a clue to their team which should tie different words on the board together. '
-            'A clue can be anything that has a Wikipedia page. '
-            'The timer is shared for the leader giving the clue and the leader\'s team guessing.',
+            'A clue can be anything that has a Wikipedia page. ',
+            '    The timer is shared for the leader giving the clue and the leader\'s team guessing.',
         '    If a team wins, teams that didn\'t initially start before the winning team get chance for rebuttal. In '
             'case of ties, the team that used the least time throughout the game wins.',
       ],

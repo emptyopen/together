@@ -105,7 +105,11 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
           width: 220,
           padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
           decoration: BoxDecoration(
-              border: Border.all(), borderRadius: BorderRadius.circular(20)),
+            border: Border.all(
+              color: Theme.of(context).highlightColor,
+            ),
+            borderRadius: BorderRadius.circular(20),
+          ),
           child: Column(
             children: <Widget>[
               Row(
@@ -186,31 +190,12 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
             getRoomCode(),
             SizedBox(height: 5),
             widget.userId == data['leader']
-                ? RaisedGradientButton(
-                    child: Text(
-                      'End game',
-                      style: TextStyle(fontSize: 14),
-                    ),
-                    onPressed: () {
-                      showDialog<Null>(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return EndGameDialog(
-                            game: 'Bananaphone',
-                            sessionId: widget.sessionId,
-                            winnerAlreadyDecided: true,
-                          );
-                        },
-                      );
-                    },
+                ? EndGameButton(
+                    gameName: 'Bananaphone',
+                    sessionId: widget.sessionId,
+                    fontSize: 14,
                     height: 30,
                     width: 100,
-                    gradient: LinearGradient(
-                      colors: <Color>[
-                        Color.fromARGB(255, 255, 185, 0),
-                        Color.fromARGB(255, 255, 213, 0),
-                      ],
-                    ),
                   )
                 : Container(),
           ],
@@ -244,7 +229,9 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
         constraints: BoxConstraints(maxWidth: 250),
         padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
         decoration: BoxDecoration(
-          border: Border.all(),
+          border: Border.all(
+            color: Theme.of(context).highlightColor,
+          ),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Column(
@@ -265,7 +252,9 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
       columnItems.add(Container(
           padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
           decoration: BoxDecoration(
-            border: Border.all(),
+            border: Border.all(
+              color: Theme.of(context).highlightColor,
+            ),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
@@ -277,7 +266,9 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
         Container(
           padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
           decoration: BoxDecoration(
-            border: Border.all(),
+            border: Border.all(
+              color: Theme.of(context).highlightColor,
+            ),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Column(
@@ -315,6 +306,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
 
   Widget getDrawableArea(BuildContext context) {
     return Container(
+      decoration: BoxDecoration(color: Colors.white),
       child: Center(
         child: GestureDetector(
             onPanStart: (details) {
@@ -366,7 +358,11 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
               child: Container(
                 height: 300,
                 width: 300,
-                decoration: BoxDecoration(border: Border.all()),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Theme.of(context).highlightColor,
+                  ),
+                ),
               ),
             )),
       ),
@@ -376,7 +372,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
   Widget getRoomCode() {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(),
+        border: Border.all(color: Theme.of(context).highlightColor),
         borderRadius: BorderRadius.circular(10),
       ),
       padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
@@ -505,7 +501,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
         (data['phase'] == 'draw3' && data['draw3Prompt$promptIndex'] != null)) {
       return Container(
           decoration: BoxDecoration(
-              border: Border.all(), borderRadius: BorderRadius.circular(20)),
+              border: Border.all(color: Theme.of(context).highlightColor), borderRadius: BorderRadius.circular(20)),
           padding: EdgeInsets.all(30),
           child: Text('Waiting on the slowpokes...'));
     }
@@ -513,7 +509,9 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
       width: 350,
       padding: EdgeInsets.fromLTRB(20, 20, 20, 5),
       decoration: BoxDecoration(
-        border: Border.all(),
+        border: Border.all(
+          color: Theme.of(context).highlightColor,
+        ),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
@@ -602,7 +600,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
                           width: 20,
                           decoration: BoxDecoration(
                             color: value,
-                            border: Border.all(),
+                            border: Border.all(color: Theme.of(context).highlightColor),
                             borderRadius: BorderRadius.circular(20),
                           )),
                     );
@@ -658,7 +656,10 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
               RaisedGradientButton(
                 height: 40,
                 width: 70,
-                child: Text('Submit'),
+                child: Text(
+                  'Submit',
+                  style: TextStyle(color: Colors.black),
+                ),
                 gradient: LinearGradient(
                   colors: <Color>[
                     Color.fromARGB(255, 255, 185, 0),
@@ -715,7 +716,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
             data['describe3Prompt$promptIndex'] != null)) {
       return Container(
           decoration: BoxDecoration(
-              border: Border.all(), borderRadius: BorderRadius.circular(20)),
+              border: Border.all(color: Theme.of(context).highlightColor), borderRadius: BorderRadius.circular(20)),
           padding: EdgeInsets.all(30),
           child: Text('Waiting on the slowpokes...'));
     }
@@ -1333,7 +1334,9 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
                   color: Theme.of(context).primaryColor,
                 ),
               ),
-              PageBreak(width: 150,),
+              PageBreak(
+                width: 150,
+              ),
               SizedBox(height: 20),
               Column(children: scores),
             ],
@@ -1341,34 +1344,15 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
         ),
         SizedBox(height: 20),
         widget.userId == data['leader']
-                ? RaisedGradientButton(
-                    child: Text(
-                      'End game',
-                      style: TextStyle(fontSize: 20),
-                    ),
-                    onPressed: () {
-                      showDialog<Null>(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return EndGameDialog(
-                            game: 'Bananaphone',
-                            sessionId: widget.sessionId,
-                            winnerAlreadyDecided: true,
-                          );
-                        },
-                      );
-                    },
-                    height: 40,
-                    width: 140,
-                    gradient: LinearGradient(
-                      colors: <Color>[
-                        Color.fromARGB(255, 255, 185, 0),
-                        Color.fromARGB(255, 255, 213, 0),
-                      ],
-                    ),
-                  )
-                : Container(),
-                SizedBox(height: 10),
+            ? EndGameButton(
+                gameName: 'Bananaphone',
+                sessionId: widget.sessionId,
+                fontSize: 20,
+                height: 40,
+                width: 140,
+              )
+            : Container(),
+        SizedBox(height: 10),
       ],
     );
   }

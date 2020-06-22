@@ -6,14 +6,21 @@ import 'screens/root_screen.dart';
 void main() => runApp(MyApp());
 
 // done:
-// add 'rejoin' button in main menu
-// add ability to edit time per round for abstract
-// add vibration - when it becomes your turn, when a game is starting
-// BIG: add bananaphone 
+// fix centering for main menu buttons -- not sure if I did anything
+// fixed edit rules for 
 
 // next up:
+// undo button not working in 2+ drawings 
+// FIX night mode colors
+// add bonus 1 minute to first round of abstract 
+// add rules for bananaphone 
+// ADD basis for three crowns
+// add snackbar for update name
+// add a sliding bar to show welcome / summary of games
 
 // TODO:
+// INFO: abstract, word overflow is 11 characters for iphone 10
+// add rules for three crowns
 // make lobby white on a transition (while loading data)
 // BIG: add statistics for player accounts (number of games won, etc.)
 // add scores button to view scores in bananaphone
@@ -41,6 +48,7 @@ void main() => runApp(MyApp());
 // markus@g.com  XMFwripPojYlcvagoiDEmyoxZyK2
 // maggie@g.com  h4BrcG93XgYsBcGpH7q2WySK8rd2
 // vanessa@g.com  z5SqbMUvLVb7CfSxQz4OEk9VyDE3
+// greg@gmail.com  djawU3QzVCXkLq32mlmd6W81CqK2
 
 // temp banana: UMR
 // Markus
@@ -56,15 +64,18 @@ class MyApp extends StatelessWidget {
       title: 'Together',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        // primarySwatch: Colors.lightBlue,
         primaryColor: Colors.blue[600],
         accentColor: Colors.blue[200],
+        highlightColor: Colors.black,
         fontFamily: 'Balsamiq',
         brightness: Brightness.light,
       ),
       darkTheme: ThemeData(
-        primaryColor: Colors.pinkAccent[600],
-        accentColor: Colors.pinkAccent[200],
+        primaryColor: Colors.blue[600],
+        accentColor: Colors.blue[300],
+        // primaryColor: Colors.pink[600],
+        // accentColor: Colors.pink[400],
+        highlightColor: Colors.white,
         fontFamily: 'Balsamiq',
         brightness: Brightness.dark,
       ),

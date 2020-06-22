@@ -36,7 +36,7 @@ class _HelpScreenState extends State<HelpScreen> {
         children: <Widget>[
           Text(
             widget.information[0],
-            style: TextStyle(fontSize: 18),
+            style: TextStyle(fontSize: 18, color: Colors.black,),
             textAlign: TextAlign.left,
           ),
           SizedBox(
@@ -52,14 +52,14 @@ class _HelpScreenState extends State<HelpScreen> {
       widget.information.sublist(1).forEach((f) {
         informationList.add(Text(
           f,
-          style: TextStyle(fontSize: 18),
+          style: TextStyle(fontSize: 18, color: Colors.black,),
           textAlign: TextAlign.left,
         ));
       });
     } else {
       informationList.add(Text(
         widget.information[0],
-        style: TextStyle(fontSize: 18),
+        style: TextStyle(fontSize: 18, color: Colors.black),
         textAlign: TextAlign.left,
       ));
     }
@@ -134,6 +134,7 @@ class _HelpScreenState extends State<HelpScreen> {
                                     widget.title,
                                     style: TextStyle(
                                       fontSize: 28,
+                                      color: Theme.of(context).primaryColor,
                                     ),
                                     textAlign: TextAlign.center,
                                   ),

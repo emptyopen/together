@@ -98,6 +98,9 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
+                  // counter balance for REJOIN
+                  Container(),
+                  // CREATE
                   RaisedGradientButton(
                     child: Text(
                       'Create a game',
@@ -232,7 +235,7 @@ class _LobbyDialogState extends State<LobbyDialog> {
       case 'Abstract':
         return {
           'numTeams': 2,
-          'turnTimer': '30',
+          'turnTimer': 30,
         };
         break;
       case 'Bananaphone':
@@ -240,6 +243,10 @@ class _LobbyDialogState extends State<LobbyDialog> {
           'numRounds': 2,
         };
         break;
+      case 'Three Crowns':
+        return {
+          'maxWordLength': 6,
+        };
     }
   }
 
@@ -336,6 +343,8 @@ class _LobbyDialogState extends State<LobbyDialog> {
         sessionContents['phase'] = 'draw1';
         sessionContents['round'] = 0;
         break;
+      case 'Three Crowns':
+        sessionContents['turn'] = userId;
     }
     var result =
         await Firestore.instance.collection('sessions').add(sessionContents);
@@ -440,7 +449,7 @@ class _LobbyDialogState extends State<LobbyDialog> {
 
   getDropdownWithIcon(value) {
     var icon = Icon(MdiIcons.incognito);  // default hunt
-    Color color = Colors.black;
+    Color color = Theme.of(context).highlightColor;
     switch (value) {
       case 'Abstract':
         color = Colors.green;
@@ -449,6 +458,10 @@ class _LobbyDialogState extends State<LobbyDialog> {
       case 'Bananaphone':
         color = Colors.blue;
         icon = Icon(MdiIcons.phoneSettingsOutline, color: color);
+        break;
+      case 'Three Crowns':
+        color = Colors.amber;
+        icon = Icon(MdiIcons.crown, color: color);
         break;
     }
     return Row(
@@ -485,7 +498,7 @@ class _LobbyDialogState extends State<LobbyDialog> {
                         _dropDownGame = newValue;
                       });
                     },
-                    items: <String>['The Hunt', 'Abstract', 'Bananaphone']
+                    items: <String>['The Hunt', 'Abstract', 'Bananaphone', 'Three Crowns',]
                         .map<DropdownMenuItem<String>>((String value) {
                       return DropdownMenuItem<String>(
                         value: value,

@@ -16,6 +16,7 @@ import 'package:together/services/services.dart';
 import 'package:together/screens/thehunt_screen.dart';
 import 'package:together/screens/abstract_screen.dart';
 import 'package:together/screens/bananaphone_screen.dart';
+import 'package:together/screens/three_crowns_screen.dart';
 
 class LobbyScreen extends StatefulWidget {
   LobbyScreen({Key key, this.roomCode}) : super(key: key);
@@ -105,6 +106,16 @@ class _LobbyScreenState extends State<LobbyScreen> {
               slideTransition(
                 context,
                 BananaphoneScreen(
+                  sessionId: sessionId,
+                  userId: userId,
+                  roomCode: widget.roomCode,
+                ),
+              );
+              break;
+            case 'Three Crowns':
+              slideTransition(
+                context,
+                ThreeCrownsScreen(
                   sessionId: sessionId,
                   userId: userId,
                   roomCode: widget.roomCode,
@@ -435,7 +446,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
               'timer': DateTime.now().add(
                 Duration(
                     seconds: (rules['numTeams'] == 2 ? 9 : 8) *
-                        int.parse(rules['turnTimer'])),
+                        rules['turnTimer'] + 120),
               )
             });
           } else {
@@ -479,14 +490,14 @@ class _LobbyScreenState extends State<LobbyScreen> {
           final _random = new Random();
 
           // initialize score per player
-          var scores = []; 
+          var scores = [];
           data['playerIds'].asMap().forEach((i, v) async {
             scores[i] = 0;
           });
           await Firestore.instance
-                        .collection('sessions')
-                        .document(sessionId)
-                        .updateData({'scores': scores});
+              .collection('sessions')
+              .document(sessionId)
+              .updateData({'scores': scores});
 
           // set prompts (one per player per round)
           var prompts = [];
@@ -513,7 +524,46 @@ class _LobbyScreenState extends State<LobbyScreen> {
               .collection('sessions')
               .document(sessionId)
               .updateData({'rules': rules});
-          print('updated.');
+          break;
+        case 'Three Crowns':
+          print('Setting up Bananaphone game...');
+
+          // verify that there are sufficient number of players
+          if (data['playerIds'].length < 3) {
+            setState(() {
+              startError = 'Need at least 3 players';
+            });
+            return;
+          }
+
+          // clear error if we are good to start
+          setState(() {
+            startError = '';
+          });
+
+          // initialize players' hands
+          data['playerIds'].asMap().forEach((i, v) async {
+            // generate random hand
+            await Firestore.instance
+                .collection('sessions')
+                .document(sessionId)
+                .updateData({'player${i}Hand': []});
+            await Firestore.instance
+                .collection('sessions')
+                .document(sessionId)
+                .updateData({'player${i}Tiles': []});
+            await Firestore.instance
+                .collection('sessions')
+                .document(sessionId)
+                .updateData({'player${i}Crowns': 0});
+          });
+
+          print('updating $sessionId with $rules');
+          await Firestore.instance
+              .collection('sessions')
+              .document(sessionId)
+              .updateData({'rules': rules});
+
           break;
       }
     }
@@ -612,6 +662,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
           Text('Number of rounds: ${rules['numRounds']}'),
         ]);
         break;
+      case 'Three Crowns':
+        return RulesContainer(rules: <Widget>[
+          Text('Maximum word length: ${rules['maxWordLength']}'),
+        ]);
+        break;
       default:
         return Text('Unknown game');
     }
@@ -643,10 +698,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
                           Text(
                             snapshot.data['name'],
                             style: TextStyle(
-                                fontSize: 20,
-                                color: userId == playerIds[index]
-                                    ? Theme.of(context).primaryColor
-                                    : Colors.black),
+                              fontSize: 20,
+                              color: userId == playerIds[index]
+                                  ? Theme.of(context).primaryColor
+                                  : Theme.of(context).highlightColor,
+                            ),
                           ),
                           Text(
                             playerIds[index] == data['leader']
@@ -775,7 +831,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                                 ),
                                 onPressed: () => shufflePlayers(data),
                                 height: 40,
-                                width: 150,
+                                width: 170,
                                 gradient: LinearGradient(
                                   colors: <Color>[
                                     Theme.of(context).primaryColor,
@@ -833,11 +889,12 @@ class _LobbyScreenState extends State<LobbyScreen> {
                                   'Start Game',
                                   style: TextStyle(
                                     fontSize: 20,
+                                    color: Colors.black,
                                   ),
                                 ),
                                 onPressed: () => startGame(data),
                                 height: 50,
-                                width: 150,
+                                width: 160,
                                 gradient: LinearGradient(
                                   colors: <Color>[
                                     Color.fromARGB(255, 255, 185, 0),
@@ -926,6 +983,8 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
       case 'Bananaphone':
         rules['numRounds'] = sessionData['rules']['numRounds'];
         break;
+      case 'Three Crowns':
+        rules['maxWordLength'] = sessionData['rules']['maxWordLength'];
     }
     if (widget.game == 'The Hunt') {
       getChosenLocations();
@@ -1128,7 +1187,8 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
                         rules['turnTimer'] = newValue;
                       });
                     },
-                    items: <int>[20, 30, 40, 50].map<DropdownMenuItem<int>>((int value) {
+                    items: <int>[20, 30, 40, 50]
+                        .map<DropdownMenuItem<int>>((int value) {
                       return DropdownMenuItem<int>(
                         value: value,
                         child: Text(value.toString(),
@@ -1189,6 +1249,67 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
                       });
                     },
                     items: <int>[1, 2, 3, 4, 5]
+                        .map<DropdownMenuItem<int>>((int value) {
+                      return DropdownMenuItem<int>(
+                        value: value,
+                        child: Text(value.toString(),
+                            style: TextStyle(fontFamily: 'Balsamiq')),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            Container(
+              child: FlatButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('Cancel'),
+              ),
+            ),
+            FlatButton(
+              onPressed: () {
+                updateRules();
+              },
+              child: Text('Update'),
+            )
+          ],
+        );
+        break;
+      case 'Three Crowns':
+        return AlertDialog(
+          title: Text('Edit game rules:'),
+          contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),
+          content: Container(
+            // decoration: BoxDecoration(border: Border.all()),
+            height:
+                subList2 != null ? 120 + 40 * subList1.length.toDouble() : 100,
+            width: width * 0.95,
+            child: ListView(
+              children: <Widget>[
+                SizedBox(height: 20),
+                Text('Maximum word length:'),
+                Container(
+                  width: 80,
+                  child: DropdownButton<int>(
+                    isExpanded: true,
+                    value: rules['maxWordLength'],
+                    iconSize: 24,
+                    elevation: 16,
+                    style: TextStyle(color: Theme.of(context).primaryColor),
+                    underline: Container(
+                      height: 2,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    onChanged: (int newValue) {
+                      setState(() {
+                        rules['maxWordLength'] = newValue;
+                      });
+                    },
+                    items: <int>[5, 6, 7, 8, 9, 10]
                         .map<DropdownMenuItem<int>>((int value) {
                       return DropdownMenuItem<int>(
                         value: value,

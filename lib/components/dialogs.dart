@@ -50,6 +50,15 @@ class _EndGameDialogState extends State<EndGameDialog> {
       });
       await Firestore.instance.collection('sessions').document(widget.sessionId).setData(data);
     }
+    // TODO: are any of these really necessary?
+    // if (widget.game == 'Three Crowns') {
+    //   var data = (await Firestore.instance.collection('sessions').document(widget.sessionId).get()).data;
+    //   data['playerIds'].asMap().forEach((i, val) {
+    //     data['player${i}Hand'] = [];
+    //     data['player${i}Tiles'] = []; 
+    //   });
+    //   await Firestore.instance.collection('sessions').document(widget.sessionId).setData(data);
+    // }
 
     // go to lobby or main menu 
     if (isToLobby) {
@@ -158,7 +167,7 @@ class _EndGameDialogState extends State<EndGameDialog> {
                   child: RaisedGradientButton(
                     child: Text(
                       'Lobby',
-                      style: TextStyle(fontSize: 18),
+                      style: TextStyle(fontSize: 18, color: Colors.black,),
                     ),
                     gradient: LinearGradient(
                       colors: <Color>[
@@ -175,7 +184,7 @@ class _EndGameDialogState extends State<EndGameDialog> {
                   child: RaisedGradientButton(
                     child: Text(
                       'Main Menu',
-                      style: TextStyle(fontSize: 18),
+                      style: TextStyle(fontSize: 18, color: Colors.black,),
                     ),
                     gradient: LinearGradient(
                       colors: <Color>[

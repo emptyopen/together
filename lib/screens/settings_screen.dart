@@ -19,6 +19,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   TextEditingController _newNameController = new TextEditingController();
   String currName;
   String nameError = '';
+  final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
@@ -65,6 +66,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           .document(userId)
           .updateData({'name': _newNameController.text}); 
       }
+      _scaffoldKey.currentState.showSnackBar(SnackBar(
+        content: Text('Name updated!'),
+        duration: Duration(seconds: 3),
+      ));
   }
 
   @override
@@ -76,18 +81,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
           style: TextStyle(fontFamily: 'Balsamiq'),
         ),
       ),
+      key: _scaffoldKey,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Container(
               width: 200,
-              decoration: BoxDecoration(border: Border.all(), borderRadius: BorderRadius.circular(20)),
+              decoration: BoxDecoration(border: Border.all(color: Theme.of(context).highlightColor), borderRadius: BorderRadius.circular(20)),
               padding: EdgeInsets.all(15),
               child: Column(
                 children: <Widget>[
-                  Text('Change name', style: TextStyle(fontSize: 20), textAlign: TextAlign.left,),
-                  Text('Current name: $currName', style: TextStyle(fontSize: 16, color: Colors.grey), textAlign: TextAlign.left),
+                  Text('Change name', style: TextStyle(fontSize: 20), textAlign: TextAlign.center,),
+                  Text('Current name: $currName', style: TextStyle(fontSize: 13, color: Colors.grey), textAlign: TextAlign.center),
                   SizedBox(height: 8),
                   Container(
                     height: 40,
@@ -95,10 +101,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       child: TextField(
                         controller: _newNameController,
                         decoration: InputDecoration(contentPadding: EdgeInsets.fromLTRB(10, 0, 10, 0), border: OutlineInputBorder()),
+                        textAlign: TextAlign.center,
                       ),
                     ),
                   ),
-                  SizedBox(height: 3),
+                  SizedBox(height: 10),
                   RaisedGradientButton(
                     width: 120,
                     height: 40,

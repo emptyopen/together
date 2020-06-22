@@ -83,7 +83,7 @@ class _LocationBoardState extends State<LocationBoard> {
     return Container(
       width: 280,
       decoration: BoxDecoration(
-        border: Border.all(),
+        border: Border.all(color: Theme.of(context).highlightColor),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
