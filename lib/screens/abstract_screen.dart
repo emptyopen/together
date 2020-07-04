@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:shimmer/shimmer.dart';
 import 'dart:async';
+import 'package:auto_size_text/auto_size_text.dart';
 
 import 'package:together/services/services.dart';
 import 'template/help_screen.dart';
@@ -568,9 +569,10 @@ class _AbstractScreenState extends State<AbstractScreen> {
                           Positioned.fill(
                             child: Align(
                               alignment: Alignment.center,
-                              child: Text(
+                              child: AutoSizeText(
                                 words[x]['rowWords'][y]['name'],
                                 style: TextStyle(
+                                    fontSize: 12,
                                     color: tileIsVisible &&
                                             words[x]['rowWords'][y]['color'] ==
                                                 'black'
@@ -581,9 +583,10 @@ class _AbstractScreenState extends State<AbstractScreen> {
                           ),
                         ],
                       )
-                    : Text(
+                    : AutoSizeText(
                         words[x]['rowWords'][y]['name'],
                         style: TextStyle(
+                            fontSize: 12,
                             color: tileIsVisible &&
                                     words[x]['rowWords'][y]['color'] == 'black'
                                 ? Colors.white
@@ -956,10 +959,12 @@ class _AbstractScreenState extends State<AbstractScreen> {
               children: <Widget>[
                 seconds < 0
                     ? Text('')
-                    : Text(
+                    : AutoSizeText(
                         'Remaining:   ${secondsToTimeString(seconds)}',
                         style: TextStyle(
+                          fontSize: 12,
                             color: seconds <= 30 ? Colors.red : Theme.of(context).highlightColor),
+                        maxLines: 1,
                       ),
               ],
             ),

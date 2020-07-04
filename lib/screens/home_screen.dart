@@ -9,6 +9,7 @@ import '../services/services.dart';
 import '../services/authentication.dart';
 
 import 'package:together/components/buttons.dart';
+import 'package:together/components/marquee.dart';
 
 import 'settings_screen.dart';
 import 'lobby_screen.dart';
@@ -53,6 +54,108 @@ class _HomeScreenState extends State<HomeScreen> {
       DeviceOrientation.landscapeLeft,
     ]);
     super.dispose();
+  }
+
+  getGamesMarquee() {
+    // return Text('yofskjfkdsjglidshzgkvjdxbngkjsdhfkshdkfgndskfghdsogfjndslkgjnsdklgdskjgbdksjnflskngkjsdbngkjdsbgkjdsbgjkdbsgkjbdskjgbds');
+    Color colorHunt = Theme.of(context).highlightColor;
+    Color colorAbstract = Colors.green;
+    Color colorBananaphone = Colors.blue;
+    Color colorThreeCrowns = Colors.amber;
+    double intervalLength = 50.0;
+    return Row(
+      children: <Widget>[
+        SizedBox(width: intervalLength),
+        Column(
+          children: <Widget>[
+            Icon(
+              MdiIcons.incognito,
+              color: colorHunt,
+              size: 30,
+            ),
+            SizedBox(height: 10),
+            Text(
+              'The Hunt',
+              style: TextStyle(fontSize: 18),
+            ),
+            Text(
+              'Spies vs. Citizens!',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey,
+              ),
+            ),
+          ],
+        ),
+        SizedBox(width: intervalLength),
+        Column(
+          children: <Widget>[
+            Icon(
+              MdiIcons.resistorNodes,
+              color: colorAbstract,
+              size: 30,
+            ),
+            SizedBox(height: 10),
+            Text(
+              'Abstract',
+              style: TextStyle(fontSize: 18),
+            ),
+            Text(
+              'Connect concepts!',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey,
+              ),
+            ),
+          ],
+        ),
+        SizedBox(width: intervalLength),
+        Column(
+          children: <Widget>[
+            Icon(
+              MdiIcons.phoneSettingsOutline,
+              color: colorBananaphone,
+              size: 30,
+            ),
+            SizedBox(height: 10),
+            Text(
+              'Bananaphone',
+              style: TextStyle(fontSize: 18),
+            ),
+            Text(
+              'Draw and pass it on!',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey,
+              ),
+            ),
+          ],
+        ),
+        SizedBox(width: intervalLength),
+        Column(
+          children: <Widget>[
+            Icon(
+              MdiIcons.crown,
+              color: colorThreeCrowns,
+              size: 30,
+            ),
+            SizedBox(height: 10),
+            Text(
+              'Three Crowns',
+              style: TextStyle(fontSize: 18),
+            ),
+            Text(
+              'Coming soon!',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey,
+              ),
+            ),
+          ],
+        ),
+        SizedBox(width: intervalLength),
+      ],
+    );
   }
 
   @override
@@ -100,6 +203,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: <Widget>[
                   // counter balance for REJOIN
                   Container(),
+                  // SHOW ALL GAMES
+                  Marquee(
+                    child: getGamesMarquee(),
+                    animationDuration: Duration(seconds: 10),
+                    backDuration: Duration(seconds: 10),
+                    pauseDuration: Duration(seconds: 2),
+                    directionMarguee: DirectionMarguee.TwoDirection,
+                  ),
+                  SizedBox(height: 80),
                   // CREATE
                   RaisedGradientButton(
                     child: Text(
@@ -161,7 +273,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           .document(userData['currentGame'])
                           .snapshots(),
                       builder: (context, sessionSnapshot) {
-                        if (sessionSnapshot.hasData && sessionSnapshot.data.data == null) {
+                        if (sessionSnapshot.hasData &&
+                            sessionSnapshot.data.data == null) {
                           return Container();
                         }
                         return Column(
@@ -198,6 +311,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         );
                       }),
+                  // offset for game list
+                  SizedBox(height: 50),
                 ],
               ),
             ),
@@ -241,6 +356,7 @@ class _LobbyDialogState extends State<LobbyDialog> {
       case 'Bananaphone':
         return {
           'numRounds': 2,
+          'numDrawDescribe': 2,
         };
         break;
       case 'Three Crowns':
@@ -448,7 +564,7 @@ class _LobbyDialogState extends State<LobbyDialog> {
   }
 
   getDropdownWithIcon(value) {
-    var icon = Icon(MdiIcons.incognito);  // default hunt
+    var icon = Icon(MdiIcons.incognito); // default hunt
     Color color = Theme.of(context).highlightColor;
     switch (value) {
       case 'Abstract':
@@ -468,7 +584,10 @@ class _LobbyDialogState extends State<LobbyDialog> {
       children: <Widget>[
         icon,
         SizedBox(width: 30),
-        Text(value, style: TextStyle(fontFamily: 'Balsamiq', color: color),),
+        Text(
+          value,
+          style: TextStyle(fontFamily: 'Balsamiq', color: color),
+        ),
       ],
     );
   }
@@ -498,8 +617,12 @@ class _LobbyDialogState extends State<LobbyDialog> {
                         _dropDownGame = newValue;
                       });
                     },
-                    items: <String>['The Hunt', 'Abstract', 'Bananaphone', 'Three Crowns',]
-                        .map<DropdownMenuItem<String>>((String value) {
+                    items: <String>[
+                      'The Hunt',
+                      'Abstract',
+                      'Bananaphone',
+                      'Three Crowns',
+                    ].map<DropdownMenuItem<String>>((String value) {
                       return DropdownMenuItem<String>(
                         value: value,
                         child: getDropdownWithIcon(value),

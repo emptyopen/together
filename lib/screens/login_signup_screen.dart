@@ -264,14 +264,14 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
 
   Widget showPrimaryButton() {
     return SizedBox(
-      height: 40.0,
+      height: 55.0,
       child: new RaisedButton(
         elevation: 5.0,
         shape: new RoundedRectangleBorder(
             borderRadius: new BorderRadius.circular(30.0)),
         color: Colors.blue,
         child: new Text(_isLoginForm ? 'Login' : 'Create account',
-            style: new TextStyle(fontSize: 20.0, color: Colors.white)),
+            style: new TextStyle(fontSize: 24.0, color: Colors.white)),
         onPressed: validateAndSubmit,
       ),
     );

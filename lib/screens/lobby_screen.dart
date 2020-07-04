@@ -280,6 +280,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
               words[i].add(wordToAdd);
             }
           }
+
           // functions for getting random coordinates for board size
           Random _random = new Random();
           Coords randomCoords(int boardSize) {
@@ -463,7 +464,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
               'timer': DateTime.now().add(
                 Duration(
                     seconds: (rules['numTeams'] == 2 ? 9 : 8) *
-                        int.parse(rules['turnTimer'])),
+                        rules['turnTimer']),
               )
             });
           }
@@ -474,9 +475,14 @@ class _LobbyScreenState extends State<LobbyScreen> {
           print('Setting up Bananaphone game...');
 
           // verify that there are sufficient number of players
-          if (data['playerIds'].length < 6) {
+          if ((rules['numDrawDescribe'] == 2 && data['playerIds'].length < 4) ||
+              (rules['numDrawDescribe'] == 3 && data['playerIds'].length < 6)) {
             setState(() {
-              startError = 'Need at least 6 players';
+              if (rules['numDrawDescribe'] == 2) {
+                startError = 'Need at least 4 players for 2 rounds of draw/describe';
+              } else {
+                startError = 'Need at least 6 players for 3 rounds of draw/describe';
+              }
             });
             return;
           }
@@ -492,7 +498,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
           // initialize score per player
           var scores = [];
           data['playerIds'].asMap().forEach((i, v) async {
-            scores[i] = 0;
+            scores.add(0);
+            await Firestore.instance
+                .collection('sessions')
+                .document(sessionId)
+                .updateData({'player${i}Voted': false});
           });
           await Firestore.instance
               .collection('sessions')
@@ -519,12 +529,12 @@ class _LobbyScreenState extends State<LobbyScreen> {
             prompts.add(roundPrompt.toJson());
           }
           rules['prompts'] = prompts;
-          print('updating $sessionId with $rules');
           await Firestore.instance
               .collection('sessions')
               .document(sessionId)
               .updateData({'rules': rules});
           break;
+
         case 'Three Crowns':
           print('Setting up Bananaphone game...');
 
@@ -658,9 +668,17 @@ class _LobbyScreenState extends State<LobbyScreen> {
         );
         break;
       case 'Bananaphone':
-        return RulesContainer(rules: <Widget>[
-          Text('Number of rounds: ${rules['numRounds']}'),
-        ]);
+        return Column(
+          children: <Widget>[
+            RulesContainer(rules: <Widget>[
+              Text('Number of rounds: ${rules['numRounds']}'),
+            ]),
+            SizedBox(height: 5),
+            RulesContainer(rules: <Widget>[
+              Text('Number of draw/describe: ${rules['numDrawDescribe']}'),
+            ]),
+          ],
+        );
         break;
       case 'Three Crowns':
         return RulesContainer(rules: <Widget>[
@@ -982,6 +1000,7 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
         break;
       case 'Bananaphone':
         rules['numRounds'] = sessionData['rules']['numRounds'];
+        rules['numDrawDescribe'] = sessionData['rules']['numDrawDescribe'];
         break;
       case 'Three Crowns':
         rules['maxWordLength'] = sessionData['rules']['maxWordLength'];
@@ -1223,9 +1242,7 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
           title: Text('Edit game rules:'),
           contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),
           content: Container(
-            // decoration: BoxDecoration(border: Border.all()),
-            height:
-                subList2 != null ? 120 + 40 * subList1.length.toDouble() : 100,
+            height: 180,
             width: width * 0.95,
             child: ListView(
               children: <Widget>[
@@ -1249,6 +1266,35 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
                       });
                     },
                     items: <int>[1, 2, 3, 4, 5]
+                        .map<DropdownMenuItem<int>>((int value) {
+                      return DropdownMenuItem<int>(
+                        value: value,
+                        child: Text(value.toString(),
+                            style: TextStyle(fontFamily: 'Balsamiq')),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                SizedBox(height: 20),
+                Text('Number of draw/describes:'),
+                Container(
+                  width: 80,
+                  child: DropdownButton<int>(
+                    isExpanded: true,
+                    value: rules['numDrawDescribe'],
+                    iconSize: 24,
+                    elevation: 16,
+                    style: TextStyle(color: Theme.of(context).primaryColor),
+                    underline: Container(
+                      height: 2,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    onChanged: (int newValue) {
+                      setState(() {
+                        rules['numDrawDescribe'] = newValue;
+                      });
+                    },
+                    items: <int>[2, 3]
                         .map<DropdownMenuItem<int>>((int value) {
                       return DropdownMenuItem<int>(
                         value: value,

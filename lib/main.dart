@@ -8,23 +8,27 @@ void main() => runApp(MyApp());
 // done:
 // fix centering for main menu buttons -- not sure if I did anything
 // fixed edit rules for 
-
-// next up:
-// undo button not working in 2+ drawings 
 // FIX night mode colors
-// add bonus 1 minute to first round of abstract 
-// add rules for bananaphone 
 // ADD basis for three crowns
 // add snackbar for update name
 // add a sliding bar to show welcome / summary of games
+// Check three team game for abstract
+
+// next up:
+// RUN THROUGH AN ENTIRE BANANAPHONE, many updates. - pretty close to done 
+// undo button not working in bananaphone 2nd+ drawings 
+// add rules for bananaphone 
+// add basic functionality to three crowns - show cards, play cards in duel, set up rotating duel 
+// Add ability to vote for player in The Hunt
+//  - automatically choose winner by vote or reveal 
 
 // TODO:
 // INFO: abstract, word overflow is 11 characters for iphone 10
 // add rules for three crowns
-// make lobby white on a transition (while loading data)
 // BIG: add statistics for player accounts (number of games won, etc.)
 // add scores button to view scores in bananaphone
 // BIG: add spectator mode
+// 
 // orange team needs to win when green wins for them
 // tiebreaker for abstract, with total time used as second marker
 // add timer to the hunt
