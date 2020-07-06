@@ -33,14 +33,53 @@ class _EndGameDialogState extends State<EndGameDialog> {
     // TODO: assign winner (add statistics)
 
     // clear old data
+    // TODO: update to only re-add necessary stuff
     print('flushing data...');
+    if (widget.game == 'The Hunt') {
+      var data = (await Firestore.instance
+              .collection('sessions')
+              .document(widget.sessionId)
+              .get())
+          .data;
+      var newData = {
+        'game': data['game'],
+        'leader': data['leader'],
+        'password': data['password'],
+        'accusation': {},
+        'spyRevealed': '',
+        'playerIds': data['playerIds'],
+        'roomCode': data['roomCode'],
+        'rules': {
+          'locations': data['rules']['locations'],
+          'numSpies': data['rules']['numSpies'],
+        },
+        'startTime': data['startTime'],
+        'state': data['state'],
+      };
+      await Firestore.instance
+          .collection('sessions')
+          .document(widget.sessionId)
+          .setData(newData);
+    }
     if (widget.game == 'Abstract') {
-      var data = (await Firestore.instance.collection('sessions').document(widget.sessionId).get()).data;
+      var data = (await Firestore.instance
+              .collection('sessions')
+              .document(widget.sessionId)
+              .get())
+          .data;
       data.remove('endOnNextGreen');
-      await Firestore.instance.collection('sessions').document(widget.sessionId).setData(data);
+      await Firestore.instance
+          .collection('sessions')
+          .document(widget.sessionId)
+          .setData(data);
     }
     if (widget.game == 'Bananaphone') {
-      var data = (await Firestore.instance.collection('sessions').document(widget.sessionId).get()).data;
+      var data = (await Firestore.instance
+              .collection('sessions')
+              .document(widget.sessionId)
+              .get())
+          .data;
+      var newData = {};
       data['playerIds'].asMap().forEach((i, val) {
         data.remove('draw1Prompt$i');
         data.remove('describe1Prompt$i');
@@ -48,19 +87,21 @@ class _EndGameDialogState extends State<EndGameDialog> {
         data.remove('describe2Prompt$i');
         data['phase'] = 'draw1';
       });
-      await Firestore.instance.collection('sessions').document(widget.sessionId).setData(data);
+      await Firestore.instance
+          .collection('sessions')
+          .document(widget.sessionId)
+          .setData(data);
     }
-    // TODO: are any of these really necessary?
     // if (widget.game == 'Three Crowns') {
     //   var data = (await Firestore.instance.collection('sessions').document(widget.sessionId).get()).data;
     //   data['playerIds'].asMap().forEach((i, val) {
     //     data['player${i}Hand'] = [];
-    //     data['player${i}Tiles'] = []; 
+    //     data['player${i}Tiles'] = [];
     //   });
     //   await Firestore.instance.collection('sessions').document(widget.sessionId).setData(data);
     // }
 
-    // go to lobby or main menu 
+    // go to lobby or main menu
     if (isToLobby) {
       // update session state to lobby - this automatically will trigger to lobby
       await Firestore.instance
@@ -167,7 +208,10 @@ class _EndGameDialogState extends State<EndGameDialog> {
                   child: RaisedGradientButton(
                     child: Text(
                       'Lobby',
-                      style: TextStyle(fontSize: 18, color: Colors.black,),
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.black,
+                      ),
                     ),
                     gradient: LinearGradient(
                       colors: <Color>[
@@ -184,7 +228,10 @@ class _EndGameDialogState extends State<EndGameDialog> {
                   child: RaisedGradientButton(
                     child: Text(
                       'Main Menu',
-                      style: TextStyle(fontSize: 18, color: Colors.black,),
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.black,
+                      ),
                     ),
                     gradient: LinearGradient(
                       colors: <Color>[

@@ -209,11 +209,9 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
           // add player names
           data['playerNames'] = {};
-          playerIds.forEach((val) async {
-            print('doing playerId $val');
-            data['playerNames'][val] = (await Firestore.instance.collection('users').document(val).get()).data['name'];
-            print('playerNames now ${data['playerNames']}');
-          });
+          for (int i = 0; i < playerIds.length; i++) {
+            data['playerNames'][playerIds[i]] = (await Firestore.instance.collection('users').document(playerIds[i]).get()).data['name'];
+          }
 
           // set player roles - mapping of playerId to role
           data['playerRoles'] = {};
@@ -236,8 +234,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
             i += 1;
           }
 
-          // set accused to no one
+          // set accused to noone
           data['accusation'] = {};
+
+          // set spyRevealed to noone
+          data['spyRevealed'] = '';
 
           // update data
           await Firestore.instance

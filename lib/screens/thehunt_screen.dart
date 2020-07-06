@@ -380,17 +380,21 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
   }
 
   getAccusation(data) {
-    if (data['accusation']['accuser'] == null) {
+    if (data['accusation']['accuser'] == null && data['spyRevealed'] == '') {
       return getAccuseOrReveal(data);
     }
     var mapping = data['playerNames'];
     String accuser = mapping[data['accusation']['accuser']];
     String accused = mapping[data['accusation']['accused']];
+    var spy = '';
     List<Widget> votersStatus = [];
     data['playerIds'].forEach((val) {
       if (val != data['accusation']['accuser'] &&
           val != data['accusation']['accused']) {
-        // TODO: logic for multiple spies
+        // TODO: logic for multiple spies (many sections need to be updated!)
+        if (data['playerRoles'][val] == 'spy') {
+          spy = mapping[val];
+        }
         votersStatus.add(
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -448,43 +452,8 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
           ),
           padding: EdgeInsets.all(10),
           width: 250,
-          child: data['charged'] != null
+          child: data['spyRevealed'] != ''
               ? Column(
-                  children: <Widget>[
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        Text(
-                          '$accuser ',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Color.fromARGB(255, 255, 213, 0),
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        Text(
-                          'accuses ',
-                          style: TextStyle(
-                            fontSize: 16,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        Text(
-                          '$accused!',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Color.fromARGB(255, 255, 213, 0),
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                    PageBreak(width: 50),
-                    Column(children: votersStatus)
-                    // if player should vote but hasn't, add button to vote yes or no
-                  ],
-                )
-              : Column(
                   children: <Widget>[
                     Text(
                       'Game is over!',
@@ -492,25 +461,127 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
                         fontSize: 18,
                       ),
                     ),
-                    SizedBox(height: 5),
+                    SizedBox(height: 15),
                     Text(
-                      '$accuser accused $accused,\n and everyone agreed.',
+                      '$spy',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 18,
+                      ),
+                    ),
+                    Text(
+                      'reveals themselves as the spy!\n\nThey guess location to be: ',
                       textAlign: TextAlign.center,
                     ),
-                    SizedBox(height: 5),
-                    data['playerRoles'][data['accusation']['accused']] == 'spy'
-                        ? Text(
-                            '$accused was the spy!\nCitizens win!',
-                            style: TextStyle(fontSize: 20, color: Color.fromARGB(255, 255, 213, 0)),
-                            textAlign: TextAlign.center,
+                    Text(
+                      '${data.data['spyRevealed']}',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 18,
+                      ),
+                    ),
+                    SizedBox(height: 15),
+                    data['spyRevealed'] == data['location']
+                        ? Column(
+                            children: <Widget>[
+                              Text('That\'s correct!'),
+                              Text(
+                                'Spies win!',
+                                style: TextStyle(
+                                    fontSize: 24,
+                                    color: Color.fromARGB(255, 255, 213, 0)),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
                           )
-                        : Text(
-                            '$accused was NOT the spy!\nSpies win!',
-                            style: TextStyle(fontSize: 20, color: Color.fromARGB(255, 255, 213, 0)),
-                            textAlign: TextAlign.center,
+                        : Column(
+                            children: <Widget>[
+                              Text('Unfortunately, incorrect!'),
+                              Text(
+                                'The correct location is: ${data['location']}',
+                                style: TextStyle(
+                                  color: Colors.red,
+                                ),
+                              ),
+                              Text(
+                                'Citizens win!',
+                                style: TextStyle(
+                                    fontSize: 24,
+                                    color: Color.fromARGB(255, 255, 213, 0)),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
                           ),
                   ],
-                ),
+                )
+              : !data.data['accusation'].containsKey('charged')
+                  ? Column(
+                      children: <Widget>[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            Text(
+                              '$accuser ',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Color.fromARGB(255, 255, 213, 0),
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            Text(
+                              'accuses ',
+                              style: TextStyle(
+                                fontSize: 16,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            Text(
+                              '$accused!',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Color.fromARGB(255, 255, 213, 0),
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                        PageBreak(width: 50),
+                        Column(children: votersStatus)
+                        // if player should vote but hasn't, add button to vote yes or no
+                      ],
+                    )
+                  : Column(
+                      children: <Widget>[
+                        Text(
+                          'Game is over!',
+                          style: TextStyle(
+                            fontSize: 18,
+                          ),
+                        ),
+                        SizedBox(height: 5),
+                        Text(
+                          '$accuser accused $accused,\n and everyone agreed.',
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: 5),
+                        data['playerRoles'][data['accusation']['accused']] ==
+                                'spy'
+                            ? Text(
+                                '$accused was the spy!\nCitizens win!',
+                                style: TextStyle(
+                                    fontSize: 20,
+                                    color: Color.fromARGB(255, 255, 213, 0)),
+                                textAlign: TextAlign.center,
+                              )
+                            : Text(
+                                '$accused was NOT the spy!\nSpies win!',
+                                style: TextStyle(
+                                    fontSize: 20,
+                                    color: Color.fromARGB(255, 255, 213, 0)),
+                                textAlign: TextAlign.center,
+                              ),
+                      ],
+                    ),
         ),
         userNeedsToVote
             ? Column(
@@ -636,18 +707,22 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
                       SizedBox(height: 50),
-                      getTurn(context, data),
+                      !data['accusation'].containsKey('charged')
+                          ? getTurn(context, data)
+                          : Container(),
                       SizedBox(height: 20),
                       getRoleButton(data),
                       SizedBox(height: 20),
                       getAccusation(data),
                       SizedBox(height: 20),
-                      LocationBoard(
-                        subList1: subList1,
-                        subList2: subList2,
-                        strikethroughs: strikethroughs,
-                        callback: fakeCallback,
-                      ),
+                      !data['accusation'].containsKey('charged')
+                          ? LocationBoard(
+                              subList1: subList1,
+                              subList2: subList2,
+                              strikethroughs: strikethroughs,
+                              callback: fakeCallback,
+                            )
+                          : Container(),
                       SizedBox(
                         height: 20,
                       ),
@@ -718,36 +793,54 @@ class RevealDialog extends StatefulWidget {
 }
 
 class _RevealDialogState extends State<RevealDialog> {
-  String _guessedLocation;
+  String _guessedLocation = '';
+
+  reveal() async {
+    await Firestore.instance
+        .collection('sessions')
+        .document(widget.sessionId)
+        .updateData({'spyRevealed': _guessedLocation});
+  }
 
   @override
   Widget build(BuildContext context) {
+    List<String> possibleLocations = [''];
+    widget.data['rules']['locations'].forEach((v) {
+      possibleLocations.add(v);
+    });
     return AlertDialog(
       title: Text('Reveal yourself and guess the location!'),
       content: Container(
-        height: 140.0,
-        width: 100.0,
-        child: DropdownButton<String>(
-          value: _guessedLocation,
-          iconSize: 24,
-          elevation: 16,
-          style: TextStyle(color: Theme.of(context).primaryColor),
-          underline: Container(
-            height: 2,
-            color: Theme.of(context).primaryColor,
+        height: 60.0,
+        decoration: BoxDecoration(
+            border: Border.all(color: Theme.of(context).highlightColor)),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            value: _guessedLocation,
+            iconSize: 24,
+            elevation: 16,
+            style: TextStyle(color: Theme.of(context).primaryColor),
+            underline: Container(
+              height: 2,
+              color: Theme.of(context).primaryColor,
+            ),
+            onChanged: (String newValue) {
+              setState(() {
+                _guessedLocation = newValue;
+              });
+            },
+            items:
+                possibleLocations.map<DropdownMenuItem<String>>((String value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(
+                  '   ' + value,
+                  style: TextStyle(
+                      fontSize: 18, color: Theme.of(context).highlightColor),
+                ),
+              );
+            }).toList(),
           ),
-          onChanged: (String newValue) {
-            setState(() {
-              _guessedLocation = newValue;
-            });
-          },
-          items: widget.data['rules']['locations']
-              .map<DropdownMenuItem<String>>((String value) {
-            return DropdownMenuItem<String>(
-              value: value,
-              child: Text(value),
-            );
-          }).toList(),
         ),
       ),
       actions: <Widget>[
@@ -759,7 +852,13 @@ class _RevealDialogState extends State<RevealDialog> {
         // This button results in adding the contact to the database
         FlatButton(
             onPressed: () {
-              print('will update accuse');
+              if (_guessedLocation == '') {
+                // TODO: add error for blank submission
+                print('error');
+              } else {
+                reveal();
+                Navigator.of(context).pop();
+              }
             },
             child: Text('Reveal'))
       ],
@@ -802,7 +901,6 @@ class _AccuseDialogState extends State<AccuseDialog> {
         accusablePlayers.add(v);
       }
     });
-    print(accusablePlayers);
     return AlertDialog(
       title: Text('Accuse someone of being the spy!'),
       content: Container(
@@ -848,7 +946,6 @@ class _AccuseDialogState extends State<AccuseDialog> {
             child: const Text("Cancel")),
         FlatButton(
             onPressed: () {
-              print('hey $_accusedPlayer');
               if (_accusedPlayer == '') {
                 // TODO: add error for blank submission
                 print('error');
