@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'dart:math';
 import 'package:flutter/services.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
@@ -56,103 +55,148 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  getGamesMarquee() {
-    // return Text('yofskjfkdsjglidshzgkvjdxbngkjsdhfkshdkfgndskfghdsogfjndslkgjnsdklgdskjgbdksjnflskngkjsdbngkjdsbgkjdsbgjkdbsgkjbdskjgbds');
+  getGamesMarquee(BuildContext context) {
     Color colorHunt = Theme.of(context).highlightColor;
     Color colorAbstract = Colors.green;
     Color colorBananaphone = Colors.blue;
     Color colorThreeCrowns = Colors.amber;
-    double intervalLength = 50.0;
+    double intervalLength = 35.0;
     return Row(
       children: <Widget>[
         SizedBox(width: intervalLength),
-        Column(
-          children: <Widget>[
-            Icon(
-              MdiIcons.incognito,
-              color: colorHunt,
-              size: 30,
+        Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).dividerColor,
+            border: Border.all(color: Theme.of(context).highlightColor),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          padding: EdgeInsets.all(15),
+          child: GestureDetector(
+            onTap: () {
+              createGame(context, 'The Hunt', '', false);
+            },
+            child: Column(
+              children: <Widget>[
+                Icon(
+                  MdiIcons.incognito,
+                  color: colorHunt,
+                  size: 30,
+                ),
+                SizedBox(height: 10),
+                Text(
+                  'The Hunt',
+                  style: TextStyle(fontSize: 18),
+                ),
+                Text(
+                  'Spies vs. Citizens!',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
             ),
-            SizedBox(height: 10),
-            Text(
-              'The Hunt',
-              style: TextStyle(fontSize: 18),
-            ),
-            Text(
-              'Spies vs. Citizens!',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
-              ),
-            ),
-          ],
+          ),
         ),
         SizedBox(width: intervalLength),
-        Column(
-          children: <Widget>[
-            Icon(
-              MdiIcons.resistorNodes,
-              color: colorAbstract,
-              size: 30,
+        Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).dividerColor,
+              border: Border.all(color: Theme.of(context).highlightColor),
+              borderRadius: BorderRadius.circular(20),
             ),
-            SizedBox(height: 10),
-            Text(
-              'Abstract',
-              style: TextStyle(fontSize: 18),
-            ),
-            Text(
-              'Connect concepts!',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
-              ),
-            ),
-          ],
-        ),
+            padding: EdgeInsets.all(15),
+            child: GestureDetector(
+                onTap: () {
+                  createGame(context, 'Abstract', '', false);
+                },
+                child: Column(
+                  children: <Widget>[
+                    Icon(
+                      MdiIcons.resistorNodes,
+                      color: colorAbstract,
+                      size: 30,
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      'Abstract',
+                      style: TextStyle(fontSize: 18),
+                    ),
+                    Text(
+                      'Connect concepts!',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ))),
         SizedBox(width: intervalLength),
-        Column(
-          children: <Widget>[
-            Icon(
-              MdiIcons.phoneSettingsOutline,
-              color: colorBananaphone,
-              size: 30,
+        Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).dividerColor,
+              border: Border.all(color: Theme.of(context).highlightColor),
+              borderRadius: BorderRadius.circular(20),
             ),
-            SizedBox(height: 10),
-            Text(
-              'Bananaphone',
-              style: TextStyle(fontSize: 18),
-            ),
-            Text(
-              'Draw and pass it on!',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
-              ),
-            ),
-          ],
-        ),
+            padding: EdgeInsets.all(15),
+            child: GestureDetector(
+                onTap: () {
+                  createGame(context, 'Bananaphone', '', false);
+                },
+                child: Column(
+                  children: <Widget>[
+                    Icon(
+                      MdiIcons.phoneSettingsOutline,
+                      color: colorBananaphone,
+                      size: 30,
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      'Bananaphone',
+                      style: TextStyle(fontSize: 18),
+                    ),
+                    Text(
+                      'Draw and pass it on!',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ))),
         SizedBox(width: intervalLength),
-        Column(
-          children: <Widget>[
-            Icon(
-              MdiIcons.crown,
-              color: colorThreeCrowns,
-              size: 30,
+        Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).dividerColor,
+              border: Border.all(color: Theme.of(context).highlightColor),
+              borderRadius: BorderRadius.circular(20),
             ),
-            SizedBox(height: 10),
-            Text(
-              'Three Crowns',
-              style: TextStyle(fontSize: 18),
-            ),
-            Text(
-              'Coming soon!',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
-              ),
-            ),
-          ],
-        ),
+            padding: EdgeInsets.all(15),
+            child: GestureDetector(
+                onTap: () {
+                  createGame(context, 'Three Crowns', '', false);
+                },
+                child: Column(
+                  children: <Widget>[
+                    Icon(
+                      MdiIcons.crown,
+                      color: colorThreeCrowns,
+                      size: 30,
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      'Three Crowns',
+                      style: TextStyle(fontSize: 18),
+                    ),
+                    Text(
+                      'Coming soon!',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ))),
         SizedBox(width: intervalLength),
       ],
     );
@@ -204,14 +248,29 @@ class _HomeScreenState extends State<HomeScreen> {
                   // counter balance for REJOIN
                   Container(),
                   // SHOW ALL GAMES
+                  Text(
+                    'Quick Start',
+                    style: TextStyle(
+                      fontSize: 20,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  Text(
+                    '* no password',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  SizedBox(height: 15),
                   Marquee(
-                    child: getGamesMarquee(),
+                    child: getGamesMarquee(context),
                     animationDuration: Duration(seconds: 10),
                     backDuration: Duration(seconds: 10),
                     pauseDuration: Duration(seconds: 2),
                     directionMarguee: DirectionMarguee.TwoDirection,
                   ),
-                  SizedBox(height: 80),
+                  SizedBox(height: 40),
                   // CREATE
                   RaisedGradientButton(
                     child: Text(
@@ -338,151 +397,6 @@ class _LobbyDialogState extends State<LobbyDialog> {
   String _roomCode = '';
   bool isFormError = false;
   String formError = '';
-
-  getDefaultRules(String gameName) {
-    switch (gameName) {
-      case 'The Hunt':
-        return {
-          'locations': ['Casino', 'Pirate Ship', 'Coal Mine', 'University'],
-          'numSpies': 1,
-        };
-        break;
-      case 'Abstract':
-        return {
-          'numTeams': 2,
-          'turnTimer': 30,
-        };
-        break;
-      case 'Bananaphone':
-        return {
-          'numRounds': 2,
-          'numDrawDescribe': 2,
-        };
-        break;
-      case 'Three Crowns':
-        return {
-          'maxWordLength': 6,
-        };
-    }
-  }
-
-  checkUserInGame({String userId, String sessionId = ''}) async {
-    // check if player has currentGame (that is not this game). if so, remove player from currentGame
-    var userData =
-        (await Firestore.instance.collection('users').document(userId).get())
-            .data;
-    if (userData.containsKey('currentGame')) {
-      print('user is still in game ${userData['currentGame']}, will remove');
-      var session = await Firestore.instance
-          .collection('sessions')
-          .document(userData['currentGame'])
-          .get();
-      var sessionData = session.data;
-
-      // if old game still exists and is not this game
-      if (sessionData != null &&
-          (sessionId == '' || sessionId != session.documentID)) {
-        // remove user from playerIds in old game
-        await Firestore.instance
-            .collection('sessions')
-            .document(userData['currentGame'])
-            .updateData({
-          'playerIds': FieldValue.arrayRemove([userId])
-        });
-        // check if room is empty, if so, delete session
-        var playerIds = (await Firestore.instance
-                .collection('sessions')
-                .document(userData['currentGame'])
-                .get())
-            .data['playerIds'];
-        if (playerIds.length == 0) {
-          await Firestore.instance
-              .collection('sessions')
-              .document(userData['currentGame'])
-              .delete();
-        }
-      }
-    } else {
-      print('user is not in another game, no problem');
-    }
-  }
-
-  createGame(String game, String password) async {
-    final _rnd = Random();
-    final letters = 'ABCDEFGHJKMNPQRSTUVWXYZ';
-    String randLetter() => letters[_rnd.nextInt(letters.length)];
-    String randRoomCode() => randLetter() + randLetter() + randLetter();
-    _roomCode = randRoomCode();
-
-    // check that room code doesn't exist
-    bool roomCodeExists = true;
-    while (roomCodeExists) {
-      await Firestore.instance
-          .collection('sessions')
-          .where('roomCode', isEqualTo: _roomCode)
-          .getDocuments()
-          .then((event) async {
-        if (event.documents.isEmpty) {
-          roomCodeExists = false;
-        } else {
-          _roomCode = randRoomCode();
-        }
-      }).catchError((e) => print('error fetching data: $e'));
-    }
-
-    // remove user from old game
-    final userId = (await FirebaseAuth.instance.currentUser()).uid;
-    checkUserInGame(userId: userId);
-
-    // define initial rules per game
-    Map<String, dynamic> defaultRules = getDefaultRules(game);
-
-    var sessionContents = {
-      'game': game,
-      'rules': defaultRules,
-      'password': password,
-      'roomCode': _roomCode,
-      'playerIds': [userId],
-      'state': 'lobby',
-      'leader': userId,
-      'dateCreated': DateTime.now(),
-      'setupComplete': false,
-    };
-    switch (game) {
-      case 'The Hunt':
-        sessionContents['turn'] = userId;
-        break;
-      case 'Abstract':
-        sessionContents['turn'] = 'green';
-        break;
-      case 'Bananaphone':
-        sessionContents['phase'] = 'draw1';
-        sessionContents['round'] = 0;
-        break;
-      case 'Three Crowns':
-        sessionContents['turn'] = userId;
-    }
-    var result =
-        await Firestore.instance.collection('sessions').add(sessionContents);
-
-    // update user's current game
-    await Firestore.instance
-        .collection('users')
-        .document(userId)
-        .updateData({'currentGame': result.documentID});
-
-    // vibrate
-    HapticFeedback.vibrate();
-
-    // navigate to lobby
-    Navigator.of(context).pop();
-    slideTransition(
-      context,
-      LobbyScreen(
-        roomCode: _roomCode.toUpperCase(),
-      ),
-    );
-  }
 
   joinGame(String roomCode, String password) async {
     roomCode = roomCode.toUpperCase();
@@ -672,7 +586,8 @@ class _LobbyDialogState extends State<LobbyDialog> {
             onPressed: () {
               widget.isJoin
                   ? joinGame(_roomCodeController.text, _passwordController.text)
-                  : createGame(_dropDownGame, _passwordController.text);
+                  : createGame(
+                      context, _dropDownGame, _passwordController.text, true);
             },
             child: Text('Confirm'))
       ],

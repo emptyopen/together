@@ -6,19 +6,21 @@ import 'screens/root_screen.dart';
 void main() => runApp(MyApp());
 
 // done:
+// Added ability to vote for player in The Hunt
+
+// Add quickstart option in main menu
 
 // next up:
 // RUN THROUGH AN ENTIRE BANANAPHONE, many updates. - pretty close to done 
 // undo button not working in bananaphone 2nd+ drawings 
 // add rules for bananaphone 
 // add basic functionality to three crowns - show cards, play cards in duel, set up rotating duel 
-// Add ability to vote for player in The Hunt
 //  - automatically choose winner by vote or reveal 
 
 // TODO:
 // INFO: abstract, word overflow is 11 characters for iphone 10
 // add rules for three crowns
-// will need support in The Hunt for more than one spy in terms of moving turns around 
+// will need support in The Hunt for more than one spy - many changes
 // BIG: add statistics for player accounts (number of games won, etc.)
 // add scores button to view scores in bananaphone
 // BIG: add spectator mode
