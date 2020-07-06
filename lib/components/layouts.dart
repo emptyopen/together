@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 
 import 'package:together/components/misc.dart';
 
@@ -22,7 +23,14 @@ class LocationBoard extends StatefulWidget {
 }
 
 class _LocationBoardState extends State<LocationBoard> {
-  Widget getListWidgets(List<dynamic> strings, int columnIndex) {
+
+  Widget getListWidgets(List<dynamic> strings, int columnIndex, double screenWidth) {
+    double smallFontSize = 13;
+    double largeFontSize = 16;
+    if (screenWidth < 380) {
+      smallFontSize = 10;
+      largeFontSize = 13;
+    }
     return Column(
         children: strings
             .asMap()
@@ -41,10 +49,10 @@ class _LocationBoardState extends State<LocationBoard> {
                     child: FlatButton(
                       splashColor: Color.fromARGB(0, 1, 1, 1),
                       highlightColor: Color.fromARGB(0, 1, 1, 1),
-                      child: Text(
+                      child: AutoSizeText(
                         entry.value,
                         style: TextStyle(
-                          fontSize: widget.contentsOnly ? 13 : 16,
+                          fontSize: widget.contentsOnly ? smallFontSize : largeFontSize,
                           color: widget.strikethroughs[columnIndex]
                                   [entry.key] ? Colors.white : Colors.black,
                           decoration: widget.strikethroughs[columnIndex]
@@ -71,17 +79,18 @@ class _LocationBoardState extends State<LocationBoard> {
 
   @override
   Widget build(BuildContext context) {
+    var width = MediaQuery.of(context).size.width;
     if (widget.contentsOnly) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: <Widget>[
-          getListWidgets(widget.subList1, 0),
-          getListWidgets(widget.subList2, 1),
+          getListWidgets(widget.subList1, 0, width),
+          getListWidgets(widget.subList2, 1, width),
         ],
       );
     }
     return Container(
-      width: 280,
+      width: width * 0.8,
       decoration: BoxDecoration(
         border: Border.all(color: Theme.of(context).highlightColor),
         borderRadius: BorderRadius.circular(20),
@@ -99,8 +108,8 @@ class _LocationBoardState extends State<LocationBoard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: <Widget>[
-              getListWidgets(widget.subList1, 0),
-              getListWidgets(widget.subList2, 1),
+              getListWidgets(widget.subList1, 0, width),
+              getListWidgets(widget.subList2, 1, width),
             ],
           ),
         ],

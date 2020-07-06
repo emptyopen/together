@@ -6,13 +6,6 @@ import 'screens/root_screen.dart';
 void main() => runApp(MyApp());
 
 // done:
-// fix centering for main menu buttons -- not sure if I did anything
-// fixed edit rules for 
-// FIX night mode colors
-// ADD basis for three crowns
-// add snackbar for update name
-// add a sliding bar to show welcome / summary of games
-// Check three team game for abstract
 
 // next up:
 // RUN THROUGH AN ENTIRE BANANAPHONE, many updates. - pretty close to done 
@@ -25,10 +18,10 @@ void main() => runApp(MyApp());
 // TODO:
 // INFO: abstract, word overflow is 11 characters for iphone 10
 // add rules for three crowns
+// will need support in The Hunt for more than one spy in terms of moving turns around 
 // BIG: add statistics for player accounts (number of games won, etc.)
 // add scores button to view scores in bananaphone
 // BIG: add spectator mode
-// 
 // orange team needs to win when green wins for them
 // tiebreaker for abstract, with total time used as second marker
 // add timer to the hunt

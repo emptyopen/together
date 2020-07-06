@@ -201,41 +201,50 @@ class _LobbyScreenState extends State<LobbyScreen> {
           var possibleLocations = data['rules']['locations'];
           var location =
               possibleLocations[_random.nextInt(possibleLocations.length)];
-          print('location is $location');
+          data['location'] = location;
 
           // randomize player order
           var playerIds = data['playerIds'];
           playerIds.shuffle();
 
-          // set spies
+          // add player names
+          data['playerNames'] = {};
+          playerIds.forEach((val) async {
+            print('doing playerId $val');
+            data['playerNames'][val] = (await Firestore.instance.collection('users').document(val).get()).data['name'];
+            print('playerNames now ${data['playerNames']}');
+          });
+
+          // set player roles - mapping of playerId to role
+          data['playerRoles'] = {};
+          // spies
           int numSpies = data['rules']['numSpies'];
           var i = 0;
           while (i < numSpies) {
-            print('spy is ${playerIds[i]}');
-            await Firestore.instance
-                .collection('users')
-                .document(playerIds[i])
-                .updateData({'huntRole': 'spy', 'huntLocation': location});
+            data['playerRoles'][playerIds[i]] = 'spy';
             i += 1;
           }
-
-          // set other roles
+          // citizens
           List<dynamic> possibleRoles = (await Firestore.instance
                   .collection('locations')
                   .document(location)
                   .get())
               .data['roles'];
           while (i < playerIds.length) {
-            print('player ${playerIds[i]} is not spy');
-            await Firestore.instance
-                .collection('users')
-                .document(playerIds[i])
-                .updateData({
-              'huntRole': possibleRoles[_random.nextInt(possibleRoles.length)],
-              'huntLocation': location,
-            });
+            data['playerRoles'][playerIds[i]] =
+                possibleRoles[_random.nextInt(possibleRoles.length)];
             i += 1;
           }
+
+          // set accused to no one
+          data['accusation'] = {};
+
+          // update data
+          await Firestore.instance
+              .collection('sessions')
+              .document(sessionId)
+              .setData(data);
+
           break;
 
         case 'Abstract':
@@ -446,8 +455,9 @@ class _LobbyScreenState extends State<LobbyScreen> {
               'orangeStart': DateTime.now(),
               'timer': DateTime.now().add(
                 Duration(
-                    seconds: (rules['numTeams'] == 2 ? 9 : 8) *
-                        rules['turnTimer'] + 120),
+                    seconds:
+                        (rules['numTeams'] == 2 ? 9 : 8) * rules['turnTimer'] +
+                            120),
               )
             });
           } else {
@@ -463,8 +473,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
               'purpleStart': DateTime.now(),
               'timer': DateTime.now().add(
                 Duration(
-                    seconds: (rules['numTeams'] == 2 ? 9 : 8) *
-                        rules['turnTimer']),
+                    seconds:
+                        (rules['numTeams'] == 2 ? 9 : 8) * rules['turnTimer']),
               )
             });
           }
@@ -479,9 +489,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
               (rules['numDrawDescribe'] == 3 && data['playerIds'].length < 6)) {
             setState(() {
               if (rules['numDrawDescribe'] == 2) {
-                startError = 'Need at least 4 players for 2 rounds of draw/describe';
+                startError =
+                    'Need at least 4 players for 2 rounds of draw/describe';
               } else {
-                startError = 'Need at least 6 players for 3 rounds of draw/describe';
+                startError =
+                    'Need at least 6 players for 3 rounds of draw/describe';
               }
             });
             return;
@@ -600,10 +612,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
     return Column(
       children: <Widget>[
         Text(
-          (startTime == null || _now == null) &&
-                  startTime.difference(_now).inSeconds < 0
-              ? ''
-              : 'Game is starting in ${startTime.difference(_now).inSeconds}',
+          'Game is starting in ${startTime.difference(_now).inSeconds}',
           style: TextStyle(
             color: Theme.of(context).primaryColor,
             fontSize: 24,
@@ -768,6 +777,18 @@ class _LobbyScreenState extends State<LobbyScreen> {
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(
+            '$gameName: Lobby',
+          ),
+        ),
+        body: Container(),
+      );
+    }
+    // TODO: check if this is working
+    if ((startTime != null && _now != null) &&
+        startTime.difference(_now).inSeconds < 0) {
       return Scaffold(
         appBar: AppBar(
           title: Text(
@@ -1294,8 +1315,7 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
                         rules['numDrawDescribe'] = newValue;
                       });
                     },
-                    items: <int>[2, 3]
-                        .map<DropdownMenuItem<int>>((int value) {
+                    items: <int>[2, 3].map<DropdownMenuItem<int>>((int value) {
                       return DropdownMenuItem<int>(
                         value: value,
                         child: Text(value.toString(),

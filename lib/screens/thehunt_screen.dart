@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 
 import 'package:together/components/misc.dart';
 import 'package:together/components/layouts.dart';
-import 'package:together/components/dialogs.dart';
 import 'package:together/services/services.dart';
 import 'template/help_screen.dart';
 import 'lobby_screen.dart';
@@ -22,14 +21,12 @@ class TheHuntScreen extends StatefulWidget {
 }
 
 class _TheHuntScreenState extends State<TheHuntScreen> {
-  // List<dynamic> possibleLocations;
   List<dynamic> subList1;
   List<dynamic> subList2;
   List<List<bool>> strikethroughs;
-  String userRole;
-  String location;
   bool roleIsVisible = false;
   String currPlayer = '';
+  final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
@@ -61,8 +58,6 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
   }
 
   checkIfVibrate(data) {
-    print('yoyoyo $data');
-    print(data.data);
     if (currPlayer != data['turn']) {
       currPlayer = data['turn'];
       if (currPlayer == widget.userId) {
@@ -85,17 +80,6 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
       List.filled(subList1.length, false),
       List.filled(subList2.length, false),
     ];
-
-    // get user role
-    var userData = (await Firestore.instance
-            .collection('users')
-            .document(widget.userId)
-            .get())
-        .data;
-    setState(() {
-      userRole = userData['huntRole'];
-      location = userData['huntLocation'];
-    });
   }
 
   updateTurn() async {
@@ -188,21 +172,407 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
                         'End my turn',
                         style: TextStyle(fontSize: 18),
                       ),
-                      onPressed: updateTurn,
+                      onPressed: () {
+                        if (data['accusation']['accuser'] == null) {
+                          updateTurn();
+                        } else {
+                          _scaffoldKey.currentState.showSnackBar(SnackBar(
+                            content:
+                                Text('Can\'t end turn during an accusation!'),
+                            duration: Duration(seconds: 3),
+                          ));
+                          print('snackbar for ongoing accusation');
+                        }
+                      },
                       height: 40,
                       width: 180,
-                      gradient: LinearGradient(
-                        colors: <Color>[
-                          Theme.of(context).primaryColor,
-                          Theme.of(context).accentColor,
-                        ],
-                      ),
+                      gradient: data['accusation']['accuser'] == null
+                          ? LinearGradient(
+                              colors: <Color>[
+                                Theme.of(context).primaryColor,
+                                Theme.of(context).accentColor,
+                              ],
+                            )
+                          : LinearGradient(
+                              colors: <Color>[
+                                Colors.grey[600],
+                                Colors.grey[500],
+                              ],
+                            ),
                     )
                   : Container(),
             ],
           ),
         );
       },
+    );
+  }
+
+  getRoleButton(data) {
+    return FlatButton(
+      splashColor: Color.fromARGB(0, 1, 1, 1),
+      highlightColor: Color.fromARGB(0, 1, 1, 1),
+      onPressed: () {
+        setState(() {
+          roleIsVisible = !roleIsVisible;
+        });
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: Theme.of(context).highlightColor),
+          borderRadius: BorderRadius.circular(20),
+          color: Theme.of(context).primaryColor,
+        ),
+        padding: EdgeInsets.all(10),
+        width: 250,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Text(
+              roleIsVisible ? '(Tap to hide role)' : 'Tap to show role',
+              style: TextStyle(
+                  fontSize: roleIsVisible ? 16 : 20,
+                  color: roleIsVisible ? Colors.grey[400] : Colors.white),
+            ),
+            roleIsVisible
+                ? SizedBox(
+                    height: 10,
+                  )
+                : Container(),
+            roleIsVisible
+                ? data['playerRoles'][widget.userId] == 'spy'
+                    ? Column(
+                        children: <Widget>[
+                          Text(
+                            'You are the spy!',
+                            style: TextStyle(fontSize: 22, color: Colors.white),
+                            textAlign: TextAlign.center,
+                          ),
+                          Text(
+                            '(Try and figure out the location!)',
+                            style: TextStyle(
+                                fontSize: 14, color: Colors.grey[300]),
+                            textAlign: TextAlign.center,
+                          )
+                        ],
+                      )
+                    : Column(
+                        children: <Widget>[
+                          Text(
+                            'Location:',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey[400],
+                            ),
+                          ),
+                          Text(
+                            '${data['location']}',
+                            style: TextStyle(
+                              fontSize: 20,
+                              color: Colors.white,
+                            ),
+                          ),
+                          SizedBox(height: 10),
+                          Text(
+                            'Your role:',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey[400],
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          Text(
+                            '${data['playerRoles'][widget.userId]}',
+                            style: TextStyle(
+                              fontSize: 20,
+                              color: Colors.white,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      )
+                : Container(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  addVoteToAccusation(data, vote) async {
+    var accusation = (await Firestore.instance
+            .collection('sessions')
+            .document(widget.sessionId)
+            .get())
+        .data['accusation'];
+    accusation[widget.userId] = vote;
+    // check if all votes are in (need to add logic for more than one spy)
+    bool allPlayersVoted = true;
+    bool allPlayersVotedGuilty = true;
+    data['playerIds'].forEach((val) {
+      if (val != accusation['accuser'] && val != accusation['accused']) {
+        if (accusation[val] == '') {
+          allPlayersVoted = false;
+        } else if (accusation[val] == 'no') {
+          allPlayersVotedGuilty = false;
+        }
+      }
+    });
+    if (allPlayersVoted) {
+      if (allPlayersVotedGuilty) {
+        // game is over
+        accusation['charged'] = accusation['accused'];
+      } else {
+        // delete the accusation and temporarily notify
+        accusation = {
+          'lastAccused': accusation['accused'],
+          'accusationComplete': DateTime.now(),
+        };
+      }
+    }
+    await Firestore.instance
+        .collection('sessions')
+        .document(widget.sessionId)
+        .updateData({'accusation': accusation});
+  }
+
+  getAccuseOrReveal(data) {
+    return FlatButton(
+      splashColor: Color.fromARGB(0, 1, 1, 1),
+      highlightColor: Color.fromARGB(0, 1, 1, 1),
+      onPressed: () {
+        if (data['playerRoles'][widget.userId] == 'spy') {
+          showDialog<Null>(
+            context: context,
+            builder: (BuildContext context) {
+              return RevealDialog(data: data, sessionId: widget.sessionId);
+            },
+          );
+        } else {
+          showDialog<Null>(
+            context: context,
+            builder: (BuildContext context) {
+              return AccuseDialog(
+                  data: data,
+                  userId: widget.userId,
+                  sessionId: widget.sessionId);
+            },
+          );
+        }
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: Theme.of(context).highlightColor),
+          borderRadius: BorderRadius.circular(20),
+          color: Color.fromARGB(255, 255, 213, 0),
+        ),
+        padding: EdgeInsets.all(10),
+        width: 160,
+        child: Text(
+          'I know!',
+          style: TextStyle(
+            fontSize: 20,
+            color: Colors.black,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+
+  getAccusation(data) {
+    if (data['accusation']['accuser'] == null) {
+      return getAccuseOrReveal(data);
+    }
+    var mapping = data['playerNames'];
+    String accuser = mapping[data['accusation']['accuser']];
+    String accused = mapping[data['accusation']['accused']];
+    List<Widget> votersStatus = [];
+    data['playerIds'].forEach((val) {
+      if (val != data['accusation']['accuser'] &&
+          val != data['accusation']['accused']) {
+        // TODO: logic for multiple spies
+        votersStatus.add(
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Text(
+                '${mapping[val]}:  ',
+                style: TextStyle(
+                  fontSize: 14,
+                ),
+              ),
+              data['accusation'][val] == ''
+                  ? Text(
+                      'waiting',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey,
+                      ),
+                    )
+                  : data['accusation'][val] == 'yes'
+                      ? Text(
+                          'YES',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.green,
+                          ),
+                        )
+                      : Text(
+                          'NO',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.red,
+                          ),
+                        ),
+            ],
+          ),
+        );
+      }
+    });
+    // check if user needs to vote
+    bool userNeedsToVote = false;
+    if (widget.userId != data['accusation']['accuser'] &&
+        widget.userId != data['accusation']['accused']) {
+      // user is not accuser or accused
+      if (data['accusation'][widget.userId] == '') {
+        userNeedsToVote = true;
+      }
+    }
+    return Column(
+      children: <Widget>[
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Theme.of(context).highlightColor),
+            borderRadius: BorderRadius.circular(20),
+            color: Colors.grey[700],
+          ),
+          padding: EdgeInsets.all(10),
+          width: 250,
+          child: data['charged'] != null
+              ? Column(
+                  children: <Widget>[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        Text(
+                          '$accuser ',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Color.fromARGB(255, 255, 213, 0),
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        Text(
+                          'accuses ',
+                          style: TextStyle(
+                            fontSize: 16,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        Text(
+                          '$accused!',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Color.fromARGB(255, 255, 213, 0),
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                    PageBreak(width: 50),
+                    Column(children: votersStatus)
+                    // if player should vote but hasn't, add button to vote yes or no
+                  ],
+                )
+              : Column(
+                  children: <Widget>[
+                    Text(
+                      'Game is over!',
+                      style: TextStyle(
+                        fontSize: 18,
+                      ),
+                    ),
+                    SizedBox(height: 5),
+                    Text(
+                      '$accuser accused $accused,\n and everyone agreed.',
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 5),
+                    data['playerRoles'][data['accusation']['accused']] == 'spy'
+                        ? Text(
+                            '$accused was the spy!\nCitizens win!',
+                            style: TextStyle(fontSize: 20, color: Color.fromARGB(255, 255, 213, 0)),
+                            textAlign: TextAlign.center,
+                          )
+                        : Text(
+                            '$accused was NOT the spy!\nSpies win!',
+                            style: TextStyle(fontSize: 20, color: Color.fromARGB(255, 255, 213, 0)),
+                            textAlign: TextAlign.center,
+                          ),
+                  ],
+                ),
+        ),
+        userNeedsToVote
+            ? Column(
+                children: <Widget>[
+                  SizedBox(height: 10),
+                  Container(
+                    decoration: BoxDecoration(
+                      border:
+                          Border.all(color: Theme.of(context).highlightColor),
+                      borderRadius: BorderRadius.circular(20),
+                      color: Colors.grey[700],
+                    ),
+                    padding: EdgeInsets.all(10),
+                    width: 250,
+                    child: Column(
+                      children: <Widget>[
+                        Text(
+                          'Do you think ${mapping[data['accusation']['accused']]} is guilty?',
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            RaisedGradientButton(
+                              width: 70,
+                              height: 30,
+                              onPressed: () {
+                                addVoteToAccusation(data, 'yes');
+                              },
+                              child: Text('Yes'),
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.green[400],
+                                  Colors.green[300],
+                                ],
+                              ),
+                            ),
+                            SizedBox(width: 20),
+                            RaisedGradientButton(
+                              width: 70,
+                              height: 30,
+                              onPressed: () {
+                                addVoteToAccusation(data, 'no');
+                              },
+                              child: Text('No'),
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.red[400],
+                                  Colors.red[300],
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              )
+            : Container(),
+      ],
     );
   }
 
@@ -238,6 +608,7 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
           // check if current player's turn
           checkIfVibrate(data);
           return Scaffold(
+              key: _scaffoldKey,
               appBar: AppBar(
                 title: Text(
                   'The Hunt!',
@@ -267,103 +638,9 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
                       SizedBox(height: 50),
                       getTurn(context, data),
                       SizedBox(height: 20),
-                      FlatButton(
-                        splashColor: Color.fromARGB(0, 1, 1, 1),
-                        highlightColor: Color.fromARGB(0, 1, 1, 1),
-                        onPressed: () {
-                          setState(() {
-                            roleIsVisible = !roleIsVisible;
-                          });
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                                color: Theme.of(context).highlightColor),
-                            borderRadius: BorderRadius.circular(20),
-                            color: Theme.of(context).primaryColor,
-                          ),
-                          padding: EdgeInsets.all(10),
-                          width: 250,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: <Widget>[
-                              Text(
-                                roleIsVisible
-                                    ? '(Tap to hide role)'
-                                    : 'Tap to show role',
-                                style: TextStyle(
-                                    fontSize: roleIsVisible ? 16 : 20,
-                                    color: roleIsVisible
-                                        ? Colors.grey[400]
-                                        : Colors.white),
-                              ),
-                              roleIsVisible
-                                  ? SizedBox(
-                                      height: 10,
-                                    )
-                                  : Container(),
-                              roleIsVisible &&
-                                      location != null &&
-                                      userRole != null
-                                  ? userRole == 'spy'
-                                      ? Column(
-                                          children: <Widget>[
-                                            Text(
-                                              'You are the spy!',
-                                              style: TextStyle(
-                                                  fontSize: 22,
-                                                  color: Colors.white),
-                                              textAlign: TextAlign.center,
-                                            ),
-                                            Text(
-                                              '(Try and figure out the location!)',
-                                              style: TextStyle(
-                                                  fontSize: 14,
-                                                  color: Colors.grey[300]),
-                                              textAlign: TextAlign.center,
-                                            )
-                                          ],
-                                        )
-                                      : Column(
-                                          children: <Widget>[
-                                            Text(
-                                              'Location:',
-                                              style: TextStyle(
-                                                fontSize: 16,
-                                                color: Colors.grey[400],
-                                              ),
-                                            ),
-                                            Text(
-                                              '$location',
-                                              style: TextStyle(
-                                                fontSize: 20,
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                            SizedBox(height: 10),
-                                            Text(
-                                              'Your role:',
-                                              style: TextStyle(
-                                                fontSize: 16,
-                                                color: Colors.grey[400],
-                                              ),
-                                              textAlign: TextAlign.center,
-                                            ),
-                                            Text(
-                                              '$userRole',
-                                              style: TextStyle(
-                                                fontSize: 20,
-                                                color: Colors.white,
-                                              ),
-                                              textAlign: TextAlign.center,
-                                            ),
-                                          ],
-                                        )
-                                  : Container(),
-                            ],
-                          ),
-                        ),
-                      ),
+                      getRoleButton(data),
+                      SizedBox(height: 20),
+                      getAccusation(data),
                       SizedBox(height: 20),
                       LocationBoard(
                         subList1: subList1,
@@ -393,38 +670,11 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
                           ? EndGameButton(
                               gameName: 'The Hunt',
                               sessionId: widget.sessionId,
-                              fontSize: 18, 
+                              fontSize: 18,
                               height: 40,
                               width: 140,
                             )
                           : Container(),
-                      // ? RaisedGradientButton(
-                      //     child: Text(
-                      //       'End game',
-                      //       style: TextStyle(fontSize: 16),
-                      //       color:
-                      //     ),
-                      //     onPressed: () {
-                      //       showDialog<Null>(
-                      //         context: context,
-                      //         builder: (BuildContext context) {
-                      //           return EndGameDialog(
-                      //             game: 'The Hunt',
-                      //             sessionId: widget.sessionId,
-                      //           );
-                      //         },
-                      //       );
-                      //     },
-                      //     height: 40,
-                      //     width: 140,
-                      //     gradient: LinearGradient(
-                      //       colors: <Color>[
-                      //         Color.fromARGB(255, 255, 185, 0),
-                      //         Color.fromARGB(255, 255, 213, 0),
-                      //       ],
-                      //     ),
-                      //   )
-                      // : Container(),
                       SizedBox(height: 80),
                     ],
                   ),
@@ -446,12 +696,169 @@ class TheHuntScreenHelp extends StatelessWidget {
             'and the answer can be anything.\n\n    Just keep in mind that vagueness can be suspicious!',
         '    At any point, a player can accuse another player of being the spy.\n\n    '
             'A verdict requires a unanimous vote, less the remaining number of spies.',
-        '    The game ends in two general ways:\n\n(1) A spy can reveal they are the spy at any time, and attempt to guess the location. '
+        '    The game ends in three general ways:\n\n(1) A spy can reveal they are the spy at any time (except during an accusation), and attempt to guess the location. '
             'If they guess correctly, the spies win. If they guess incorrectly, the spies lose.'
-            '\n\n(2) If a player is unanimously accused and there is only one spy left, the citizens win. If there is more than one spy, '
-            'the accused (if a spy) gets a chance to guess the location before getting sentenced to silence (following #1 rules for winning).'
+            '\n\n(continued on next page)',
+        '\n\n(2) If a citizen is unanimously accused, the spies win. Otherwise the spy is exiled, and if there are no spies left, the citizens win.'
+            '\n\nThe spies can always guess the location once the game is over, for "honor"!'
       ],
       buttonColor: Theme.of(context).primaryColor,
+    );
+  }
+}
+
+class RevealDialog extends StatefulWidget {
+  RevealDialog({this.data, this.sessionId});
+
+  final data;
+  final String sessionId;
+
+  @override
+  _RevealDialogState createState() => _RevealDialogState();
+}
+
+class _RevealDialogState extends State<RevealDialog> {
+  String _guessedLocation;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Reveal yourself and guess the location!'),
+      content: Container(
+        height: 140.0,
+        width: 100.0,
+        child: DropdownButton<String>(
+          value: _guessedLocation,
+          iconSize: 24,
+          elevation: 16,
+          style: TextStyle(color: Theme.of(context).primaryColor),
+          underline: Container(
+            height: 2,
+            color: Theme.of(context).primaryColor,
+          ),
+          onChanged: (String newValue) {
+            setState(() {
+              _guessedLocation = newValue;
+            });
+          },
+          items: widget.data['rules']['locations']
+              .map<DropdownMenuItem<String>>((String value) {
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Text(value),
+            );
+          }).toList(),
+        ),
+      ),
+      actions: <Widget>[
+        FlatButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: Text('Cancel')),
+        // This button results in adding the contact to the database
+        FlatButton(
+            onPressed: () {
+              print('will update accuse');
+            },
+            child: Text('Reveal'))
+      ],
+    );
+  }
+}
+
+class AccuseDialog extends StatefulWidget {
+  AccuseDialog({this.data, this.userId, this.sessionId});
+
+  final data;
+  final userId;
+  final sessionId;
+
+  @override
+  _AccuseDialogState createState() => _AccuseDialogState();
+}
+
+class _AccuseDialogState extends State<AccuseDialog> {
+  String _accusedPlayer = '';
+
+  submitAccusation(String accusedId, data) async {
+    var accusation = {'accuser': widget.userId, 'accused': accusedId};
+    data['playerIds'].forEach((val) {
+      if (val != widget.userId && val != accusedId) {
+        accusation[val] = '';
+      }
+    });
+    await Firestore.instance
+        .collection('sessions')
+        .document(widget.sessionId)
+        .updateData({'accusation': accusation});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    List<String> accusablePlayers = [''];
+    widget.data['playerIds'].forEach((v) {
+      if (v != widget.userId) {
+        accusablePlayers.add(v);
+      }
+    });
+    print(accusablePlayers);
+    return AlertDialog(
+      title: Text('Accuse someone of being the spy!'),
+      content: Container(
+        height: 60.0,
+        decoration: BoxDecoration(
+            border: Border.all(color: Theme.of(context).highlightColor)),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            value: _accusedPlayer,
+            iconSize: 24,
+            elevation: 16,
+            style: TextStyle(color: Theme.of(context).primaryColor),
+            underline: Container(
+              height: 2,
+              color: Theme.of(context).primaryColor,
+            ),
+            onChanged: (String newValue) {
+              setState(() {
+                _accusedPlayer = newValue;
+              });
+            },
+            items: accusablePlayers.map((String value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: value == ''
+                    ? Text('')
+                    : Text(
+                        '   ' + widget.data['playerNames'][value],
+                        style: TextStyle(
+                            fontSize: 20,
+                            color: Theme.of(context).highlightColor),
+                      ),
+              );
+            }).toList(),
+          ),
+        ),
+      ),
+      actions: <Widget>[
+        FlatButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text("Cancel")),
+        FlatButton(
+            onPressed: () {
+              print('hey $_accusedPlayer');
+              if (_accusedPlayer == '') {
+                // TODO: add error for blank submission
+                print('error');
+              } else {
+                submitAccusation(_accusedPlayer, widget.data);
+                Navigator.of(context).pop();
+              }
+            },
+            child: Text('Accuse'))
+      ],
     );
   }
 }
