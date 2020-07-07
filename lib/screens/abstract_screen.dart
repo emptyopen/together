@@ -517,13 +517,8 @@ class _AbstractScreenState extends State<AbstractScreen> {
       // update winning players scores
       for (String team in winningTeams) {
         for (String playerId in data['playerIds']) {
-          var playerTeam = 'green';
-          if (data['rules']['orangeTeam'].contains(playerId)) {
-            playerTeam = 'orange';
-          }
-          if (data['rules']['${playerTeam}Team'].contains(playerId)) {
-            print('will increment $playerId');
-            //incrementPlayerScore('Abstract', playerId);
+          if (data['rules']['${team}Team'].contains(playerId)) {
+            incrementPlayerScore('abstract', playerId);
           }
         }
       }

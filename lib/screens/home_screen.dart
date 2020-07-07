@@ -11,6 +11,7 @@ import 'package:together/components/buttons.dart';
 import 'package:together/components/marquee.dart';
 
 import 'settings_screen.dart';
+import 'achievements_screen.dart';
 import 'lobby_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -227,6 +228,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 'Main Menu',
               ),
               actions: <Widget>[
+                IconButton(
+                  icon: Icon(MdiIcons.trophy),
+                  onPressed: () {
+                    slideTransition(
+                      context,
+                      AchievementsScreen(
+                        userId: widget.userId,
+                      ),
+                    );
+                  },
+                ),
                 IconButton(
                   icon: Icon(Icons.settings),
                   onPressed: () {

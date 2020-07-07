@@ -5,18 +5,20 @@ import 'screens/root_screen.dart';
 
 void main() => runApp(MyApp());
 
-// done:
-
+// done:=
 // total separation of game state from users (abstract TBD)
+
 // BIG: add statistics for player accounts (number of games won, etc.)
 // add basic functionality to three crowns - show cards, play cards in duel, set up rotating duel 
 
 // next up:
+// abstract games looks funky - green wins then orange hits grey - should be over but timer glitches
 // RUN THROUGH AN ENTIRE BANANAPHONE, many updates. - pretty close to done 
 // undo button not working in bananaphone 2nd+ drawings 
 // add rules for bananaphone 
 
 // TODO:
+// make all buttons disappear when they are clicked (especially when they cause an effect - there are double effects happening)
 // INFO: abstract, word overflow is 11 characters for iphone 10
 // add rules for three crowns
 // fine grained control of teams in lobby for abstract

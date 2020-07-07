@@ -291,3 +291,14 @@ createGame(BuildContext context, String game, String password, bool pop) async {
     ),
   );
 }
+
+incrementPlayerScore(String gameName, String playerId) async {
+  String gameNameScore = gameName + 'Score';
+  var data = (await Firestore.instance.collection('users').document(playerId).get()).data;
+  if (data.containsKey(gameNameScore)) {
+    data[gameNameScore] += 1;
+  } else {
+    data[gameNameScore] = 1;
+  }
+  await Firestore.instance.collection('users').document(playerId).updateData({gameNameScore: data[gameNameScore]});
+}

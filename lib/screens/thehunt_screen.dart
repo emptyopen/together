@@ -321,6 +321,20 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
       if (allPlayersVotedGuilty) {
         // game is over
         accusation['charged'] = accusation['accused'];
+        // if charged was spy, all citizens win, otherwise all spies win
+        if (data['playerRoles'][accusation['accused']] == 'spy') {
+          for (int i = 0; i < data['playerIds'].length; i++) {
+            if (data['playerRoles'][i] != 'spy') {
+              incrementPlayerScore('theHunt', data['playerIds'][i]);
+            }
+          }
+        } else {
+          for (int i = 0; i < data['playerIds'].length; i++) {
+            if (data['playerRoles'][i] == 'spy') {
+              incrementPlayerScore('theHunt', data['playerIds'][i]);
+            }
+          }
+        }
       } else {
         // delete the accusation and temporarily notify
         accusation = {
@@ -403,6 +417,7 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
                 '${mapping[val]}:  ',
                 style: TextStyle(
                   fontSize: 14,
+                  color: Colors.white,
                 ),
               ),
               data['accusation'][val] == ''
@@ -459,6 +474,7 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
                       'Game is over!',
                       style: TextStyle(
                         fontSize: 18,
+                        color: Colors.white,
                       ),
                     ),
                     SizedBox(height: 15),
@@ -467,24 +483,34 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 18,
+                        color: Colors.white,
                       ),
                     ),
                     Text(
-                      'reveals themselves as the spy!\n\nThey guess location to be: ',
+                      'reveals themselves as the spy!\n\nThey guess location is: ',
                       textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white,
+                      ),
                     ),
                     Text(
                       '${data.data['spyRevealed']}',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 18,
+                        color: Colors.white,
                       ),
                     ),
                     SizedBox(height: 15),
                     data['spyRevealed'] == data['location']
                         ? Column(
                             children: <Widget>[
-                              Text('That\'s correct!'),
+                              Text(
+                                'That\'s correct!',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                ),
+                              ),
                               Text(
                                 'Spies win!',
                                 style: TextStyle(
@@ -532,6 +558,7 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
                               'accuses ',
                               style: TextStyle(
                                 fontSize: 16,
+                                color: Colors.white,
                               ),
                               textAlign: TextAlign.center,
                             ),
@@ -556,11 +583,13 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
                           'Game is over!',
                           style: TextStyle(
                             fontSize: 18,
+                            color: Colors.white,
                           ),
                         ),
                         SizedBox(height: 5),
                         Text(
                           '$accuser accused $accused,\n and everyone agreed.',
+                          style: TextStyle(color: Colors.white),
                           textAlign: TextAlign.center,
                         ),
                         SizedBox(height: 5),
@@ -600,6 +629,7 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
                       children: <Widget>[
                         Text(
                           'Do you think ${mapping[data['accusation']['accused']]} is guilty?',
+                          style: TextStyle(color: Colors.white),
                           textAlign: TextAlign.center,
                         ),
                         SizedBox(height: 10),
@@ -771,7 +801,7 @@ class TheHuntScreenHelp extends StatelessWidget {
             'and the answer can be anything.\n\n    Just keep in mind that vagueness can be suspicious!',
         '    At any point, a player can accuse another player of being the spy.\n\n    '
             'A verdict requires a unanimous vote, less the remaining number of spies.',
-        '    The game ends in three general ways:\n\n(1) A spy can reveal they are the spy at any time (except during an accusation), and attempt to guess the location. '
+        '    The game ends in two general ways:\n\n(1) A spy can reveal they are the spy at any time (except during an accusation), and attempt to guess the location. '
             'If they guess correctly, the spies win. If they guess incorrectly, the spies lose.'
             '\n\n(continued on next page)',
         '\n\n(2) If a citizen is unanimously accused, the spies win. Otherwise the spy is exiled, and if there are no spies left, the citizens win.'
@@ -796,6 +826,21 @@ class _RevealDialogState extends State<RevealDialog> {
   String _guessedLocation = '';
 
   reveal() async {
+    // if spy guessed correct location, spies win. otherwise, citizens win
+    var data = widget.data.data;
+    if (_guessedLocation == data['location']) {
+      for (int i = 0; i < data['playerIds'].length; i++) {
+        if (data['playerRoles'][data['playerIds'][i]] == 'spy') {
+          incrementPlayerScore('theHunt', data['playerIds'][i]);
+        }
+      }
+    } else {
+      for (int i = 0; i < data['playerIds'].length; i++) {
+        if (data['playerRoles'][data['playerIds'][i]] != 'spy') {
+          incrementPlayerScore('theHunt', data['playerIds'][i]);
+        }
+      }
+    }
     await Firestore.instance
         .collection('sessions')
         .document(widget.sessionId)
