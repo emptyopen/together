@@ -356,93 +356,27 @@ class _LobbyScreenState extends State<LobbyScreen> {
           rules['greenAlreadyWon'] = false;
 
           // initialize who is on which teams, and spymasters
-          // update user documents with their team color and isTeamLeader
-          // TODO: might want fine grained control of teams in lobby
           var players = data['playerIds'];
           players.shuffle();
           if (rules['numTeams'] == 2) {
             // divide playerIds into 2 teams
             rules['greenTeam'] = players.sublist(0, players.length ~/ 2);
-            for (var playerId in rules['greenTeam']) {
-              await Firestore.instance
-                  .collection('users')
-                  .document(playerId)
-                  .updateData({
-                'abstractTeam': 'green',
-                'abstractTeamLeader': '',
-              });
-            }
             rules['greenLeader'] = players[0];
-            await Firestore.instance
-                .collection('users')
-                .document(rules['greenLeader'])
-                .updateData({'abstractTeamLeader': 'green'});
             rules['orangeTeam'] =
                 players.sublist(players.length ~/ 2, players.length);
-            for (var playerId in rules['orangeTeam']) {
-              await Firestore.instance
-                  .collection('users')
-                  .document(playerId)
-                  .updateData({
-                'abstractTeam': 'orange',
-                'abstractTeamLeader': '',
-              });
-            }
             rules['orangeLeader'] = players[players.length ~/ 2];
-            await Firestore.instance
-                .collection('users')
-                .document(rules['orangeLeader'])
-                .updateData({'abstractTeamLeader': 'orange'});
           } else {
             // divide playerIds into 3 teams
             rules['greenTeam'] = players.sublist(0, players.length ~/ 3);
-            for (var playerId in rules['greenTeam']) {
-              await Firestore.instance
-                  .collection('users')
-                  .document(playerId)
-                  .updateData({
-                'abstractTeam': 'green',
-                'abstractTeamLeader': '',
-              });
-            }
             rules['greenLeader'] = players[0];
-            await Firestore.instance
-                .collection('users')
-                .document(rules['greenLeader'])
-                .updateData({'abstractTeamLeader': 'green'});
             rules['orangeTeam'] =
                 players.sublist(players.length ~/ 3, players.length ~/ 3 * 2);
-            for (var playerId in rules['orangeTeam']) {
-              await Firestore.instance
-                  .collection('users')
-                  .document(playerId)
-                  .updateData({
-                'abstractTeam': 'orange',
-                'abstractTeamLeader': '',
-              });
-            }
             rules['orangeLeader'] = players[players.length ~/ 3];
-            await Firestore.instance
-                .collection('users')
-                .document(rules['orangeLeader'])
-                .updateData({'abstractTeamLeader': 'orange'});
             rules['purpleTeam'] =
                 players.sublist(players.length ~/ 3 * 2, players.length);
-            for (var playerId in rules['purpleTeam']) {
-              await Firestore.instance
-                  .collection('users')
-                  .document(playerId)
-                  .updateData({
-                'abstractTeam': 'purple',
-                'abstractTeamLeader': '',
-              });
-            }
             rules['purpleLeader'] = players[players.length ~/ 3 * 2];
-            await Firestore.instance
-                .collection('users')
-                .document(rules['purpleLeader'])
-                .updateData({'abstractTeamLeader': 'purple'});
           }
+          await Firestore.instance.collection('sessions').document(sessionId).updateData({'rules': rules});
 
           // start the timer, and initialize cumulative times
           if (rules['numTeams'] == 2) {

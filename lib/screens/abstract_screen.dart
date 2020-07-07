@@ -25,7 +25,7 @@ class AbstractScreen extends StatefulWidget {
 class _AbstractScreenState extends State<AbstractScreen> {
   int numTeams;
   bool isLoading = true;
-  String userTeamLeader = '';
+  bool userIsTeamLeader = false;
   String userTeam = '';
   Timer _timer;
   DateTime _now;
@@ -98,16 +98,29 @@ class _AbstractScreenState extends State<AbstractScreen> {
             .get())
         .data;
 
-    var userData = (await Firestore.instance
-            .collection('users')
-            .document(widget.userId)
-            .get())
-        .data;
-
     setState(() {
       numTeams = data['rules']['numTeams'];
-      userTeamLeader = userData['abstractTeamLeader'];
-      userTeam = userData['abstractTeam'];
+
+      if (data['rules']['numTeams'] == 2) {
+        userIsTeamLeader = data['rules']['greenLeader'] == widget.userId ||
+            data['rules']['orangeLeader'] == widget.userId;
+        if (data['rules']['greenTeam'].contains(widget.userId)) {
+          userTeam = 'green';
+        } else {
+          userTeam = 'orange';
+        }
+      } else {
+        userIsTeamLeader = data['rules']['greenLeader'] == widget.userId ||
+            data['rules']['orangeLeader'] == widget.userId ||
+            data['rules']['purpleLeader'] == widget.userId;
+        if (data['rules']['greenTeam'].contains(widget.userId)) {
+          userTeam = 'green';
+        } else if (data['rules']['orangeTeam'].contains(widget.userId)) {
+          userTeam = 'orange';
+        } else {
+          userTeam = 'purple';
+        }
+      }
     });
   }
 
@@ -202,8 +215,8 @@ class _AbstractScreenState extends State<AbstractScreen> {
         .document(widget.sessionId)
         .updateData({
       'turn': nextActiveTeam,
-      'timer': DateTime.now().add(
-          Duration(seconds: 10 + increment * numUnflipped))
+      'timer':
+          DateTime.now().add(Duration(seconds: 10 + increment * numUnflipped))
     });
 
     isUpdating = false;
@@ -249,7 +262,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
   }
 
   getPlayerStatus() {
-    if (userTeamLeader == '') {
+    if (!userIsTeamLeader) {
       return Row(
         children: <Widget>[
           Text(
@@ -438,7 +451,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
     // end game check
     bool thereIsWinner = false;
     bool deathCardDrawn = false;
-    List<String> winners = [];
+    List<String> winningTeams = [];
 
     // check for winners, if so end game (this will be run until it is orange/purple's turn)
     bool greenGotAll = totalGreen == flippedGreen;
@@ -446,25 +459,25 @@ class _AbstractScreenState extends State<AbstractScreen> {
     bool purpleGotAll = totalPurple == flippedPurple && flippedPurple > 1;
     if (greenGotAll) {
       thereIsWinner = true;
-      winners.add('green');
+      winningTeams.add('green');
     }
     if (orangeGotAll) {
       thereIsWinner = true;
-      winners.add('orange');
+      winningTeams.add('orange');
     }
     if (purpleGotAll) {
       thereIsWinner = true;
-      winners.add('purple');
+      winningTeams.add('purple');
     }
 
     // check if death card ends game
     if (data['rules']['words'][x]['rowWords'][y]['color'] == 'black') {
-      winners = ['green', 'orange'];
+      winningTeams = ['green', 'orange'];
       if (numTeams == 3) {
-        winners.add('purple');
+        winningTeams.add('purple');
       }
-      winners.removeWhere((item) => item == userTeam);
-      print('winners by black card are: $winners');
+      winningTeams.removeWhere((item) => item == userTeam);
+      print('winners by black card are: $winningTeams');
       thereIsWinner = true;
       deathCardDrawn = true;
     }
@@ -491,21 +504,36 @@ class _AbstractScreenState extends State<AbstractScreen> {
     // end game if there is a winner and turn has just become green, OR if the black card was drawn, OR all teams have won
     if ((thereIsWinner && data['turn'] == 'green' && freshTurnOnThisFlip) ||
         deathCardDrawn ||
-        winners.length == data['numTeams']) {
+        winningTeams.length == data['numTeams']) {
       print('game has ended!');
 
       // determine winner if there is a tie
-      if (winners.length > 1) {
+      if (winningTeams.length > 1) {
         print('resolving tie with amount of time spent');
       } else {
         print('not a tie');
       }
+      
+      // update winning players scores
+      for (String team in winningTeams) {
+        for (String playerId in data['playerIds']) {
+          var playerTeam = 'green';
+          if (data['rules']['orangeTeam'].contains(playerId)) {
+            playerTeam = 'orange';
+          }
+          if (data['rules']['${playerTeam}Team'].contains(playerId)) {
+            print('will increment $playerId');
+            //incrementPlayerScore('Abstract', playerId);
+          }
+        }
+      }
+
       await Firestore.instance
           .collection('sessions')
           .document(widget.sessionId)
           .updateData(deathCardDrawn
-              ? {'state': 'complete', 'winners': winners, 'deathCard': true}
-              : {'state': 'complete', 'winners': winners});
+              ? {'state': 'complete', 'winners': winningTeams, 'deathCard': true}
+              : {'state': 'complete', 'winners': winningTeams});
     }
   }
 
@@ -515,7 +543,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
     int x, y = 0;
     x = (index / gridStateLength).floor();
     y = (index % gridStateLength);
-    bool tileIsVisible = userTeamLeader != '' ||
+    bool tileIsVisible = userIsTeamLeader ||
         words[x]['rowWords'][y]['flipped'] ||
         data['state'] == 'complete';
     // update words here
@@ -525,7 +553,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
           color: tileIsVisible
               ? getColorFromString(
                   words[x]['rowWords'][y]['color'],
-                  userTeamLeader != '' && !words[x]['rowWords'][y]['flipped']
+                  userIsTeamLeader && !words[x]['rowWords'][y]['flipped']
                       ? true
                       : false)
               : Colors.white,
@@ -598,8 +626,9 @@ class _AbstractScreenState extends State<AbstractScreen> {
                 ? Positioned(
                     child: Icon(MdiIcons.sproutOutline,
                         size: 16,
-                        color: Colors
-                            .black.withAlpha(255 - (5 - words[x]['rowWords'][y]['flippedTurns']) * 50)), // alertDecagramOutline, magnifyPlusOutline
+                        color: Colors.black.withAlpha(255 -
+                            (5 - words[x]['rowWords'][y]['flippedTurns']) *
+                                50)), // alertDecagramOutline, magnifyPlusOutline
                     right: 5,
                     bottom: 5)
                 : Container(),
@@ -730,12 +759,13 @@ class _AbstractScreenState extends State<AbstractScreen> {
             : Container(),
         widget.userId == data['leader']
             ? EndGameButton(
-              gameName: 'Abstract',
-              sessionId: widget.sessionId,
-              fontSize: 16, 
-              height: 35,
-              width: 110,
-            ) : Container() 
+                gameName: 'Abstract',
+                sessionId: widget.sessionId,
+                fontSize: 16,
+                height: 35,
+                width: 110,
+              )
+            : Container()
       ],
     );
   }
@@ -962,8 +992,10 @@ class _AbstractScreenState extends State<AbstractScreen> {
                     : AutoSizeText(
                         'Remaining:   ${secondsToTimeString(seconds)}',
                         style: TextStyle(
-                          fontSize: 12,
-                            color: seconds <= 30 ? Colors.red : Theme.of(context).highlightColor),
+                            fontSize: 12,
+                            color: seconds <= 30
+                                ? Colors.red
+                                : Theme.of(context).highlightColor),
                         maxLines: 1,
                       ),
               ],
@@ -1063,7 +1095,7 @@ class AbstractScreenHelp extends StatelessWidget {
         '    The objective of this game is to flip all cards for your team. '
             'Leaders of teams take turns giving a clue to their team which should tie different words on the board together. '
             'A clue can be anything that has a Wikipedia page. ',
-            '    The timer is shared for the leader giving the clue and the leader\'s team guessing.',
+        '    The timer is shared for the leader giving the clue and the leader\'s team guessing.',
         '    If a team wins, teams that didn\'t initially start before the winning team get chance for rebuttal. In '
             'case of ties, the team that used the least time throughout the game wins.',
       ],
