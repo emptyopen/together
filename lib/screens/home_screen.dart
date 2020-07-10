@@ -62,144 +62,58 @@ class _HomeScreenState extends State<HomeScreen> {
     Color colorBananaphone = Colors.blue;
     Color colorThreeCrowns = Colors.amber;
     double intervalLength = 35.0;
-    return Row(
-      children: <Widget>[
-        SizedBox(width: intervalLength),
-        Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).dividerColor,
-            border: Border.all(color: Theme.of(context).highlightColor),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          padding: EdgeInsets.all(15),
-          child: GestureDetector(
-            onTap: () {
-              createGame(context, 'The Hunt', '', false);
-            },
-            child: Column(
-              children: <Widget>[
-                Icon(
+    return Container(
+      child: Column(
+        children: <Widget>[
+          SizedBox(height: 5),
+          Row(
+            children: <Widget>[
+              SizedBox(width: intervalLength),
+              QuickStartButton(
+                gameName: 'The Hunt',
+                subtitle: 'Spies vs. Citizens!',
+                icon: Icon(
                   MdiIcons.incognito,
                   color: colorHunt,
                   size: 30,
                 ),
-                SizedBox(height: 10),
-                Text(
-                  'The Hunt',
-                  style: TextStyle(fontSize: 18),
+              ),
+              SizedBox(width: intervalLength),
+              QuickStartButton(
+                gameName: 'Abstract',
+                subtitle: 'Connect concepts!',
+                icon: Icon(
+                  MdiIcons.resistorNodes,
+                  color: colorAbstract,
+                  size: 30,
                 ),
-                Text(
-                  'Spies vs. Citizens!',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
+              ),
+              SizedBox(width: intervalLength),
+              QuickStartButton(
+                gameName: 'Bananaphone',
+                subtitle: 'Draw and pass it on!',
+                icon: Icon(
+                  MdiIcons.phoneSettings,
+                  color: colorBananaphone,
+                  size: 30,
                 ),
-              ],
-            ),
+              ),
+              SizedBox(width: intervalLength),
+              QuickStartButton(
+                gameName: 'Three Crowns',
+                subtitle: 'Coming soon!',
+                icon: Icon(
+                  MdiIcons.crown,
+                  color: colorThreeCrowns,
+                  size: 30,
+                ),
+              ),
+              SizedBox(width: intervalLength),
+            ],
           ),
-        ),
-        SizedBox(width: intervalLength),
-        Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).dividerColor,
-              border: Border.all(color: Theme.of(context).highlightColor),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            padding: EdgeInsets.all(15),
-            child: GestureDetector(
-                onTap: () {
-                  createGame(context, 'Abstract', '', false);
-                },
-                child: Column(
-                  children: <Widget>[
-                    Icon(
-                      MdiIcons.resistorNodes,
-                      color: colorAbstract,
-                      size: 30,
-                    ),
-                    SizedBox(height: 10),
-                    Text(
-                      'Abstract',
-                      style: TextStyle(fontSize: 18),
-                    ),
-                    Text(
-                      'Connect concepts!',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                ))),
-        SizedBox(width: intervalLength),
-        Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).dividerColor,
-              border: Border.all(color: Theme.of(context).highlightColor),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            padding: EdgeInsets.all(15),
-            child: GestureDetector(
-                onTap: () {
-                  createGame(context, 'Bananaphone', '', false);
-                },
-                child: Column(
-                  children: <Widget>[
-                    Icon(
-                      MdiIcons.phoneSettingsOutline,
-                      color: colorBananaphone,
-                      size: 30,
-                    ),
-                    SizedBox(height: 10),
-                    Text(
-                      'Bananaphone',
-                      style: TextStyle(fontSize: 18),
-                    ),
-                    Text(
-                      'Draw and pass it on!',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                ))),
-        SizedBox(width: intervalLength),
-        Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).dividerColor,
-              border: Border.all(color: Theme.of(context).highlightColor),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            padding: EdgeInsets.all(15),
-            child: GestureDetector(
-                onTap: () {
-                  createGame(context, 'Three Crowns', '', false);
-                },
-                child: Column(
-                  children: <Widget>[
-                    Icon(
-                      MdiIcons.crown,
-                      color: colorThreeCrowns,
-                      size: 30,
-                    ),
-                    SizedBox(height: 10),
-                    Text(
-                      'Three Crowns',
-                      style: TextStyle(fontSize: 18),
-                    ),
-                    Text(
-                      'Coming soon!',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                ))),
-        SizedBox(width: intervalLength),
-      ],
+          SizedBox(height: 5),
+        ],
+      ),
     );
   }
 
@@ -263,7 +177,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(
                     'Quick Start',
                     style: TextStyle(
-                      fontSize: 20,
+                      fontSize: 16,
                       color: Colors.grey,
                     ),
                   ),
@@ -274,7 +188,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: Colors.grey,
                     ),
                   ),
-                  SizedBox(height: 15),
+                  SizedBox(height: 10),
                   Marquee(
                     child: getGamesMarquee(context),
                     animationDuration: Duration(seconds: 10),
@@ -499,7 +413,7 @@ class _LobbyDialogState extends State<LobbyDialog> {
         break;
       case 'Bananaphone':
         color = Colors.blue;
-        icon = Icon(MdiIcons.phoneSettingsOutline, color: color);
+        icon = Icon(MdiIcons.phoneSettings, color: color);
         break;
       case 'Three Crowns':
         color = Colors.amber;
@@ -603,6 +517,75 @@ class _LobbyDialogState extends State<LobbyDialog> {
             },
             child: Text('Confirm'))
       ],
+    );
+  }
+}
+
+class QuickStartButton extends StatelessWidget {
+  final String gameName;
+  final String subtitle;
+  final Icon icon;
+
+  QuickStartButton({
+    this.gameName,
+    this.subtitle,
+    this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            blurRadius: 1.0,
+            offset: Offset(
+              1.0,
+              1.0, 
+            ),
+          )
+        ],
+        gradient: LinearGradient(
+          colors: <Color>[
+            Theme.of(context).primaryColor,
+            Theme.of(context).accentColor,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      padding: EdgeInsets.all(15),
+      child: GestureDetector(
+        onTap: () {
+          createGame(context, gameName, '', false);
+        },
+        child: Column(
+          children: <Widget>[
+            Container(
+              padding: EdgeInsets.all(5),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: icon,
+            ),
+            SizedBox(height: 10),
+            Text(
+              gameName,
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.white,
+              ),
+            ),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

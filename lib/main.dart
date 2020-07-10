@@ -5,21 +5,17 @@ import 'screens/root_screen.dart';
 
 void main() => runApp(MyApp());
 
-// done:=
-// total separation of game state from users (abstract TBD)
-
-// BIG: add statistics for player accounts (number of games won, etc.)
-// add basic functionality to three crowns - show cards, play cards in duel, set up rotating duel 
+// done:
 
 // next up:
-// abstract games looks funky - green wins then orange hits grey - should be over but timer glitches
+// add basic functionality to three crowns - show cards, play cards in duel, set up rotating duel 
+// abstract games has funky behavior? - green wins then orange hits grey - should be over but timer glitches
 // RUN THROUGH AN ENTIRE BANANAPHONE, many updates. - pretty close to done 
 // undo button not working in bananaphone 2nd+ drawings 
 // add rules for bananaphone 
 
 // TODO:
 // make all buttons disappear when they are clicked (especially when they cause an effect - there are double effects happening)
-// INFO: abstract, word overflow is 11 characters for iphone 10
 // add rules for three crowns
 // fine grained control of teams in lobby for abstract
 // will need support in The Hunt for more than one spy - many changes
@@ -35,8 +31,6 @@ void main() => runApp(MyApp());
 // add snackbar when auto exiting to lobby or main menu
 // add password reset option
 // clean up games that are finished/old (might need backend service)
-// add ability to join current game (in case of crash, accidental) in main menu (3rd option if available)
-// React to getting kicked (timer check every 1 second to go back to lobby)
 // periodically check if player info isn't true? check current game and see if player is in it
 // ability to leave a game (might not need) (also delete session if last one out) - dialog on back button (leave game or just go to main menu)
 // abstract: (might not need) add voting system for choosing abstract cards (all members of team must select it)
@@ -64,14 +58,14 @@ class MyApp extends StatelessWidget {
       title: 'Together',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primaryColor: Colors.blue[600],
-        accentColor: Colors.blue[200],
+        primaryColor: Colors.blue[700],
+        accentColor: Colors.blue[300],
         highlightColor: Colors.black,
         fontFamily: 'Balsamiq',
         brightness: Brightness.light,
       ),
       darkTheme: ThemeData(
-        primaryColor: Colors.blue[600],
+        primaryColor: Colors.blue[700],
         accentColor: Colors.blue[300],
         // primaryColor: Colors.pink[600],
         // accentColor: Colors.pink[400],
