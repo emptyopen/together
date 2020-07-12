@@ -11,6 +11,7 @@ import '../components/buttons.dart';
 import '../components/layouts.dart';
 import '../components/misc.dart';
 import '../models/models.dart';
+import '../services/three_crowns_services.dart';
 import 'package:together/constants/values.dart';
 import 'package:together/services/services.dart';
 import 'package:together/screens/thehunt_screen.dart';
@@ -42,6 +43,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
   bool willVibrate1 = true;
   bool willVibrate2 = true;
   bool willVibrate3 = true;
+  final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
@@ -241,7 +243,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
   }
 
   setupAbstract(data, rules) async {
-
     // verify that there are sufficient number of players
     if ((rules['numTeams'] == 2 && data['playerIds'].length < 4) ||
         (rules['numTeams'] == 3 && data['playerIds'].length < 6)) {
@@ -410,7 +411,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
   }
 
   setupBananaphone(data, rules) async {
-
     // verify that there are sufficient number of players
     if ((rules['numDrawDescribe'] == 2 && data['playerIds'].length < 4) ||
         (rules['numDrawDescribe'] == 3 && data['playerIds'].length < 6)) {
@@ -473,7 +473,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
   }
 
   setupThreeCrowns(data, rules) async {
-
     // verify that there are sufficient number of players
     if (data['playerIds'].length < 3) {
       setState(() {
@@ -487,19 +486,42 @@ class _LobbyScreenState extends State<LobbyScreen> {
       startError = '';
     });
 
-    // initialize players' hands
-    data['playerIds'].asMap().forEach((i, v) async {
-      // generate random hand
+    // initialize players' data
+    var playerIds = data['playerIds'];
+    playerIds.asMap().forEach((i, v) async {
+      data['player${v}Hand'] = [];
+      while (data['player${v}Hand'].length < 5) {
+        String randomCard = generateRandomCard();
+        data['player${v}Hand'].add(randomCard);
+      }
       await Firestore.instance
           .collection('sessions')
           .document(sessionId)
-          .updateData({'player${i}Hand': [], 'player${i}Tiles': [], 'player${i}Crowns': 0});
+          .updateData({
+        'player${i}Hand': data['player${v}Hand'],
+        'player${i}Tiles': [],
+        'player${i}Crowns': 0
+      });
     });
+
+    // add player names
+    data['playerNames'] = {};
+    for (int i = 0; i < playerIds.length; i++) {
+      data['playerNames'][playerIds[i]] = (await Firestore.instance
+              .collection('users')
+              .document(playerIds[i])
+              .get())
+          .data['name'];
+    }
 
     await Firestore.instance
         .collection('sessions')
         .document(sessionId)
-        .updateData({'rules': rules});
+        .updateData({
+      'rules': rules,
+      'playerNames': data['playerNames'],
+      'duel': {'duelerIndex': 0, 'duelerCard': '', 'dueleeCard': ''},
+    });
   }
 
   startGame(data) async {
@@ -753,6 +775,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
           // all data for all components
           var data = snapshot.data.data;
           return Scaffold(
+            key: _scaffoldKey,
             appBar: AppBar(
               title: Text(
                 '$gameName: Lobby',
