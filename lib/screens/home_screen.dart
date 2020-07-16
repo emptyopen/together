@@ -57,7 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   getGamesMarquee(BuildContext context) {
-    Color colorHunt = Theme.of(context).highlightColor;
+    Color colorHunt = Colors.black;
     Color colorAbstract = Colors.green;
     Color colorBananaphone = Colors.blue;
     Color colorThreeCrowns = Colors.amber;
@@ -177,14 +177,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(
                     'Quick Start',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 20,
                       color: Colors.grey,
                     ),
                   ),
                   Text(
                     '* no password',
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 14,
                       color: Colors.grey,
                     ),
                   ),
