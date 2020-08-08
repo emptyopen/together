@@ -18,6 +18,7 @@ import 'package:together/screens/thehunt_screen.dart';
 import 'package:together/screens/abstract_screen.dart';
 import 'package:together/screens/bananaphone_screen.dart';
 import 'package:together/screens/three_crowns_screen.dart';
+import 'package:together/screens/rivers_screen.dart';
 
 class LobbyScreen extends StatefulWidget {
   LobbyScreen({Key key, this.roomCode}) : super(key: key);
@@ -118,6 +119,16 @@ class _LobbyScreenState extends State<LobbyScreen> {
               slideTransition(
                 context,
                 ThreeCrownsScreen(
+                  sessionId: sessionId,
+                  userId: userId,
+                  roomCode: widget.roomCode,
+                ),
+              );
+              break;
+            case 'Rivers':
+              slideTransition(
+                context,
+                RiversScreen(
                   sessionId: sessionId,
                   userId: userId,
                   roomCode: widget.roomCode,
@@ -234,6 +245,9 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
     // set spyRevealed to noone
     data['spyRevealed'] = '';
+
+    data['state'] = 'started';
+    data['startTime'] = DateTime.now().add(Duration(seconds: 5));
 
     // update data
     await Firestore.instance
@@ -389,7 +403,9 @@ class _LobbyScreenState extends State<LobbyScreen> {
           Duration(
               seconds:
                   (rules['numTeams'] == 2 ? 9 : 8) * rules['turnTimer'] + 120),
-        )
+        ),
+        'state': 'started',
+        'startTime': DateTime.now().add(Duration(seconds: 5)),
       });
     } else {
       await Firestore.instance
@@ -405,7 +421,9 @@ class _LobbyScreenState extends State<LobbyScreen> {
         'timer': DateTime.now().add(
           Duration(
               seconds: (rules['numTeams'] == 2 ? 9 : 8) * rules['turnTimer']),
-        )
+        ),
+        'state': 'started',
+        'startTime': DateTime.now().add(Duration(seconds: 5)),
       });
     }
   }
@@ -491,7 +509,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
     playerIds.asMap().forEach((i, v) async {
       data['player${v}Hand'] = [];
       while (data['player${v}Hand'].length < 5) {
-        String randomCard = generateRandomCard();
+        String randomCard = generateRandomThreeCrownsCard();
         data['player${v}Hand'].add(randomCard);
       }
       await Firestore.instance
@@ -521,6 +539,67 @@ class _LobbyScreenState extends State<LobbyScreen> {
       'rules': rules,
       'playerNames': data['playerNames'],
       'duel': {'duelerIndex': 0, 'duelerCard': '', 'dueleeCard': ''},
+      'state': 'started',
+      'startTime': DateTime.now().add(Duration(seconds: 5)),
+    });
+  }
+
+  setupRivers(data, rules) async {
+    // verify that there are sufficient number of players
+    if (data['playerIds'].length < 2) {
+      setState(() {
+        startError = 'Need at least 2 players';
+      });
+      return;
+    }
+
+    // clear error if we are good to start
+    setState(() {
+      startError = '';
+    });
+
+    // initialize players' data
+    var playerIds = data['playerIds'];
+    var shuffledDeck =
+        new List<int>.generate(data['rules']['cardRange'] - 3, (i) => i + 2);
+    shuffledDeck.shuffle();
+    var shuffledDeckIndex = 0;
+
+    playerIds.asMap().forEach((i, v) async {
+      data['player${i}Hand'] = [];
+      while (data['player${i}Hand'].length < 5) {
+        data['player${i}Hand'].add(shuffledDeck[shuffledDeckIndex]);
+        shuffledDeckIndex += 1;
+      }
+      await Firestore.instance
+          .collection('sessions')
+          .document(sessionId)
+          .updateData({'player${i}Hand': data['player${i}Hand']});
+    });
+
+    // add player names
+    data['playerNames'] = {};
+    for (int i = 0; i < playerIds.length; i++) {
+      data['playerNames'][playerIds[i]] = (await Firestore.instance
+              .collection('users')
+              .document(playerIds[i])
+              .get())
+          .data['name'];
+    }
+
+    await Firestore.instance
+        .collection('sessions')
+        .document(sessionId)
+        .updateData({
+      'rules': rules,
+      'drawPile': shuffledDeck.sublist(shuffledDeckIndex, shuffledDeck.length),
+      'ascendPile1': [1],
+      'ascendPile2': [1],
+      'descendPile1': [data['rules']['cardRange'] - 1],
+      'descendPile2': [data['rules']['cardRange'] - 1],
+      'playerNames': data['playerNames'],
+      'state': 'started',
+      'startTime': DateTime.now().add(Duration(seconds: 5)),
     });
   }
 
@@ -548,16 +627,12 @@ class _LobbyScreenState extends State<LobbyScreen> {
         print('Setting up Bananaphone game...');
         setupThreeCrowns(data, rules);
         break;
-    }
 
-    await Firestore.instance
-        .collection('sessions')
-        .document(sessionId)
-        .updateData({
-      'rules': rules,
-      'state': 'started',
-      'startTime': DateTime.now().add(Duration(seconds: 5)),
-    });
+      case 'Rivers':
+        print('Setting up Rivers game...');
+        setupRivers(data, rules);
+        break;
+    }
   }
 
   Widget _getCountdown(BuildContext context, data) {
@@ -651,6 +726,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
       case 'Three Crowns':
         return RulesContainer(rules: <Widget>[
           Text('Maximum word length: ${rules['maxWordLength']}'),
+        ]);
+        break;
+      case 'Rivers':
+        return RulesContainer(rules: <Widget>[
+          Text('Card range: ${rules['cardRange']}'),
         ]);
         break;
       default:
@@ -985,6 +1065,10 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
         break;
       case 'Three Crowns':
         rules['maxWordLength'] = sessionData['rules']['maxWordLength'];
+        break;
+      case 'Rivers':
+        rules['cardRange'] = sessionData['rules']['cardRange'];
+        break;
     }
     if (widget.game == 'The Hunt') {
       getChosenLocations();
@@ -1336,6 +1420,67 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
                       });
                     },
                     items: <int>[5, 6, 7, 8, 9, 10]
+                        .map<DropdownMenuItem<int>>((int value) {
+                      return DropdownMenuItem<int>(
+                        value: value,
+                        child: Text(value.toString(),
+                            style: TextStyle(fontFamily: 'Balsamiq')),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            Container(
+              child: FlatButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('Cancel'),
+              ),
+            ),
+            FlatButton(
+              onPressed: () {
+                updateRules();
+              },
+              child: Text('Update'),
+            )
+          ],
+        );
+        break;
+      case 'Rivers':
+        return AlertDialog(
+          title: Text('Edit game rules:'),
+          contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),
+          content: Container(
+            // decoration: BoxDecoration(border: Border.all()),
+            height:
+                subList2 != null ? 120 + 40 * subList1.length.toDouble() : 100,
+            width: width * 0.95,
+            child: ListView(
+              children: <Widget>[
+                SizedBox(height: 20),
+                Text('Maximum word length:'),
+                Container(
+                  width: 80,
+                  child: DropdownButton<int>(
+                    isExpanded: true,
+                    value: rules['cardRange'],
+                    iconSize: 24,
+                    elevation: 16,
+                    style: TextStyle(color: Theme.of(context).primaryColor),
+                    underline: Container(
+                      height: 2,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    onChanged: (int newValue) {
+                      setState(() {
+                        rules['cardRange'] = newValue;
+                      });
+                    },
+                    items: <int>[80, 100, 120, 140]
                         .map<DropdownMenuItem<int>>((int value) {
                       return DropdownMenuItem<int>(
                         value: value,

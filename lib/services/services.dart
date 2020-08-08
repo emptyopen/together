@@ -98,6 +98,10 @@ getDefaultRules(String gameName) {
       return {
         'maxWordLength': 6,
       };
+    case 'Rivers':
+      return {
+        'cardRange': 100,
+      };
   }
 }
 
@@ -155,6 +159,10 @@ createGame(BuildContext context, String game, String password, bool pop) async {
       break;
     case 'Three Crowns':
       sessionContents['turn'] = userId;
+      break;
+    case 'Rivers':
+      sessionContents['turn'] = userId;
+      break;
   }
   var result =
       await Firestore.instance.collection('sessions').add(sessionContents);
@@ -170,7 +178,7 @@ createGame(BuildContext context, String game, String password, bool pop) async {
 
   // navigate to lobby
   if (pop) {
-  Navigator.of(context).pop();
+    Navigator.of(context).pop();
   }
   slideTransition(
     context,
@@ -182,11 +190,16 @@ createGame(BuildContext context, String game, String password, bool pop) async {
 
 incrementPlayerScore(String gameName, String playerId) async {
   String gameNameScore = gameName + 'Score';
-  var data = (await Firestore.instance.collection('users').document(playerId).get()).data;
+  var data =
+      (await Firestore.instance.collection('users').document(playerId).get())
+          .data;
   if (data.containsKey(gameNameScore)) {
     data[gameNameScore] += 1;
   } else {
     data[gameNameScore] = 1;
   }
-  await Firestore.instance.collection('users').document(playerId).updateData({gameNameScore: data[gameNameScore]});
+  await Firestore.instance
+      .collection('users')
+      .document(playerId)
+      .updateData({gameNameScore: data[gameNameScore]});
 }

@@ -532,6 +532,23 @@ class _AbstractScreenState extends State<AbstractScreen> {
     }
   }
 
+  getTeamIcon(x, y, data) {
+    // alertDecagramOutline, magnifyPlusOutline
+    var icon = MdiIcons.circleDouble;
+    switch(data['rules']['words'][x]['rowWords'][y]['color'] ) {
+      case 'green':
+      icon = MdiIcons.sproutOutline;
+        break;
+      case 'orange':
+        icon = MdiIcons.fire;
+        break;
+      case 'purple':
+        icon = MdiIcons.wizardHat;
+        break;
+    }
+    return icon;
+  }
+
   Widget _buildGridItems(BuildContext context, int index, dynamic data) {
     var words = data['rules']['words'];
     int gridStateLength = words.length;
@@ -619,11 +636,11 @@ class _AbstractScreenState extends State<AbstractScreen> {
             ),
             words[x]['rowWords'][y]['flippedTurns'] > 0
                 ? Positioned(
-                    child: Icon(MdiIcons.sproutOutline,
-                        size: 16,
-                        color: Colors.black.withAlpha(255 -
+                    child: Icon(getTeamIcon(x, y, data),
+                        size: 18 + words[x]['rowWords'][y]['flippedTurns'].toDouble() * 0.5,
+                        color: words[x]['rowWords'][y]['color'] == 'grey' ? Colors.black : Colors.black.withAlpha(255 -
                             (5 - words[x]['rowWords'][y]['flippedTurns']) *
-                                50)), // alertDecagramOutline, magnifyPlusOutline
+                                50),), 
                     right: 5,
                     bottom: 5)
                 : Container(),

@@ -100,6 +100,18 @@ class _EndGameDialogState extends State<EndGameDialog> {
     //   });
     //   await Firestore.instance.collection('sessions').document(widget.sessionId).setData(data);
     // }
+    if (widget.game == 'Rivers') {
+      var data = (await Firestore.instance
+              .collection('sessions')
+              .document(widget.sessionId)
+              .get())
+          .data;
+      data.remove('endOnNextGreen');
+      await Firestore.instance
+          .collection('sessions')
+          .document(widget.sessionId)
+          .setData(data);
+    }
 
     // go to lobby or main menu
     if (isToLobby) {

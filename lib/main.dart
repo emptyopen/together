@@ -8,11 +8,19 @@ void main() => runApp(MyApp());
 // done:
 
 // next up:
-// add basic functionality to three crowns - show cards, play cards in duel, set up rotating duel 
+// add basic functionality to three crowns -
+// - play cards in duel
+// - continue duel winner logic
+// - add ability to match
+// - display tiles
+// - display crowns
+// - add ability to gain a tile
+// - add ability to steal a tile
+// - display opponent tiles and crowns
 // abstract games has funky behavior? - green wins then orange hits grey - should be over but timer glitches
-// RUN THROUGH AN ENTIRE BANANAPHONE, many updates. - pretty close to done 
-// undo button not working in bananaphone 2nd+ drawings 
-// add rules for bananaphone 
+// RUN THROUGH AN ENTIRE BANANAPHONE, many updates. - pretty close to done
+// undo button not working in bananaphone 2nd+ drawings
+// add rules for bananaphone
 
 // TODO:
 // make all buttons disappear when they are clicked (especially when they cause an effect - there are double effects happening)

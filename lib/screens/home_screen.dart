@@ -61,6 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
     Color colorAbstract = Colors.green;
     Color colorBananaphone = Colors.blue;
     Color colorThreeCrowns = Colors.amber;
+    Color colorRivers = Colors.lightBlue;
     double intervalLength = 35.0;
     return Container(
       child: Column(
@@ -95,6 +96,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: Icon(
                   MdiIcons.phoneSettings,
                   color: colorBananaphone,
+                  size: 30,
+                ),
+              ),
+              SizedBox(width: intervalLength),
+              QuickStartButton(
+                gameName: 'Rivers',
+                subtitle: 'Up and down!',
+                icon: Icon(
+                  MdiIcons.waves,
+                  color: colorRivers,
                   size: 30,
                 ),
               ),
@@ -191,9 +202,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   SizedBox(height: 10),
                   Marquee(
                     child: getGamesMarquee(context),
-                    animationDuration: Duration(seconds: 10),
-                    backDuration: Duration(seconds: 10),
-                    pauseDuration: Duration(seconds: 2),
+                    animationDuration: Duration(seconds: 13),
+                    backDuration: Duration(seconds: 13),
+                    pauseDuration: Duration(seconds: 3),
                     directionMarguee: DirectionMarguee.TwoDirection,
                   ),
                   SizedBox(height: 40),
@@ -534,30 +545,32 @@ class QuickStartButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            blurRadius: 1.0,
-            offset: Offset(
-              1.0,
-              1.0, 
-            ),
-          )
-        ],
-        gradient: LinearGradient(
-          colors: <Color>[
-            Theme.of(context).primaryColor,
-            Theme.of(context).accentColor,
+    return GestureDetector(
+      onTap: () {
+        createGame(context, gameName, '', false);
+      },
+      child: Container(
+        height: 120,
+        width: 150,
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              blurRadius: 1.0,
+              offset: Offset(
+                1.0,
+                1.0,
+              ),
+            )
           ],
+          gradient: LinearGradient(
+            colors: <Color>[
+              Theme.of(context).primaryColor,
+              Theme.of(context).accentColor,
+            ],
+          ),
+          borderRadius: BorderRadius.circular(20),
         ),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      padding: EdgeInsets.all(15),
-      child: GestureDetector(
-        onTap: () {
-          createGame(context, gameName, '', false);
-        },
+        padding: EdgeInsets.all(15),
         child: Column(
           children: <Widget>[
             Container(

@@ -35,7 +35,6 @@ var letterFrequencies = {
 };
 
 generateRandomLetter() {
-
   // initialize random tool
   var letters = 'abcdefghijklmnopqrstuvwxyz';
   final _random = new Random();
@@ -103,12 +102,12 @@ var deck = [
   'AD',
 ];
 
-generateRandomCard() {
+generateRandomThreeCrownsCard() {
   final _random = new Random();
   return deck[_random.nextInt(deck.length)];
 }
 
-fillHand({data, scaffoldKey, userId, sessionId, force=false}) async {
+fillHand({data, scaffoldKey, userId, sessionId, force = false}) async {
   // check if in duel or forced
   if (!force && playerInDuel(data, userId)) {
     scaffoldKey.currentState.showSnackBar(SnackBar(
@@ -121,7 +120,7 @@ fillHand({data, scaffoldKey, userId, sessionId, force=false}) async {
   bool changed = false;
   var cnt = 0;
   while (data['player${playerIndex}Hand'].length < 5 && cnt < 8) {
-    String randomCard = generateRandomCard();
+    String randomCard = generateRandomThreeCrownsCard();
     data['player${playerIndex}Hand'].add(randomCard);
     changed = true;
     cnt += 1;

@@ -1,0 +1,519 @@
+import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+
+import 'package:together/services/services.dart';
+import 'package:together/components/buttons.dart';
+import 'template/help_screen.dart';
+import 'lobby_screen.dart';
+
+class RiversScreen extends StatefulWidget {
+  RiversScreen({this.sessionId, this.userId, this.roomCode});
+
+  final String sessionId;
+  final String userId;
+  final String roomCode;
+
+  @override
+  _RiversScreenState createState() => _RiversScreenState();
+}
+
+class _RiversScreenState extends State<RiversScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
+  int clickedHandCard = -1;
+
+  checkIfExit(data) async {
+    // run async func to check if game is over, or back to lobby or deleted (main menu)
+    if (data == null) {
+      // navigate to main menu
+      Navigator.of(context).pop();
+    } else if (data['state'] == 'lobby') {
+      // navigate to lobby
+      Navigator.of(context).pop();
+      slideTransition(
+        context,
+        LobbyScreen(
+          roomCode: widget.roomCode,
+        ),
+      );
+    }
+  }
+
+  getPlayerHand(data) {
+    var playerIndex = data['playerIds'].indexOf(widget.userId);
+    var playerHand = data['player${playerIndex}Hand'];
+    // return Text('Player hand: $playerIndex $playerHand');
+    List<Widget> cards = [
+      SizedBox(
+        width: 10,
+      )
+    ];
+    playerHand.forEach((v) {
+      cards.add(RiversCard(
+          value: v.toString(),
+          clickable: false,
+          clicked: clickedHandCard == v,
+          callback: () {
+            setState(() {
+              clickedHandCard = v;
+            });
+          }));
+      cards.add(
+        SizedBox(width: 10),
+      );
+    });
+    return Column(
+      children: <Widget>[
+        Text('YOUR HAND'),
+        SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: cards,
+        ),
+      ],
+    );
+  }
+
+  drawCard(data) async {
+    var playerIndex = data['playerIds'].indexOf(widget.userId);
+    // check if card can be drawn
+    if (data['player${playerIndex}Hand'].length >= 5) {
+      _scaffoldKey.currentState.showSnackBar(SnackBar(
+        content: Text('Hand is full!'),
+        duration: Duration(seconds: 2),
+      ));
+      return;
+    }
+    // add card to hand
+    data['player${playerIndex}Hand'].add(data['drawPile'].last);
+    // remove card from draw pile
+    data['drawPile'].remove(data['drawPile'].last);
+
+    await Firestore.instance
+        .collection('sessions')
+        .document(widget.sessionId)
+        .setData(data);
+  }
+
+  getDrawPile(data) {
+    var drawPile = RiversCard(empty: true);
+    if (data['drawPile'].length > 0) {
+      drawPile = RiversCard(
+        flipped: true,
+        callback: () => drawCard(data),
+      );
+    }
+    return Column(children: <Widget>[
+      Text('DRAW PILE'),
+      Text(
+        '(${data['drawPile'].length} remaining)',
+        style: TextStyle(
+          fontSize: 10,
+        ),
+      ),
+      SizedBox(height: 10),
+      drawPile
+    ]);
+  }
+
+  cardIsValidForPile(data, pileName, value) {
+    var topCard = data[pileName].last;
+    // descending
+    if (pileName.contains('descend')) {
+      if (value < topCard || value == topCard + 10) {
+        return true;
+      }
+      return false;
+    }
+    // ascending
+    else {
+      if (value > topCard || value == topCard - 10) {
+        return true;
+      }
+      return false;
+    }
+  }
+
+  playCard(data, pileName, cardToAdd) async {
+    // add card to pile
+    data[pileName].add(cardToAdd);
+    // remove card from hand
+    var playerIndex = data['playerIds'].indexOf(widget.userId);
+    data['player${playerIndex}Hand'].remove(cardToAdd);
+    // set selected card to nil
+    setState(() {
+      clickedHandCard = -1;
+    });
+
+    await Firestore.instance
+        .collection('sessions')
+        .document(widget.sessionId)
+        .setData(data);
+  }
+
+  getAscendPiles(data) {
+    bool ascend1Clickable = false;
+    bool ascend2Clickable = false;
+    // if hand card is selected and conditions are valid, highlight it
+    if (clickedHandCard != -1) {
+      if (clickedHandCard > data['ascendPile1'].last ||
+          clickedHandCard == data['ascendPile1'].last - 10) {
+        ascend1Clickable = true;
+      }
+      if (clickedHandCard > data['ascendPile2'].last ||
+          clickedHandCard == data['ascendPile2'].last - 10) {
+        ascend2Clickable = true;
+      }
+    }
+    return Column(
+      children: <Widget>[
+        Text('ASCENDING'),
+        SizedBox(
+          height: 10,
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Icon(
+              MdiIcons.chevronDoubleUp,
+              size: 70,
+            ),
+            SizedBox(width: 20),
+            RiversCard(
+              value: data['ascendPile1'].last.toString(),
+              clickable: ascend1Clickable,
+              callback: () {
+                if (cardIsValidForPile(data, 'ascendPile1', clickedHandCard)) {
+                  playCard(
+                    data,
+                    'ascendPile1',
+                    clickedHandCard,
+                  );
+                } else {
+                  _scaffoldKey.currentState.showSnackBar(SnackBar(
+                    content: Text('Not a valid pile!'),
+                    duration: Duration(seconds: 2),
+                  ));
+                }
+              },
+            ),
+            SizedBox(width: 40),
+            RiversCard(
+              value: data['ascendPile2'].last.toString(),
+              clickable: ascend2Clickable,
+              callback: () {
+                if (cardIsValidForPile(data, 'ascendPile2', clickedHandCard)) {
+                  playCard(
+                    data,
+                    'ascendPile2',
+                    clickedHandCard,
+                  );
+                } else {
+                  _scaffoldKey.currentState.showSnackBar(SnackBar(
+                    content: Text('Not a valid pile!'),
+                    duration: Duration(seconds: 2),
+                  ));
+                }
+              },
+            ),
+            SizedBox(width: 20),
+            Icon(
+              MdiIcons.chevronDoubleUp,
+              size: 70,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  getDescendPiles(data) {
+    bool descend1Clickable = false;
+    bool descend2Clickable = false;
+    // if hand card is selected and conditions are valid, highlight it
+    if (clickedHandCard != -1) {
+      if (clickedHandCard < data['descendPile1'].last ||
+          clickedHandCard == data['descendPile1'].last + 10) {
+        descend1Clickable = true;
+      }
+      if (clickedHandCard < data['descendPile2'].last ||
+          clickedHandCard == data['descendPile2'].last + 10) {
+        descend2Clickable = true;
+      }
+    }
+    return Column(
+      children: <Widget>[
+        Text('DESCENDING'),
+        SizedBox(
+          height: 10,
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Icon(
+              MdiIcons.chevronDoubleDown,
+              size: 70,
+            ),
+            SizedBox(width: 20),
+            RiversCard(
+              value: data['descendPile1'].last.toString(),
+              clickable: descend1Clickable,
+              callback: () {
+                if (cardIsValidForPile(data, 'descendPile1', clickedHandCard)) {
+                  playCard(
+                    data,
+                    'descendPile1',
+                    clickedHandCard,
+                  );
+                } else {
+                  _scaffoldKey.currentState.showSnackBar(SnackBar(
+                    content: Text('Not a valid pile!'),
+                    duration: Duration(seconds: 2),
+                  ));
+                }
+              },
+            ),
+            SizedBox(width: 40),
+            RiversCard(
+              value: data['descendPile2'].last.toString(),
+              clickable: descend2Clickable,
+              callback: () {
+                if (cardIsValidForPile(data, 'descendPile2', clickedHandCard)) {
+                  playCard(
+                    data,
+                    'descendPile2',
+                    clickedHandCard,
+                  );
+                } else {
+                  _scaffoldKey.currentState.showSnackBar(SnackBar(
+                    content: Text('Not a valid pile!'),
+                    duration: Duration(seconds: 2),
+                  ));
+                }
+              },
+            ),
+            SizedBox(width: 20),
+            Icon(
+              MdiIcons.chevronDoubleDown,
+              size: 70,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  getCenterCards(data) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        getDrawPile(data),
+        SizedBox(height: 30),
+        getAscendPiles(data),
+        SizedBox(height: 20),
+        getDescendPiles(data),
+      ],
+    );
+  }
+
+  getGameboard(data) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          Text('TODO: turn and action'),
+          SizedBox(height: 20),
+          getCenterCards(data),
+          SizedBox(height: 40),
+          getPlayerHand(data),
+          SizedBox(height: 20),
+          widget.userId == data['leader']
+              ? EndGameButton(
+                  gameName: 'Rivers',
+                  sessionId: widget.sessionId,
+                  fontSize: 14,
+                  height: 30,
+                  width: 100,
+                )
+              : Container(),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder(
+        stream: Firestore.instance
+            .collection('sessions')
+            .document(widget.sessionId)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return Scaffold(
+                appBar: AppBar(
+                  title: Text(
+                    'Rivers',
+                  ),
+                ),
+                body: Container());
+          }
+          // all data for all components
+          DocumentSnapshot snapshotData = snapshot.data;
+          var data = snapshotData.data;
+          if (data == null) {
+            return Scaffold(
+                appBar: AppBar(
+                  title: Text(
+                    'Rivers',
+                  ),
+                ),
+                body: Container());
+          }
+          checkIfExit(data);
+          return Scaffold(
+            key: _scaffoldKey,
+            appBar: AppBar(
+              title: Text(
+                'Rivers',
+              ),
+              actions: <Widget>[
+                IconButton(
+                  icon: Icon(Icons.info),
+                  onPressed: () {
+                    // HapticFeedback.heavyImpact();
+                    Navigator.of(context).push(
+                      PageRouteBuilder(
+                        opaque: false,
+                        pageBuilder: (BuildContext context, _, __) {
+                          return RiversScreenHelp();
+                        },
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+            body: getGameboard(data),
+          );
+        });
+  }
+}
+
+class RiversScreenHelp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return HelpScreen(
+      title: 'Rivers: Rules',
+      information: ['    rules here'],
+      buttonColor: Theme.of(context).primaryColor,
+    );
+  }
+}
+
+class RiversCard extends StatelessWidget {
+  final String value;
+  final Function callback;
+  final bool clickable;
+  final bool empty;
+  final bool flipped;
+  final bool clicked;
+
+  RiversCard({
+    this.value,
+    this.callback,
+    this.clickable,
+    this.empty = false,
+    this.flipped = false,
+    this.clicked = false,
+  });
+
+  getIcon(size) {
+    return Icon(MdiIcons.abjadArabic);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    double height = 80;
+    double width = 60;
+    double fontSize = 34;
+    if (empty) {
+      return Container(
+        height: height,
+        width: width,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: Theme.of(context).highlightColor),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Center(
+          child: Text(
+            'X',
+            style: TextStyle(
+              color: Colors.red,
+              fontSize: 40,
+            ),
+          ),
+        ),
+      );
+    }
+    if (flipped) {
+      return GestureDetector(
+        onTap: callback,
+        child: Container(
+          height: height,
+          width: width,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(color: Theme.of(context).highlightColor),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Center(
+            child: Container(
+              height: height - 10,
+              width: width - 10,
+              decoration: BoxDecoration(
+                color: Colors.blue,
+                border: Border.all(color: Theme.of(context).highlightColor),
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    return GestureDetector(
+      onTap: callback,
+      child: Container(
+        height: height,
+        width: width,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(
+            color: clicked
+                ? Colors.blue
+                : clickable ? Colors.lightGreen : Colors.white,
+            width: 5,
+          ),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(color: Theme.of(context).highlightColor),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Center(
+            child: Text(
+              value,
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: fontSize,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
