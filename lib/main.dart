@@ -10,8 +10,6 @@ void main() => runApp(MyApp());
 
 // next up:
 // fix DEBUG LOCKED
-// make turn ending not automatic, only when they click end turn
-// add "end turn" button after playing 1 card
 // add check for game complete - game ends either if no one can play or if every card is played
 // count number of cards in hand, team gets that score
 // add best score as a team

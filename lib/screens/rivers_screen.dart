@@ -191,6 +191,17 @@ class _RiversScreenState extends State<RiversScreen> {
       endTurn(data);
     }
 
+    // if draw pile and everyone's hand is empty, end the game
+    var remainingCards = data['drawPile'].length;
+    if (remainingCards == 0) {
+      data['playerIds'].asMap().forEach((i, v) {
+        remainingCards += data['player${i}Hand'].length;
+      });
+      if (remainingCards == 0) {
+        endGame(data);
+      }
+    }
+
     await Firestore.instance
         .collection('sessions')
         .document(widget.sessionId)
@@ -427,9 +438,15 @@ class _RiversScreenState extends State<RiversScreen> {
 
   endGame(data) async {
     // count cards in deck and players' hands
-
+    var score = data['drawPile'].length;
+    data['playerIds'].asMap().forEach((i, v) {
+      score += data['player${i}Hand'].length;
+    });
+    data['finalScore'] = score;
     // move to post game screen with score
     data['state'] = 'complete';
+
+    // print('will update data with: $data');
 
     await Firestore.instance
         .collection('sessions')
@@ -490,6 +507,104 @@ class _RiversScreenState extends State<RiversScreen> {
     );
   }
 
+  getScoreboard(data) {
+    List<Widget> scores = [
+      Text(
+        'Draw Pile: ${data['drawPile'].length}',
+        style: TextStyle(
+          fontSize: 20,
+        ),
+      )
+    ];
+    data['playerIds'].asMap().forEach((i, v) {
+      var playerName = data['playerNames'][v];
+      var playerCardsRemaining = data['player${i}Hand'].length;
+      scores.add(
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Text(
+              '$playerName: $playerCardsRemaining',
+              style: TextStyle(
+                fontSize: 20,
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          data['finalScore'] != 0
+              ? Column(
+                  children: <Widget>[
+                    Text(
+                      'The game is over!',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 24,
+                      ),
+                    ),
+                    SizedBox(height: 5),
+                    Text(
+                      'The final score was:',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 20,
+                      ),
+                    ),
+                    Text(
+                      '${data['finalScore']}',
+                      style: TextStyle(
+                        fontSize: 30,
+                      ),
+                    )
+                  ],
+                )
+              : Text(
+                  'Amazing job!\n\nYou\'ve beaten Rivers!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 30,
+                  ),
+                ),
+          SizedBox(height: 30),
+          data['finalScore'] != 0
+              ? Column(
+                  children: <Widget>[
+                    Text(
+                      'Remaining cards:',
+                      style: TextStyle(
+                        fontSize: 18,
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Column(children: scores),
+                  ],
+                )
+              : Container(),
+          SizedBox(height: 50),
+          widget.userId == data['leader']
+              ? EndGameButton(
+                  gameName: 'Rivers',
+                  sessionId: widget.sessionId,
+                  fontSize: 14,
+                  height: 30,
+                  width: 100,
+                )
+              : Text(
+                  '(Glorious leader can take you back to the lobby)',
+                  style: TextStyle(
+                    fontSize: 12,
+                  ),
+                ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
@@ -512,12 +627,13 @@ class _RiversScreenState extends State<RiversScreen> {
           var data = snapshotData.data;
           if (data == null) {
             return Scaffold(
-                appBar: AppBar(
-                  title: Text(
-                    'Rivers',
-                  ),
+              appBar: AppBar(
+                title: Text(
+                  'Rivers',
                 ),
-                body: Container());
+              ),
+              body: Container(),
+            );
           }
           checkIfExit(data);
           return Scaffold(
@@ -543,7 +659,9 @@ class _RiversScreenState extends State<RiversScreen> {
                 ),
               ],
             ),
-            body: getGameboard(data),
+            body: data['state'] == 'started'
+                ? getGameboard(data)
+                : getScoreboard(data),
           );
         });
   }
