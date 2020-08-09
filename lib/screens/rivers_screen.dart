@@ -65,7 +65,7 @@ class _RiversScreenState extends State<RiversScreen> {
     return Column(
       children: <Widget>[
         Text('YOUR HAND'),
-        SizedBox(height: 10),
+        SizedBox(height: 5),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: cards,
@@ -81,6 +81,13 @@ class _RiversScreenState extends State<RiversScreen> {
       _scaffoldKey.currentState.showSnackBar(SnackBar(
         content: Text('Hand is full!'),
         duration: Duration(seconds: 2),
+      ));
+      return;
+    }
+    if (widget.userId == data['turn']) {
+      _scaffoldKey.currentState.showSnackBar(SnackBar(
+        content: Text('Can\'t draw during your turn!'),
+        duration: Duration(seconds: 3),
       ));
       return;
     }
@@ -134,7 +141,36 @@ class _RiversScreenState extends State<RiversScreen> {
     }
   }
 
+  endTurn(data) async {
+    // TODO: add logic here to check if deck will be empty if cards are drawn
+    if (data['drawPile'].length == 0) {
+      data['cardsToPlay'] = 1;
+    } else {
+      data['cardsToPlay'] = 2;
+    }
+    // update turn
+    var currentTurnIndex = data['playerIds'].indexOf(data['turn']);
+    var nextTurnIndex = currentTurnIndex + 1;
+    if (nextTurnIndex == data['playerIds'].length) {
+      nextTurnIndex = 0;
+    }
+    data['turn'] = data['playerIds'][nextTurnIndex];
+
+    await Firestore.instance
+        .collection('sessions')
+        .document(widget.sessionId)
+        .setData(data);
+  }
+
   playCard(data, pileName, cardToAdd) async {
+    // check if it's player's turn
+    if (widget.userId != data['turn']) {
+      _scaffoldKey.currentState.showSnackBar(SnackBar(
+        content: Text('Not your turn!'),
+        duration: Duration(seconds: 2),
+      ));
+      return;
+    }
     // add card to pile
     data[pileName].add(cardToAdd);
     // remove card from hand
@@ -144,6 +180,16 @@ class _RiversScreenState extends State<RiversScreen> {
     setState(() {
       clickedHandCard = -1;
     });
+
+    // check if turn is over
+    if (data['cardsToPlay'] > 0) {
+      data['cardsToPlay'] -= 1;
+    }
+
+    // if hand is empty, automatically end turn
+    if (data['player${playerIndex}Hand'].length == 0) {
+      endTurn(data);
+    }
 
     await Firestore.instance
         .collection('sessions')
@@ -169,7 +215,7 @@ class _RiversScreenState extends State<RiversScreen> {
       children: <Widget>[
         Text('ASCENDING'),
         SizedBox(
-          height: 10,
+          height: 5,
         ),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -245,7 +291,7 @@ class _RiversScreenState extends State<RiversScreen> {
       children: <Widget>[
         Text('DESCENDING'),
         SizedBox(
-          height: 10,
+          height: 5,
         ),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -307,26 +353,129 @@ class _RiversScreenState extends State<RiversScreen> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
-        getDrawPile(data),
-        SizedBox(height: 30),
         getAscendPiles(data),
-        SizedBox(height: 20),
+        SizedBox(height: 10),
         getDescendPiles(data),
       ],
+    );
+  }
+
+  getStatus(data) {
+    var currentPlayerName = data['playerNames'][data['turn']];
+    Text currentTurn = Text('It is $currentPlayerName\'s turn:');
+    if (widget.userId == data['turn']) {
+      currentTurn = Text(
+        'It is your turn:',
+        style: TextStyle(
+          color: Theme.of(context).primaryColor,
+          fontSize: 18,
+        ),
+      );
+    }
+    List<Widget> statusItems = [
+      currentTurn,
+      data['cardsToPlay'] > 0
+          ? Text(
+              '${data['cardsToPlay']} cards left to play!',
+              style: TextStyle(fontSize: 12),
+            )
+          : Text(
+              'Play more cards\nor end turn!',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12),
+            ),
+      SizedBox(height: 5),
+    ];
+    data['playerIds'].forEach((v) {
+      String name = data['playerNames'][v];
+      if (v == data['turn']) {
+        name = '> ' + name;
+      }
+      statusItems.add(Text(
+        name,
+        style: TextStyle(
+          fontSize: 12,
+        ),
+      ));
+    });
+    return Container(
+      padding: EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        border: Border.all(color: Theme.of(context).highlightColor),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        children: statusItems,
+      ),
+    );
+  }
+
+  getEndTurnButton(data) {
+    return RaisedGradientButton(
+      onPressed: () => endTurn(data),
+      child: Text('End my turn'),
+      height: 30,
+      width: 120,
+      gradient: LinearGradient(
+        colors: <Color>[
+          Theme.of(context).primaryColor,
+          Theme.of(context).accentColor,
+        ],
+      ),
+    );
+  }
+
+  endGame(data) async {
+    // count cards in deck and players' hands
+
+    // move to post game screen with score
+    data['state'] = 'complete';
+
+    await Firestore.instance
+        .collection('sessions')
+        .document(widget.sessionId)
+        .setData(data);
+  }
+
+  getGiveUpButton(data) {
+    return RaisedGradientButton(
+      onPressed: () => endGame(data),
+      child: Text('Give up'),
+      height: 30,
+      width: 80,
+      gradient: LinearGradient(
+        colors: <Color>[
+          Colors.red,
+          Colors.red[300],
+        ],
+      ),
     );
   }
 
   getGameboard(data) {
     return Center(
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: <Widget>[
-          Text('TODO: turn and action'),
-          SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              getDrawPile(data),
+              SizedBox(width: 30),
+              Column(children: <Widget>[
+                getStatus(data),
+                SizedBox(height: 10),
+                widget.userId == data['turn'] && data['cardsToPlay'] > 0
+                    ? getGiveUpButton(data)
+                    : Container(),
+                widget.userId == data['turn'] && data['cardsToPlay'] == 0
+                    ? getEndTurnButton(data)
+                    : Container(),
+              ]),
+            ],
+          ),
           getCenterCards(data),
-          SizedBox(height: 40),
           getPlayerHand(data),
-          SizedBox(height: 20),
           widget.userId == data['leader']
               ? EndGameButton(
                   gameName: 'Rivers',
@@ -418,6 +567,11 @@ class RiversCard extends StatelessWidget {
   final bool empty;
   final bool flipped;
   final bool clicked;
+  double height = 80;
+  double width = 60;
+  double fontSize = 30;
+  Color backgroundColor = Colors.white;
+  Color textColor = Colors.black;
 
   RiversCard({
     this.value,
@@ -428,15 +582,91 @@ class RiversCard extends StatelessWidget {
     this.clicked = false,
   });
 
-  getIcon(size) {
-    return Icon(MdiIcons.abjadArabic);
+  getIcon() {
+    var icon = MdiIcons.ladybug;
+    var color = Colors.red;
+    int intValue = int.parse(value);
+    if (intValue >= 10 && intValue < 20) {
+      icon = MdiIcons.ninja;
+      color = Colors.green;
+    }
+    if (intValue >= 20 && intValue < 30) {
+      icon = MdiIcons.jellyfishOutline;
+      color = Colors.purple;
+    }
+    if (intValue >= 30 && intValue < 40) {
+      icon = MdiIcons.ufoOutline;
+      color = Colors.lime;
+    }
+    if (intValue >= 40 && intValue < 50) {
+      icon = MdiIcons.rocketOutline;
+      color = Colors.grey;
+    }
+    if (intValue >= 50 && intValue < 60) {
+      icon = MdiIcons.atom;
+      color = Colors.blue;
+    }
+    if (intValue >= 60 && intValue < 70) {
+      icon = MdiIcons.beehiveOutline;
+      color = Colors.amber;
+      backgroundColor = Colors.black;
+    }
+    if (intValue >= 70 && intValue < 80) {
+      icon = MdiIcons.feather;
+      color = Colors.indigo;
+    }
+    if (intValue >= 80 && intValue < 90) {
+      icon = MdiIcons.footPrint;
+      color = Colors.blue;
+    }
+    if (intValue >= 90 && intValue <= 100) {
+      icon = MdiIcons.silverwareVariant;
+      color = Colors.teal;
+    }
+    return Container(
+      // decoration: BoxDecoration(border: Border.all()),
+      child: Icon(
+        icon,
+        size: 23,
+        color: color.withAlpha(140),
+      ),
+    );
+  }
+
+  getIconBackground() {
+    return Transform.rotate(
+      angle: 0, //0.2,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              getIcon(),
+              getIcon(),
+            ],
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              getIcon(),
+              getIcon(),
+            ],
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              getIcon(),
+              getIcon(),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    double height = 80;
-    double width = 60;
-    double fontSize = 34;
     if (empty) {
       return Container(
         height: height,
@@ -488,29 +718,35 @@ class RiversCard extends StatelessWidget {
         height: height,
         width: width,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: backgroundColor,
           border: Border.all(
             color: clicked
                 ? Colors.blue
-                : clickable ? Colors.lightGreen : Colors.white,
-            width: 5,
+                : clickable ? Colors.lightGreen : Colors.black,
+            width: clickable || clicked ? 5 : 1,
           ),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: Theme.of(context).highlightColor),
+            color: backgroundColor,
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Center(
-            child: Text(
-              value,
-              style: TextStyle(
-                color: Colors.black,
-                fontSize: fontSize,
+          child: Stack(
+            children: <Widget>[
+              Center(
+                child: getIconBackground(),
               ),
-            ),
+              Center(
+                child: Text(
+                  value,
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: fontSize,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

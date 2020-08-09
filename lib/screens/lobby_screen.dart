@@ -561,7 +561,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
     // initialize players' data
     var playerIds = data['playerIds'];
     var shuffledDeck =
-        new List<int>.generate(data['rules']['cardRange'] - 3, (i) => i + 2);
+        new List<int>.generate(data['rules']['cardRange'] - 2, (i) => i + 2);
     shuffledDeck.shuffle();
     var shuffledDeckIndex = 0;
 
@@ -592,11 +592,15 @@ class _LobbyScreenState extends State<LobbyScreen> {
         .document(sessionId)
         .updateData({
       'rules': rules,
-      'drawPile': shuffledDeck.sublist(shuffledDeckIndex, shuffledDeck.length),
+      'cardsToPlay': 2,
+      'drawPile': shuffledDeck.sublist(
+          shuffledDeckIndex,
+          shuffledDeckIndex +
+              1), // shuffledDeck.sublist(shuffledDeckIndex, shuffledDeck.length),
       'ascendPile1': [1],
       'ascendPile2': [1],
-      'descendPile1': [data['rules']['cardRange'] - 1],
-      'descendPile2': [data['rules']['cardRange'] - 1],
+      'descendPile1': [data['rules']['cardRange']],
+      'descendPile2': [data['rules']['cardRange']],
       'playerNames': data['playerNames'],
       'state': 'started',
       'startTime': DateTime.now().add(Duration(seconds: 5)),

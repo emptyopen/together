@@ -6,8 +6,20 @@ import 'screens/root_screen.dart';
 void main() => runApp(MyApp());
 
 // done:
+// added basics for Rivers
 
 // next up:
+// fix DEBUG LOCKED
+// make turn ending not automatic, only when they click end turn
+// add "end turn" button after playing 1 card
+// add check for game complete - game ends either if no one can play or if every card is played
+// count number of cards in hand, team gets that score
+// add best score as a team
+// add number of 0 cards left
+// add end game screen (with number of cards in everyone's hands, special addition to screen if no cards left)
+// add log of events?? (markus played X, markus passed, vanessa played Y, etc.)
+
+// TODO:
 // add basic functionality to three crowns -
 // - play cards in duel
 // - continue duel winner logic
@@ -21,8 +33,6 @@ void main() => runApp(MyApp());
 // RUN THROUGH AN ENTIRE BANANAPHONE, many updates. - pretty close to done
 // undo button not working in bananaphone 2nd+ drawings
 // add rules for bananaphone
-
-// TODO:
 // make all buttons disappear when they are clicked (especially when they cause an effect - there are double effects happening)
 // add rules for three crowns
 // fine grained control of teams in lobby for abstract
