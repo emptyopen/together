@@ -165,7 +165,6 @@ class _RiversScreenState extends State<RiversScreen> {
     // if next turn player's hand is not full, fill it
     while (
         data['player${nextTurnIndex}Hand'].length < data['rules']['handSize']) {
-      print('adding cards');
       data['player${nextTurnIndex}Hand'].add(data['drawPile'].last);
       data['drawPile'].remove(data['drawPile'].last);
     }
@@ -225,15 +224,21 @@ class _RiversScreenState extends State<RiversScreen> {
   getAscendPiles(data) {
     bool ascend1Clickable = false;
     bool ascend2Clickable = false;
+    bool ascend1ExtraClickable = false;
+    bool ascend2ExtraClickable = false;
     // if hand card is selected and conditions are valid, highlight it
     if (clickedHandCard != -1) {
-      if (clickedHandCard > data['ascendPile1'].last ||
-          clickedHandCard == data['ascendPile1'].last - 10) {
+      if (clickedHandCard > data['ascendPile1'].last) {
         ascend1Clickable = true;
       }
-      if (clickedHandCard > data['ascendPile2'].last ||
-          clickedHandCard == data['ascendPile2'].last - 10) {
+      if (clickedHandCard == data['ascendPile1'].last - 10) {
+        ascend1ExtraClickable = true;
+      }
+      if (clickedHandCard > data['ascendPile2'].last) {
         ascend2Clickable = true;
+      }
+      if (clickedHandCard == data['ascendPile1'].last - 10) {
+        ascend2ExtraClickable = true;
       }
     }
     return Column(
@@ -253,6 +258,7 @@ class _RiversScreenState extends State<RiversScreen> {
             RiversCard(
               value: data['ascendPile1'].last.toString(),
               clickable: ascend1Clickable,
+              extraClickable: ascend1ExtraClickable,
               size: 0,
               callback: () {
                 if (cardIsValidForPile(data, 'ascendPile1', clickedHandCard)) {
@@ -273,6 +279,7 @@ class _RiversScreenState extends State<RiversScreen> {
             RiversCard(
               value: data['ascendPile2'].last.toString(),
               clickable: ascend2Clickable,
+              extraClickable: ascend2ExtraClickable,
               size: 0,
               callback: () {
                 if (cardIsValidForPile(data, 'ascendPile2', clickedHandCard)) {
@@ -303,15 +310,21 @@ class _RiversScreenState extends State<RiversScreen> {
   getDescendPiles(data) {
     bool descend1Clickable = false;
     bool descend2Clickable = false;
+    bool descend1ExtraClickable = false;
+    bool descend2ExtraClickable = false;
     // if hand card is selected and conditions are valid, highlight it
     if (clickedHandCard != -1) {
-      if (clickedHandCard < data['descendPile1'].last ||
-          clickedHandCard == data['descendPile1'].last + 10) {
+      if (clickedHandCard < data['descendPile1'].last) {
         descend1Clickable = true;
       }
-      if (clickedHandCard < data['descendPile2'].last ||
-          clickedHandCard == data['descendPile2'].last + 10) {
+      if (clickedHandCard == data['descendPile1'].last + 10) {
+        descend1ExtraClickable = true;
+      }
+      if (clickedHandCard < data['descendPile2'].last) {
         descend2Clickable = true;
+      }
+      if (clickedHandCard == data['descendPile1'].last + 10) {
+        descend2ExtraClickable = true;
       }
     }
     return Column(
@@ -331,6 +344,7 @@ class _RiversScreenState extends State<RiversScreen> {
             RiversCard(
               value: data['descendPile1'].last.toString(),
               clickable: descend1Clickable,
+              extraClickable: descend1ExtraClickable,
               size: 0,
               callback: () {
                 if (cardIsValidForPile(data, 'descendPile1', clickedHandCard)) {
@@ -351,6 +365,7 @@ class _RiversScreenState extends State<RiversScreen> {
             RiversCard(
               value: data['descendPile2'].last.toString(),
               clickable: descend2Clickable,
+              extraClickable: descend2ExtraClickable,
               size: 0,
               callback: () {
                 if (cardIsValidForPile(data, 'descendPile2', clickedHandCard)) {
@@ -706,6 +721,7 @@ class RiversCard extends StatelessWidget {
   final String value;
   final Function callback;
   final bool clickable;
+  final bool extraClickable;
   final bool empty;
   final bool flipped;
   final bool clicked;
@@ -715,6 +731,7 @@ class RiversCard extends StatelessWidget {
     this.value,
     this.callback,
     this.clickable,
+    this.extraClickable = false,
     this.empty = false,
     this.flipped = false,
     this.clicked = false,
@@ -891,8 +908,10 @@ class RiversCard extends StatelessWidget {
           border: Border.all(
             color: clicked
                 ? Colors.blue
-                : clickable ? Colors.lightGreen : Colors.black,
-            width: clickable || clicked ? 5 : 1,
+                : clickable
+                    ? Colors.lightGreen
+                    : extraClickable ? Colors.indigoAccent : Colors.black,
+            width: clickable || clicked || extraClickable ? 5 : 1,
           ),
           borderRadius: BorderRadius.circular(10),
         ),

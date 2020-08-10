@@ -13,7 +13,6 @@ void main() => runApp(MyApp());
 // add best score as a team to stats
 // add number of 0 cards left to stats
 // add log of events?? (markus played X, markus passed, vanessa played Y, etc.)
-// auto add cards at end of turn
 
 // TODO:
 // add basic functionality to three crowns -
