@@ -6,6 +6,7 @@ import 'package:together/services/services.dart';
 import 'package:together/components/buttons.dart';
 import 'template/help_screen.dart';
 import 'lobby_screen.dart';
+import 'package:together/components/misc.dart';
 
 class RiversScreen extends StatefulWidget {
   RiversScreen({this.sessionId, this.userId, this.roomCode});
@@ -420,26 +421,48 @@ class _RiversScreenState extends State<RiversScreen> {
       currentTurn,
       data['cardsToPlay'] > 0
           ? Text(
-              'Need to play\n${data['cardsToPlay']} more cards!',
-              style: TextStyle(fontSize: 12),
+              'Must play\n${data['cardsToPlay']} more cards!',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey,
+              ),
             )
           : Text(
               'Play more cards\nor end turn!',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12),
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey,
+              ),
             ),
       SizedBox(height: 5),
+      PageBreak(width: 20),
     ];
     data['playerIds'].forEach((v) {
       String name = data['playerNames'][v];
-      if (v == data['turn']) {
-        name = '> ' + name;
+      if (widget.userId == v) {
+        name = name + ' (you)';
       }
-      statusItems.add(Text(
-        name,
-        style: TextStyle(
-          fontSize: 12,
-        ),
+      statusItems.add(Row(
+        children: <Widget>[
+          v == data['turn']
+              ? Text(
+                  '> ',
+                  style: TextStyle(
+                      color: Theme.of(context).primaryColor, fontSize: 12),
+                )
+              : Container(),
+          Text(
+            name,
+            style: TextStyle(
+              fontSize: 12,
+              color: v == data['turn']
+                  ? Theme.of(context).highlightColor
+                  : Colors.grey,
+            ),
+          ),
+        ],
       ));
     });
     return Container(
