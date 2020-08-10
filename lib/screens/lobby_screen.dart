@@ -567,7 +567,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
     playerIds.asMap().forEach((i, v) async {
       data['player${i}Hand'] = [];
-      while (data['player${i}Hand'].length < 5) {
+      while (data['player${i}Hand'].length < data['rules']['handSize']) {
         data['player${i}Hand'].add(shuffledDeck[shuffledDeckIndex]);
         shuffledDeckIndex += 1;
       }
@@ -593,10 +593,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
         .updateData({
       'rules': rules,
       'cardsToPlay': 2,
-      'drawPile': shuffledDeck.sublist(
-          shuffledDeckIndex,
-          shuffledDeckIndex +
-              1), // shuffledDeck.sublist(shuffledDeckIndex, shuffledDeck.length),
+      'drawPile': shuffledDeck.sublist(shuffledDeckIndex, shuffledDeck.length),
       'ascendPile1': [1],
       'ascendPile2': [1],
       'descendPile1': [data['rules']['cardRange']],
@@ -733,9 +730,33 @@ class _LobbyScreenState extends State<LobbyScreen> {
         ]);
         break;
       case 'Rivers':
-        return RulesContainer(rules: <Widget>[
-          Text('Card range: ${rules['cardRange']}'),
-        ]);
+        return Column(
+          children: <Widget>[
+            RulesContainer(rules: <Widget>[
+              Text(
+                'Card Range:',
+                style: TextStyle(fontSize: 14),
+              ),
+              Text(
+                rules['cardRange'].toString(),
+                style: TextStyle(fontSize: 18),
+              ),
+            ]),
+            SizedBox(height: 5),
+            RulesContainer(
+              rules: <Widget>[
+                Text(
+                  'Hand Size:',
+                  style: TextStyle(fontSize: 14),
+                ),
+                Text(
+                  rules['handSize'].toString(),
+                  style: TextStyle(fontSize: 18),
+                ),
+              ],
+            ),
+          ],
+        );
         break;
       default:
         return Text('Unknown game');
@@ -1072,6 +1093,7 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
         break;
       case 'Rivers':
         rules['cardRange'] = sessionData['rules']['cardRange'];
+        rules['handSize'] = sessionData['rules']['handSize'];
         break;
     }
     if (widget.game == 'The Hunt') {
@@ -1460,8 +1482,7 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
           contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),
           content: Container(
             // decoration: BoxDecoration(border: Border.all()),
-            height:
-                subList2 != null ? 120 + 40 * subList1.length.toDouble() : 100,
+            height: 170,
             width: width * 0.95,
             child: ListView(
               children: <Widget>[
@@ -1486,6 +1507,35 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
                     },
                     items: <int>[80, 100, 120, 140]
                         .map<DropdownMenuItem<int>>((int value) {
+                      return DropdownMenuItem<int>(
+                        value: value,
+                        child: Text(value.toString(),
+                            style: TextStyle(fontFamily: 'Balsamiq')),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                SizedBox(height: 20),
+                Text('Maximum hand size:'),
+                Container(
+                  width: 80,
+                  child: DropdownButton<int>(
+                    isExpanded: true,
+                    value: rules['handSize'],
+                    iconSize: 24,
+                    elevation: 16,
+                    style: TextStyle(color: Theme.of(context).primaryColor),
+                    underline: Container(
+                      height: 2,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    onChanged: (int newValue) {
+                      setState(() {
+                        rules['handSize'] = newValue;
+                      });
+                    },
+                    items:
+                        <int>[5, 6, 7].map<DropdownMenuItem<int>>((int value) {
                       return DropdownMenuItem<int>(
                         value: value,
                         child: Text(value.toString(),

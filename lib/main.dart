@@ -10,12 +10,10 @@ void main() => runApp(MyApp());
 
 // next up:
 // fix DEBUG LOCKED
-// add check for game complete - game ends either if no one can play or if every card is played
-// count number of cards in hand, team gets that score
-// add best score as a team
-// add number of 0 cards left
-// add end game screen (with number of cards in everyone's hands, special addition to screen if no cards left)
+// add best score as a team to stats
+// add number of 0 cards left to stats
 // add log of events?? (markus played X, markus passed, vanessa played Y, etc.)
+// auto add cards at end of turn
 
 // TODO:
 // add basic functionality to three crowns -
@@ -42,7 +40,6 @@ void main() => runApp(MyApp());
 // add timer to the hunt
 // abstract: ability to manually change teams (people can just join the team they want to be on?)
 // abstract should show leader view at end of game (not just solid blocks)
-// probably don't need setupComplete flag, games can only be configured from the lobby
 // if leader leaves a game, need to assign remaining player the leader position - ORRRRR, "claim leadership" button would be more fun and easier
 // add snackbar when auto exiting to lobby or main menu
 // add password reset option

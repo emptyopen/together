@@ -139,7 +139,7 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
       future:
           Firestore.instance.collection('users').document(activePlayer).get(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) {
+        if (snapshot.hasData && snapshot.data.data == null) {
           return Container();
         }
         return Container(

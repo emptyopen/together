@@ -101,6 +101,7 @@ getDefaultRules(String gameName) {
     case 'Rivers':
       return {
         'cardRange': 100,
+        'handSize': 5,
       };
   }
 }
@@ -144,7 +145,6 @@ createGame(BuildContext context, String game, String password, bool pop) async {
     'state': 'lobby',
     'leader': userId,
     'dateCreated': DateTime.now(),
-    'setupComplete': false,
   };
   switch (game) {
     case 'The Hunt':

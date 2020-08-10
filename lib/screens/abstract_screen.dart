@@ -513,7 +513,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
       } else {
         print('not a tie');
       }
-      
+
       // update winning players scores
       for (String team in winningTeams) {
         for (String playerId in data['playerIds']) {
@@ -527,7 +527,11 @@ class _AbstractScreenState extends State<AbstractScreen> {
           .collection('sessions')
           .document(widget.sessionId)
           .updateData(deathCardDrawn
-              ? {'state': 'complete', 'winners': winningTeams, 'deathCard': true}
+              ? {
+                  'state': 'complete',
+                  'winners': winningTeams,
+                  'deathCard': true
+                }
               : {'state': 'complete', 'winners': winningTeams});
     }
   }
@@ -535,9 +539,9 @@ class _AbstractScreenState extends State<AbstractScreen> {
   getTeamIcon(x, y, data) {
     // alertDecagramOutline, magnifyPlusOutline
     var icon = MdiIcons.circleDouble;
-    switch(data['rules']['words'][x]['rowWords'][y]['color'] ) {
+    switch (data['rules']['words'][x]['rowWords'][y]['color']) {
       case 'green':
-      icon = MdiIcons.sproutOutline;
+        icon = MdiIcons.sproutOutline;
         break;
       case 'orange':
         icon = MdiIcons.fire;
@@ -636,11 +640,17 @@ class _AbstractScreenState extends State<AbstractScreen> {
             ),
             words[x]['rowWords'][y]['flippedTurns'] > 0
                 ? Positioned(
-                    child: Icon(getTeamIcon(x, y, data),
-                        size: 18 + words[x]['rowWords'][y]['flippedTurns'].toDouble() * 0.5,
-                        color: words[x]['rowWords'][y]['color'] == 'grey' ? Colors.black : Colors.black.withAlpha(255 -
-                            (5 - words[x]['rowWords'][y]['flippedTurns']) *
-                                50),), 
+                    child: Icon(
+                      getTeamIcon(x, y, data),
+                      size: 18 +
+                          words[x]['rowWords'][y]['flippedTurns'].toDouble() *
+                              0.5,
+                      color: words[x]['rowWords'][y]['color'] == 'grey'
+                          ? Colors.black
+                          : Colors.black.withAlpha(255 -
+                              (5 - words[x]['rowWords'][y]['flippedTurns']) *
+                                  50),
+                    ),
                     right: 5,
                     bottom: 5)
                 : Container(),

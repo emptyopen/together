@@ -39,7 +39,7 @@ class _RiversScreenState extends State<RiversScreen> {
     }
   }
 
-  getPlayerHand(data) {
+  getHand(data) {
     var playerIndex = data['playerIds'].indexOf(widget.userId);
     var playerHand = data['player${playerIndex}Hand'];
     // return Text('Player hand: $playerIndex $playerHand');
@@ -49,17 +49,23 @@ class _RiversScreenState extends State<RiversScreen> {
       )
     ];
     playerHand.forEach((v) {
-      cards.add(RiversCard(
+      cards.add(
+        RiversCard(
           value: v.toString(),
           clickable: false,
           clicked: clickedHandCard == v,
+          size: data['rules']['handSize'] == 5
+              ? 1
+              : data['rules']['handSize'] == 6 ? 2 : 3,
           callback: () {
             setState(() {
               clickedHandCard = v;
             });
-          }));
+          },
+        ),
+      );
       cards.add(
-        SizedBox(width: 10),
+        SizedBox(width: data['rules']['handSize'] == 5 ? 10 : 5),
       );
     });
     return Column(
@@ -77,7 +83,7 @@ class _RiversScreenState extends State<RiversScreen> {
   drawCard(data) async {
     var playerIndex = data['playerIds'].indexOf(widget.userId);
     // check if card can be drawn
-    if (data['player${playerIndex}Hand'].length >= 5) {
+    if (data['player${playerIndex}Hand'].length >= data['rules']['handSize']) {
       _scaffoldKey.currentState.showSnackBar(SnackBar(
         content: Text('Hand is full!'),
         duration: Duration(seconds: 2),
@@ -155,6 +161,14 @@ class _RiversScreenState extends State<RiversScreen> {
       nextTurnIndex = 0;
     }
     data['turn'] = data['playerIds'][nextTurnIndex];
+
+    // if next turn player's hand is not full, fill it
+    while (
+        data['player${nextTurnIndex}Hand'].length < data['rules']['handSize']) {
+      print('adding cards');
+      data['player${nextTurnIndex}Hand'].add(data['drawPile'].last);
+      data['drawPile'].remove(data['drawPile'].last);
+    }
 
     await Firestore.instance
         .collection('sessions')
@@ -239,6 +253,7 @@ class _RiversScreenState extends State<RiversScreen> {
             RiversCard(
               value: data['ascendPile1'].last.toString(),
               clickable: ascend1Clickable,
+              size: 0,
               callback: () {
                 if (cardIsValidForPile(data, 'ascendPile1', clickedHandCard)) {
                   playCard(
@@ -258,6 +273,7 @@ class _RiversScreenState extends State<RiversScreen> {
             RiversCard(
               value: data['ascendPile2'].last.toString(),
               clickable: ascend2Clickable,
+              size: 0,
               callback: () {
                 if (cardIsValidForPile(data, 'ascendPile2', clickedHandCard)) {
                   playCard(
@@ -315,6 +331,7 @@ class _RiversScreenState extends State<RiversScreen> {
             RiversCard(
               value: data['descendPile1'].last.toString(),
               clickable: descend1Clickable,
+              size: 0,
               callback: () {
                 if (cardIsValidForPile(data, 'descendPile1', clickedHandCard)) {
                   playCard(
@@ -334,6 +351,7 @@ class _RiversScreenState extends State<RiversScreen> {
             RiversCard(
               value: data['descendPile2'].last.toString(),
               clickable: descend2Clickable,
+              size: 0,
               callback: () {
                 if (cardIsValidForPile(data, 'descendPile2', clickedHandCard)) {
                   playCard(
@@ -387,7 +405,7 @@ class _RiversScreenState extends State<RiversScreen> {
       currentTurn,
       data['cardsToPlay'] > 0
           ? Text(
-              '${data['cardsToPlay']} cards left to play!',
+              'Need to play\n${data['cardsToPlay']} more cards!',
               style: TextStyle(fontSize: 12),
             )
           : Text(
@@ -477,7 +495,13 @@ class _RiversScreenState extends State<RiversScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              getDrawPile(data),
+              Column(
+                children: <Widget>[
+                  getDrawPile(data),
+                  SizedBox(height: 15),
+                  Text('Room code: ${widget.roomCode}'),
+                ],
+              ),
               SizedBox(width: 30),
               Column(children: <Widget>[
                 getStatus(data),
@@ -492,7 +516,7 @@ class _RiversScreenState extends State<RiversScreen> {
             ],
           ),
           getCenterCards(data),
-          getPlayerHand(data),
+          getHand(data),
           widget.userId == data['leader']
               ? EndGameButton(
                   gameName: 'Rivers',
@@ -685,11 +709,7 @@ class RiversCard extends StatelessWidget {
   final bool empty;
   final bool flipped;
   final bool clicked;
-  double height = 80;
-  double width = 60;
-  double fontSize = 30;
-  Color backgroundColor = Colors.white;
-  Color textColor = Colors.black;
+  final int size;
 
   RiversCard({
     this.value,
@@ -698,9 +718,10 @@ class RiversCard extends StatelessWidget {
     this.empty = false,
     this.flipped = false,
     this.clicked = false,
+    this.size = 1,
   });
 
-  getIcon() {
+  getIcon(double iconSize) {
     var icon = MdiIcons.ladybug;
     var color = Colors.red;
     int intValue = int.parse(value);
@@ -727,7 +748,6 @@ class RiversCard extends StatelessWidget {
     if (intValue >= 60 && intValue < 70) {
       icon = MdiIcons.beehiveOutline;
       color = Colors.amber;
-      backgroundColor = Colors.black;
     }
     if (intValue >= 70 && intValue < 80) {
       icon = MdiIcons.feather;
@@ -745,13 +765,13 @@ class RiversCard extends StatelessWidget {
       // decoration: BoxDecoration(border: Border.all()),
       child: Icon(
         icon,
-        size: 23,
+        size: iconSize,
         color: color.withAlpha(140),
       ),
     );
   }
 
-  getIconBackground() {
+  getIconBackground(double iconSize) {
     return Transform.rotate(
       angle: 0, //0.2,
       child: Column(
@@ -760,22 +780,22 @@ class RiversCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              getIcon(),
-              getIcon(),
+              getIcon(iconSize),
+              getIcon(iconSize),
             ],
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              getIcon(),
-              getIcon(),
+              getIcon(iconSize),
+              getIcon(iconSize),
             ],
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              getIcon(),
-              getIcon(),
+              getIcon(iconSize),
+              getIcon(iconSize),
             ],
           ),
         ],
@@ -785,6 +805,37 @@ class RiversCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    double height = 80;
+    double width = 60;
+    double fontSize = 30;
+    Color textColor = Colors.black;
+    double iconSize = 23;
+    switch (size) {
+      case 0:
+        // case for center piles
+        height = 100;
+        width = 75;
+        fontSize = 40;
+        iconSize = 28;
+        break;
+      case 1:
+        // leave defaults
+        break;
+      case 2:
+        // smaller cards for 6 cards
+        height = 80;
+        width = 60;
+        fontSize = 30;
+        iconSize = 23;
+        break;
+      case 3:
+        // even smaller cards for 7 cards
+        height = 70;
+        width = 50;
+        fontSize = 30;
+        iconSize = 18;
+        break;
+    }
     if (empty) {
       return Container(
         height: height,
@@ -836,7 +887,7 @@ class RiversCard extends StatelessWidget {
         height: height,
         width: width,
         decoration: BoxDecoration(
-          color: backgroundColor,
+          color: Colors.white,
           border: Border.all(
             color: clicked
                 ? Colors.blue
@@ -847,13 +898,13 @@ class RiversCard extends StatelessWidget {
         ),
         child: Container(
           decoration: BoxDecoration(
-            color: backgroundColor,
+            color: Colors.white,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Stack(
             children: <Widget>[
               Center(
-                child: getIconBackground(),
+                child: getIconBackground(iconSize),
               ),
               Center(
                 child: Text(

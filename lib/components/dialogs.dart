@@ -26,7 +26,6 @@ class _EndGameDialogState extends State<EndGameDialog> {
   @override
   void initState() {
     super.initState();
-    print('init with ${widget.game}');
   }
 
   endGame(bool isToLobby) async {
@@ -100,18 +99,17 @@ class _EndGameDialogState extends State<EndGameDialog> {
     //   });
     //   await Firestore.instance.collection('sessions').document(widget.sessionId).setData(data);
     // }
-    if (widget.game == 'Rivers') {
-      var data = (await Firestore.instance
-              .collection('sessions')
-              .document(widget.sessionId)
-              .get())
-          .data;
-      data.remove('endOnNextGreen');
-      await Firestore.instance
-          .collection('sessions')
-          .document(widget.sessionId)
-          .setData(data);
-    }
+    // if (widget.game == 'Rivers') {
+    //   var data = (await Firestore.instance
+    //           .collection('sessions')
+    //           .document(widget.sessionId)
+    //           .get())
+    //       .data;
+    //   await Firestore.instance
+    //       .collection('sessions')
+    //       .document(widget.sessionId)
+    //       .setData(data);
+    // }
 
     // go to lobby or main menu
     if (isToLobby) {
@@ -119,13 +117,21 @@ class _EndGameDialogState extends State<EndGameDialog> {
       await Firestore.instance
           .collection('sessions')
           .document(widget.sessionId)
-          .updateData({'state': 'lobby', 'setupComplete': false});
+          .updateData({'state': 'lobby'});
       Navigator.of(context).pop();
     } else {
       await Firestore.instance
           .collection('sessions')
           .document(widget.sessionId)
           .delete();
+      // WidgetsBinding.instance.addPostFrameCallback((_) {
+      //       Navigator.of(context)
+      //           .pushReplacementNamed(MyScreen.routeName);
+      //     });
+      // WidgetsBinding.instance.addPostFrameCallback((_) {
+      //   Navigator.of(context).pop();
+      //   Navigator.of(context).pop();
+      // });
       Navigator.of(context).pop();
       Navigator.of(context).pop();
     }

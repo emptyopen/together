@@ -426,6 +426,10 @@ class _LobbyDialogState extends State<LobbyDialog> {
         color = Colors.blue;
         icon = Icon(MdiIcons.phoneSettings, color: color);
         break;
+      case 'Rivers':
+        color = Colors.lightBlue;
+        icon = Icon(MdiIcons.waves, color: color);
+        break;
       case 'Three Crowns':
         color = Colors.amber;
         icon = Icon(MdiIcons.crown, color: color);
@@ -472,6 +476,7 @@ class _LobbyDialogState extends State<LobbyDialog> {
                       'The Hunt',
                       'Abstract',
                       'Bananaphone',
+                      'Rivers',
                       'Three Crowns',
                     ].map<DropdownMenuItem<String>>((String value) {
                       return DropdownMenuItem<String>(
