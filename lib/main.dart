@@ -6,13 +6,13 @@ import 'screens/root_screen.dart';
 void main() => runApp(MyApp());
 
 // done:
-// added basics for Rivers
 
 // next up:
+// fix end game (ensure 1 card), and skip people who have no cards left
+// fix highlighting -10 case
 // fix DEBUG LOCKED
 // add best score as a team to stats
 // add number of 0 cards left to stats
-// add log of events?? (markus played X, markus passed, vanessa played Y, etc.)
 
 // TODO:
 // add basic functionality to three crowns -

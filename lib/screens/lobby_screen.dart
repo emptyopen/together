@@ -594,6 +594,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
       'rules': rules,
       'cardsToPlay': 2,
       'drawPile': shuffledDeck.sublist(shuffledDeckIndex, shuffledDeck.length),
+      'log': ['', '', ''],
       'ascendPile1': [1],
       'ascendPile2': [1],
       'descendPile1': [data['rules']['cardRange']],

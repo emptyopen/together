@@ -101,7 +101,7 @@ getDefaultRules(String gameName) {
     case 'Rivers':
       return {
         'cardRange': 100,
-        'handSize': 5,
+        'handSize': 7,
       };
   }
 }

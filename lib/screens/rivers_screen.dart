@@ -110,11 +110,15 @@ class _RiversScreenState extends State<RiversScreen> {
   }
 
   getDrawPile(data) {
-    var drawPile = RiversCard(empty: true);
+    var drawPile = RiversCard(
+      empty: true,
+      size: 0,
+    );
     if (data['drawPile'].length > 0) {
       drawPile = RiversCard(
         flipped: true,
         callback: () => drawCard(data),
+        size: 0,
       );
     }
     return Column(children: <Widget>[
@@ -132,6 +136,10 @@ class _RiversScreenState extends State<RiversScreen> {
 
   cardIsValidForPile(data, pileName, value) {
     var topCard = data[pileName].last;
+    // no card selected
+    if (value == -1) {
+      return false;
+    }
     // descending
     if (pileName.contains('descend')) {
       if (value < topCard || value == topCard + 10) {
@@ -150,18 +158,34 @@ class _RiversScreenState extends State<RiversScreen> {
 
   endTurn(data) async {
     // TODO: add logic here to check if deck will be empty if cards are drawn
-    if (data['drawPile'].length == 0) {
+    var missingCards = 0;
+    data['playerIds'].asMap().forEach((i, v) {
+      missingCards += data['rules']['handSize'] - data['player${i}Hand'].length;
+    });
+    if (data['drawPile'].length - missingCards == 0) {
       data['cardsToPlay'] = 1;
     } else {
       data['cardsToPlay'] = 2;
     }
-    // update turn
+
     var currentTurnIndex = data['playerIds'].indexOf(data['turn']);
     var nextTurnIndex = currentTurnIndex + 1;
     if (nextTurnIndex == data['playerIds'].length) {
       nextTurnIndex = 0;
     }
+    // skip until find player with cards
+    while (data['player${nextTurnIndex}Hand'].length == 0) {
+      nextTurnIndex = currentTurnIndex + 1;
+      if (nextTurnIndex == data['playerIds'].length) {
+        nextTurnIndex = 0;
+      }
+      data['turn'] = data['playerIds'][nextTurnIndex];
+    }
+    // update turn
     data['turn'] = data['playerIds'][nextTurnIndex];
+
+    // log end of turn
+    logEvent(data, 'Now ${data['playerNames'][data['turn']]}\'s turn');
 
     // if next turn player's hand is not full, fill it
     while (
@@ -194,6 +218,9 @@ class _RiversScreenState extends State<RiversScreen> {
     setState(() {
       clickedHandCard = -1;
     });
+    // log played card
+    var playerName = data['playerNames'][widget.userId];
+    logEvent(data, '$playerName played $cardToAdd');
 
     // check if turn is over
     if (data['cardsToPlay'] > 0) {
@@ -238,7 +265,7 @@ class _RiversScreenState extends State<RiversScreen> {
       if (clickedHandCard > data['ascendPile2'].last) {
         ascend2Clickable = true;
       }
-      if (clickedHandCard == data['ascendPile1'].last - 10) {
+      if (clickedHandCard == data['ascendPile2'].last - 10) {
         ascend2ExtraClickable = true;
       }
     }
@@ -324,7 +351,7 @@ class _RiversScreenState extends State<RiversScreen> {
       if (clickedHandCard < data['descendPile2'].last) {
         descend2Clickable = true;
       }
-      if (clickedHandCard == data['descendPile1'].last + 10) {
+      if (clickedHandCard == data['descendPile2'].last + 10) {
         descend2ExtraClickable = true;
       }
     }
@@ -445,6 +472,7 @@ class _RiversScreenState extends State<RiversScreen> {
         name = name + ' (you)';
       }
       statusItems.add(Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
           v == data['turn']
               ? Text(
@@ -466,12 +494,15 @@ class _RiversScreenState extends State<RiversScreen> {
       ));
     });
     return Container(
+      width: 150,
       padding: EdgeInsets.all(10),
       decoration: BoxDecoration(
+        color: Colors.grey[900],
         border: Border.all(color: Theme.of(context).highlightColor),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(5),
       ),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: statusItems,
       ),
     );
@@ -525,6 +556,134 @@ class _RiversScreenState extends State<RiversScreen> {
     );
   }
 
+  logEvent(data, eventText) async {
+    data['log'].add(eventText);
+    await Firestore.instance
+        .collection('sessions')
+        .document(widget.sessionId)
+        .setData(data);
+  }
+
+  showLog(data) {
+    var latestLog = data['log'].last;
+    var secondLatestLog = data['log'][data['log'].length - 2];
+    var thirdLatestLog = data['log'][data['log'].length - 3];
+
+    List<Widget> fullLogs = [];
+    data['log'].sublist(3).reversed.forEach((v) {
+      fullLogs.add(
+        Text(
+          v,
+          style: TextStyle(
+            fontSize: v.startsWith('Now') && v.endsWith('turn') ? 14 : 16,
+            color: v.startsWith('Now') && v.endsWith('turn')
+                ? Colors.grey
+                : Colors.white,
+          ),
+        ),
+      );
+    });
+
+    return Container(
+      width: 140,
+      height: 70,
+      child: RaisedButton(
+        onPressed: () {
+          showDialog<Null>(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text('Logs:'),
+                contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),
+                content: Container(
+                  height: 200,
+                  child: Column(
+                    children: <Widget>[
+                      SizedBox(height: 10),
+                      Container(
+                        height: 190,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                                color: Theme.of(context).highlightColor),
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          padding: EdgeInsets.all(10),
+                          child: SingleChildScrollView(
+                            child: Column(
+                              children: fullLogs,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                actions: <Widget>[
+                  Container(
+                    child: FlatButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: Text('OK'),
+                    ),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+        shape: RoundedRectangleBorder(
+            side: BorderSide(width: 1, color: Colors.white),
+            borderRadius: BorderRadius.circular(5.0)),
+        padding: const EdgeInsets.all(0.0),
+        child: Container(
+          constraints: BoxConstraints(),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(color: Colors.grey[900]),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              SizedBox(height: 3),
+              Text(
+                '> ' + latestLog + ' <',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.white,
+                ),
+              ),
+              SizedBox(height: 3),
+              Text(
+                secondLatestLog,
+                style: TextStyle(
+                  fontSize: 9,
+                  color: Colors.grey[200],
+                ),
+              ),
+              SizedBox(height: 3),
+              Text(
+                thirdLatestLog,
+                style: TextStyle(
+                  fontSize: 9,
+                  color: Colors.grey[400],
+                ),
+              ),
+              SizedBox(height: 3),
+              Text(
+                '(click to show full logs)',
+                style: TextStyle(
+                  fontSize: 8,
+                  color: Colors.grey[500],
+                ),
+              ),
+              SizedBox(height: 3),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   getGameboard(data) {
     return Center(
       child: Column(
@@ -535,21 +694,27 @@ class _RiversScreenState extends State<RiversScreen> {
             children: <Widget>[
               Column(
                 children: <Widget>[
+                  Text(
+                    'Room code: ${widget.roomCode}',
+                    style: TextStyle(
+                      color: Colors.grey,
+                    ),
+                  ),
+                  SizedBox(height: 10),
                   getDrawPile(data),
                   SizedBox(height: 15),
-                  Text('Room code: ${widget.roomCode}'),
+                  widget.userId == data['turn']
+                      ? data['cardsToPlay'] > 0
+                          ? getGiveUpButton(data)
+                          : getEndTurnButton(data)
+                      : Container(height: 30),
                 ],
               ),
               SizedBox(width: 30),
               Column(children: <Widget>[
                 getStatus(data),
                 SizedBox(height: 10),
-                widget.userId == data['turn'] && data['cardsToPlay'] > 0
-                    ? getGiveUpButton(data)
-                    : Container(),
-                widget.userId == data['turn'] && data['cardsToPlay'] == 0
-                    ? getEndTurnButton(data)
-                    : Container(),
+                showLog(data),
               ]),
             ],
           ),
@@ -795,7 +960,7 @@ class RiversCard extends StatelessWidget {
     }
     if (intValue >= 80 && intValue < 90) {
       icon = MdiIcons.footPrint;
-      color = Colors.blue;
+      color = Colors.brown;
     }
     if (intValue >= 90 && intValue <= 100) {
       icon = MdiIcons.silverwareVariant;
@@ -854,7 +1019,7 @@ class RiversCard extends StatelessWidget {
       case 0:
         // case for center piles
         height = 100;
-        width = 75;
+        width = 80;
         fontSize = 40;
         iconSize = 28;
         break;
@@ -912,9 +1077,22 @@ class RiversCard extends StatelessWidget {
               height: height - 10,
               width: width - 10,
               decoration: BoxDecoration(
-                color: Colors.blue,
-                border: Border.all(color: Theme.of(context).highlightColor),
+                gradient: LinearGradient(
+                  colors: <Color>[
+                    Colors.pinkAccent,
+                    Colors.blue,
+                  ],
+                  begin: Alignment.bottomLeft,
+                  end: Alignment.topRight,
+                ),
+                border: Border.all(color: Colors.black),
                 borderRadius: BorderRadius.circular(10),
+              ),
+              child: Center(
+                child: Icon(
+                  MdiIcons.waves,
+                  size: 40,
+                ),
               ),
             ),
           ),

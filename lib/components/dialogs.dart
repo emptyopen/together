@@ -105,6 +105,7 @@ class _EndGameDialogState extends State<EndGameDialog> {
     //           .document(widget.sessionId)
     //           .get())
     //       .data;
+    //   data['log'] = [];
     //   await Firestore.instance
     //       .collection('sessions')
     //       .document(widget.sessionId)
