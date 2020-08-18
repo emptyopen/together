@@ -142,6 +142,7 @@ createGame(BuildContext context, String game, String password, bool pop) async {
     'password': password,
     'roomCode': _roomCode,
     'playerIds': [userId],
+    'spectatorIds': [],
     'state': 'lobby',
     'leader': userId,
     'dateCreated': DateTime.now(),

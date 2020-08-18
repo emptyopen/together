@@ -16,6 +16,7 @@ class AchievementsScreen extends StatefulWidget {
 class _AchievementsScreenState extends State<AchievementsScreen> {
   bool isLoading = true;
   int theHuntScore = 0;
+  int riversScore = 0;
   int abstractScore = 0;
   int bananaphoneScore = 0;
   int threeCrownsScore = 0;
@@ -37,6 +38,12 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
           .collection('users')
           .document(widget.userId)
           .updateData({'theHuntScore': 0});
+    }
+    if (data['theHuntScore'] == null) {
+      await Firestore.instance
+          .collection('users')
+          .document(widget.userId)
+          .updateData({'riversScore': 0});
     }
     if (data['abstractScore'] == null) {
       await Firestore.instance
@@ -63,6 +70,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
         .data;
     setState(() {
       theHuntScore = data['theHuntScore'];
+      riversScore = data['riversScore'];
       abstractScore = data['abstractScore'];
       bananaphoneScore = data['bananaphoneScore'];
       threeCrownsScore = data['threeCrownsScore'];
@@ -108,6 +116,17 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                           value: theHuntScore,
                           icon: Icon(
                             MdiIcons.incognito,
+                            size: 30,
+                          ),
+                        ),
+                        SizedBox(height: 10),
+                        Achievement(
+                          achievementName: 'Rivers',
+                          subHeading: '(games won)',
+                          value: riversScore,
+                          icon: Icon(
+                            MdiIcons.waves,
+                            color: Colors.lightBlue,
                             size: 30,
                           ),
                         ),
@@ -172,7 +191,7 @@ class Achievement extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(10),
       decoration: BoxDecoration(
-        border: Border.all(),
+        border: Border.all(color: Theme.of(context).highlightColor),
         borderRadius: BorderRadius.circular(5),
       ),
       child: Row(

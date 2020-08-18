@@ -38,8 +38,6 @@ void main() => runApp(MyApp());
 // if leader leaves a game, need to assign remaining player the leader position - ORRRRR, "claim leadership" button would be more fun and easier
 // add snackbar when auto exiting to lobby or main menu
 // add password reset option
-// clean up games that are finished/old (might need backend service)
-// periodically check if player info isn't true? check current game and see if player is in it
 // ability to leave a game (might not need) (also delete session if last one out) - dialog on back button (leave game or just go to main menu)
 // abstract: (might not need) add voting system for choosing abstract cards (all members of team must select it)
 // attribute icon: Icons made by "https://www.flaticon.com/authors/freepik

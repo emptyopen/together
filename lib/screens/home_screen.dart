@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 
 import '../services/services.dart';
 import '../services/authentication.dart';
@@ -62,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
     Color colorBananaphone = Colors.blue;
     Color colorThreeCrowns = Colors.amber;
     Color colorRivers = Colors.lightBlue;
-    double intervalLength = 35.0;
+    double intervalLength = 25.0;
     return Container(
       child: Column(
         children: <Widget>[
@@ -76,6 +77,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: Icon(
                   MdiIcons.incognito,
                   color: colorHunt,
+                  size: 30,
+                ),
+              ),
+              SizedBox(width: intervalLength),
+              QuickStartButton(
+                gameName: 'Rivers',
+                subtitle: 'Up and down!',
+                icon: Icon(
+                  MdiIcons.waves,
+                  color: colorRivers,
                   size: 30,
                 ),
               ),
@@ -96,16 +107,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: Icon(
                   MdiIcons.phoneSettings,
                   color: colorBananaphone,
-                  size: 30,
-                ),
-              ),
-              SizedBox(width: intervalLength),
-              QuickStartButton(
-                gameName: 'Rivers',
-                subtitle: 'Up and down!',
-                icon: Icon(
-                  MdiIcons.waves,
-                  color: colorRivers,
                   size: 30,
                 ),
               ),
@@ -556,7 +557,7 @@ class QuickStartButton extends StatelessWidget {
       },
       child: Container(
         height: 120,
-        width: 150,
+        width: 120,
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
@@ -569,8 +570,8 @@ class QuickStartButton extends StatelessWidget {
           ],
           gradient: LinearGradient(
             colors: <Color>[
-              Theme.of(context).primaryColor,
-              Theme.of(context).accentColor,
+              Colors.blue[800],
+              Colors.blue[400],
             ],
           ),
           borderRadius: BorderRadius.circular(20),
@@ -586,9 +587,10 @@ class QuickStartButton extends StatelessWidget {
               ),
               child: icon,
             ),
-            SizedBox(height: 10),
-            Text(
+            SizedBox(height: 5),
+            AutoSizeText(
               gameName,
+              maxLines: 1,
               style: TextStyle(
                 fontSize: 18,
                 color: Colors.white,
@@ -596,9 +598,10 @@ class QuickStartButton extends StatelessWidget {
             ),
             Text(
               subtitle,
+              textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 12,
-                color: Colors.white,
+                fontSize: 10,
+                color: Colors.grey[300],
               ),
             ),
           ],
