@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:flutter/services.dart';
+import 'dart:math';
 
 import 'package:together/services/services.dart';
 import 'package:together/components/buttons.dart';
@@ -22,6 +24,7 @@ class RiversScreen extends StatefulWidget {
 class _RiversScreenState extends State<RiversScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   int clickedHandCard = -1;
+  var currPlayer = '';
 
   checkIfExit(data) async {
     // run async func to check if game is over, or back to lobby or deleted (main menu)
@@ -40,13 +43,22 @@ class _RiversScreenState extends State<RiversScreen> {
     }
   }
 
+  checkIfVibrate(data) {
+    if (currPlayer != data['turn']) {
+      currPlayer = data['turn'];
+      if (currPlayer == widget.userId) {
+        HapticFeedback.vibrate();
+      }
+    }
+  }
+
   getHand(data) {
     var playerIndex = data['playerIds'].indexOf(widget.userId);
     var playerHand = data['player${playerIndex}Hand'];
     // return Text('Player hand: $playerIndex $playerHand');
     List<Widget> cards = [
       SizedBox(
-        width: 10,
+        width: 5,
       )
     ];
     playerHand.forEach((v) {
@@ -55,18 +67,21 @@ class _RiversScreenState extends State<RiversScreen> {
           value: v.toString(),
           clickable: false,
           clicked: clickedHandCard == v,
-          size: data['rules']['handSize'] == 5
-              ? 1
-              : data['rules']['handSize'] == 6 ? 2 : 3,
+          isCenter: false,
+          numCards: data['rules']['handSize'],
           callback: () {
             setState(() {
-              clickedHandCard = v;
+              if (clickedHandCard == v) {
+                clickedHandCard = -1;
+              } else {
+                clickedHandCard = v;
+              }
             });
           },
         ),
       );
       cards.add(
-        SizedBox(width: data['rules']['handSize'] == 5 ? 10 : 5),
+        SizedBox(width: 5),
       );
     });
     return Column(
@@ -112,13 +127,13 @@ class _RiversScreenState extends State<RiversScreen> {
   getDrawPile(data) {
     var drawPile = RiversCard(
       empty: true,
-      size: 0,
+      isCenter: true,
     );
     if (data['drawPile'].length > 0) {
       drawPile = RiversCard(
         flipped: true,
         callback: () => drawCard(data),
-        size: 0,
+        isCenter: true,
       );
     }
     return Column(children: <Widget>[
@@ -174,7 +189,12 @@ class _RiversScreenState extends State<RiversScreen> {
       nextTurnIndex = 0;
     }
     // skip until find player with cards
+    var numPlayersWithEmptyHand = 0;
     while (data['player${nextTurnIndex}Hand'].length == 0) {
+      numPlayersWithEmptyHand += 1;
+      if (numPlayersWithEmptyHand == data['playerIds'].length) {
+        endGame(data);
+      }
       nextTurnIndex = currentTurnIndex + 1;
       if (nextTurnIndex == data['playerIds'].length) {
         nextTurnIndex = 0;
@@ -220,16 +240,12 @@ class _RiversScreenState extends State<RiversScreen> {
     });
     // log played card
     var playerName = data['playerNames'][widget.userId];
+    HapticFeedback.vibrate();
     logEvent(data, '$playerName played $cardToAdd');
 
     // check if turn is over
     if (data['cardsToPlay'] > 0) {
       data['cardsToPlay'] -= 1;
-    }
-
-    // if hand is empty, automatically end turn
-    if (data['player${playerIndex}Hand'].length == 0) {
-      endTurn(data);
     }
 
     // if draw pile and everyone's hand is empty, end the game
@@ -241,6 +257,11 @@ class _RiversScreenState extends State<RiversScreen> {
       if (remainingCards == 0) {
         endGame(data);
       }
+    }
+
+    // if hand is empty, automatically end turn
+    if (data['player${playerIndex}Hand'].length == 0) {
+      endTurn(data);
     }
 
     await Firestore.instance
@@ -287,9 +308,15 @@ class _RiversScreenState extends State<RiversScreen> {
               value: data['ascendPile1'].last.toString(),
               clickable: ascend1Clickable,
               extraClickable: ascend1ExtraClickable,
-              size: 0,
+              isCenter: true,
               callback: () {
-                if (cardIsValidForPile(data, 'ascendPile1', clickedHandCard)) {
+                if (clickedHandCard == -1) {
+                  _scaffoldKey.currentState.showSnackBar(SnackBar(
+                    content: Text('No card selected!'),
+                    duration: Duration(seconds: 2),
+                  ));
+                } else if (cardIsValidForPile(
+                    data, 'ascendPile1', clickedHandCard)) {
                   playCard(
                     data,
                     'ascendPile1',
@@ -308,9 +335,15 @@ class _RiversScreenState extends State<RiversScreen> {
               value: data['ascendPile2'].last.toString(),
               clickable: ascend2Clickable,
               extraClickable: ascend2ExtraClickable,
-              size: 0,
+              isCenter: true,
               callback: () {
-                if (cardIsValidForPile(data, 'ascendPile2', clickedHandCard)) {
+                if (clickedHandCard == -1) {
+                  _scaffoldKey.currentState.showSnackBar(SnackBar(
+                    content: Text('No card selected!'),
+                    duration: Duration(seconds: 2),
+                  ));
+                } else if (cardIsValidForPile(
+                    data, 'ascendPile2', clickedHandCard)) {
                   playCard(
                     data,
                     'ascendPile2',
@@ -373,9 +406,15 @@ class _RiversScreenState extends State<RiversScreen> {
               value: data['descendPile1'].last.toString(),
               clickable: descend1Clickable,
               extraClickable: descend1ExtraClickable,
-              size: 0,
+              isCenter: true,
               callback: () {
-                if (cardIsValidForPile(data, 'descendPile1', clickedHandCard)) {
+                if (clickedHandCard == -1) {
+                  _scaffoldKey.currentState.showSnackBar(SnackBar(
+                    content: Text('No card selected!'),
+                    duration: Duration(seconds: 2),
+                  ));
+                } else if (cardIsValidForPile(
+                    data, 'descendPile1', clickedHandCard)) {
                   playCard(
                     data,
                     'descendPile1',
@@ -394,9 +433,15 @@ class _RiversScreenState extends State<RiversScreen> {
               value: data['descendPile2'].last.toString(),
               clickable: descend2Clickable,
               extraClickable: descend2ExtraClickable,
-              size: 0,
+              isCenter: true,
               callback: () {
-                if (cardIsValidForPile(data, 'descendPile2', clickedHandCard)) {
+                if (clickedHandCard == -1) {
+                  _scaffoldKey.currentState.showSnackBar(SnackBar(
+                    content: Text('No card selected!'),
+                    duration: Duration(seconds: 2),
+                  ));
+                } else if (cardIsValidForPile(
+                    data, 'descendPile2', clickedHandCard)) {
                   playCard(
                     data,
                     'descendPile2',
@@ -532,6 +577,12 @@ class _RiversScreenState extends State<RiversScreen> {
     data['finalScore'] = score;
     // move to post game screen with score
     data['state'] = 'complete';
+
+    // if score is zero, increment player scores for game mode
+    for (int i = 0; i < data['playerIds'].length; i++) {
+      incrementPlayerScore(
+          'rivers${data['rules']['handSize']}', data['playerIds'][i]);
+    }
 
     // print('will update data with: $data');
 
@@ -863,6 +914,8 @@ class _RiversScreenState extends State<RiversScreen> {
             );
           }
           checkIfExit(data);
+          // check if current player's turn
+          checkIfVibrate(data);
           return Scaffold(
             key: _scaffoldKey,
             appBar: AppBar(
@@ -899,7 +952,22 @@ class RiversScreenHelp extends StatelessWidget {
   Widget build(BuildContext context) {
     return HelpScreen(
       title: 'Rivers: Rules',
-      information: ['    rules here'],
+      information: [
+        '    Welcome to Rivers! In this game, we\'re going to work together! Players take turns playing cards, and the '
+            'objective of the game is to play every single card!\n\n    With standard rules, the deck contains cards from 2 to '
+            '99, one of each. While there are cards remaining in the draw pile, player must play at least two cards. Once the '
+            'draw pile runs out of cards, players must play at least one card. ',
+        '    There are four piles to play on: two ascending piles and two descending piles. The rules for playing a card are '
+            'simple: you can only play cards higher than the current card for ascending piles, and cards lower than the current card '
+            'for descending piles.\n\n    The only exception is a card exactly 10 lower on ascending piles, and 10 higher on descending '
+            'piles. For examples, for an ascending pile that is currently at 42, a player could play 43, 44, 45, etc., and the best card '
+            'to play would be a 32. But not 41, 40, 39, etc. ',
+        '    The final major rule is that players cannot specify what numbered cards they have in any way. Players can say things like '
+            '"Don\'t play on this pile", or "I have something really good for the left ascending pile", or "Definitely, definitely don\'t '
+            'play on 35". But nothing that could definitively describe a specific number.\n\n'
+            '    The game ends when all cards are played (amazing job!), or if a player cannot play the required number of cards. The score '
+            'is counted by the remaining unplayed cards in players\' hands and in the draw pile. '
+      ],
       buttonColor: Theme.of(context).primaryColor,
     );
   }
@@ -913,17 +981,19 @@ class RiversCard extends StatelessWidget {
   final bool empty;
   final bool flipped;
   final bool clicked;
-  final int size;
+  final bool isCenter;
+  final int numCards;
 
   RiversCard({
     this.value,
     this.callback,
     this.clickable,
+    this.numCards = 7,
     this.extraClickable = false,
     this.empty = false,
     this.flipped = false,
     this.clicked = false,
-    this.size = 1,
+    this.isCenter = false,
   });
 
   getIcon(double iconSize) {
@@ -1010,36 +1080,17 @@ class RiversCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    double height = 80;
-    double width = 60;
-    double fontSize = 30;
+    double screenWidth = MediaQuery.of(context).size.width;
+    double width = (screenWidth - 20 - 5 * numCards) / numCards;
+    double height = width * 1.5;
+    double fontSize = [40.0, width * 0.5].reduce(min);
+    double iconSize = [(width - 10) / 2, (height - 10) / 3].reduce(min);
     Color textColor = Colors.black;
-    double iconSize = 23;
-    switch (size) {
-      case 0:
-        // case for center piles
-        height = 100;
-        width = 80;
-        fontSize = 40;
-        iconSize = 28;
-        break;
-      case 1:
-        // leave defaults
-        break;
-      case 2:
-        // smaller cards for 6 cards
-        height = 80;
-        width = 60;
-        fontSize = 30;
-        iconSize = 23;
-        break;
-      case 3:
-        // even smaller cards for 7 cards
-        height = 70;
-        width = 50;
-        fontSize = 30;
-        iconSize = 18;
-        break;
+    if (isCenter) {
+      height = 100;
+      width = 80;
+      fontSize = 40;
+      iconSize = 28;
     }
     if (empty) {
       return Container(

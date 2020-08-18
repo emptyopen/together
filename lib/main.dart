@@ -8,13 +8,12 @@ void main() => runApp(MyApp());
 // done:
 
 // next up:
-// fix end game (ensure 1 card), and skip people who have no cards left
-// fix highlighting -10 case
-// fix DEBUG LOCKED
-// add best score as a team to stats
-// add number of 0 cards left to stats
+// BIG: add spectator mode
 
 // TODO:
+// rivers: fix DEBUG LOCKED
+// rivers: show num cards in each players hand
+// rivers: show stacks history
 // add basic functionality to three crowns -
 // - play cards in duel
 // - continue duel winner logic
@@ -27,13 +26,10 @@ void main() => runApp(MyApp());
 // abstract games has funky behavior? - green wins then orange hits grey - should be over but timer glitches
 // RUN THROUGH AN ENTIRE BANANAPHONE, many updates. - pretty close to done
 // undo button not working in bananaphone 2nd+ drawings
-// add rules for bananaphone
 // make all buttons disappear when they are clicked (especially when they cause an effect - there are double effects happening)
 // add rules for three crowns
 // fine grained control of teams in lobby for abstract
-// will need support in The Hunt for more than one spy - many changes
 // add scores button to view scores in bananaphone
-// BIG: add spectator mode
 // orange team needs to win when green wins for them
 // tiebreaker for abstract, with total time used as second marker
 // add timer to the hunt
@@ -79,8 +75,6 @@ class MyApp extends StatelessWidget {
       darkTheme: ThemeData(
         primaryColor: Colors.blue[700],
         accentColor: Colors.blue[300],
-        // primaryColor: Colors.pink[600],
-        // accentColor: Colors.pink[400],
         highlightColor: Colors.white,
         fontFamily: 'Balsamiq',
         brightness: Brightness.dark,
