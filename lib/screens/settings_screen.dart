@@ -152,6 +152,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       });
     });
     sessionsToDelete.forEach((v) {
+      print('destroying ${v.data['roomCode']}');
       Firestore.instance.runTransaction((Transaction myTransaction) async {
         await myTransaction.delete(v);
       });

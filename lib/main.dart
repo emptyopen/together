@@ -8,7 +8,9 @@ void main() => runApp(MyApp());
 // done:
 
 // next up:
-// BIG: add spectator mode
+// BIG: add spectator mode (already added to default game creation from main menu)
+//  - ability to become spectator in lobby
+//  - add spectator view in each game
 
 // TODO:
 // rivers: fix DEBUG LOCKED

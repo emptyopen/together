@@ -183,6 +183,21 @@ class _LobbyScreenState extends State<LobbyScreen> {
         .updateData({'playerIds': currPlayers});
   }
 
+  kickSpectator(String spectatorId) async {
+    // remove playerId from session
+    var data = (await Firestore.instance
+            .collection('sessions')
+            .document(sessionId)
+            .get())
+        .data;
+    var currSpecators = data['spectatorIds'];
+    currSpecators.removeWhere((item) => item == spectatorId);
+    await Firestore.instance
+        .collection('sessions')
+        .document(sessionId)
+        .updateData({'spectatorIds': currSpecators});
+  }
+
   setupTheHunt(data, rules) async {
     // verify that there are sufficient number of players
     if (data['playerIds'].length < 3) {
@@ -808,17 +823,18 @@ class _LobbyScreenState extends State<LobbyScreen> {
                               : Container(),
                           userId == data['leader'] &&
                                   playerIds[index] != data['leader']
-                              ? SizedBox(
-                                  height: 30,
-                                  child: IconButton(
-                                    icon: Icon(
-                                      MdiIcons.accountRemove,
-                                      size: 20,
-                                      color: Colors.redAccent,
+                              ? Row(
+                                  children: <Widget>[
+                                    SizedBox(width: 20),
+                                    GestureDetector(
+                                      child: Icon(
+                                        MdiIcons.accountRemove,
+                                        size: 20,
+                                        color: Colors.redAccent,
+                                      ),
+                                      onTap: () => kickPlayer(playerIds[index]),
                                     ),
-                                    onPressed: () =>
-                                        kickPlayer(playerIds[index]),
-                                  ),
+                                  ],
                                 )
                               : Container(),
                         ],
@@ -837,6 +853,107 @@ class _LobbyScreenState extends State<LobbyScreen> {
         .collection('sessions')
         .document(sessionId)
         .updateData({'playerIds': playerOrder, 'turn': playerOrder[0]});
+  }
+
+  Widget _getSpectators(data) {
+    var spectatorIds = data['spectatorIds'];
+    return Container(
+      height: 16.0 * spectatorIds.length,
+      child: ListView.builder(
+          itemCount: spectatorIds.length,
+          itemBuilder: (context, index) {
+            return FutureBuilder(
+                future: Firestore.instance
+                    .collection('users')
+                    .document(spectatorIds[index])
+                    .get(),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return Container();
+                  }
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Text(
+                        snapshot.data['name'],
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: userId == spectatorIds[index]
+                              ? Theme.of(context).primaryColor
+                              : Colors.grey,
+                        ),
+                      ),
+                      Text(
+                        spectatorIds[index] == data['leader']
+                            ? ' (glorious leader) '
+                            : '',
+                        style: TextStyle(fontSize: 14),
+                      ),
+                      userId == data['leader'] &&
+                              spectatorIds[index] == data['leader']
+                          ? SizedBox(height: 16)
+                          : Container(),
+                      userId == data['leader'] &&
+                              spectatorIds[index] != data['leader']
+                          ? Row(
+                              children: <Widget>[
+                                SizedBox(width: 10),
+                                GestureDetector(
+                                  child: Icon(
+                                    MdiIcons.accountRemove,
+                                    size: 16,
+                                    color: Colors.redAccent,
+                                  ),
+                                  onTap: () =>
+                                      kickSpectator(spectatorIds[index]),
+                                ),
+                              ],
+                            )
+                          : Container(),
+                    ],
+                  );
+                });
+          }),
+    );
+  }
+
+  toggleSpectator(data) async {
+    bool userIsPlayer = data['playerIds'].contains(userId);
+    if (userIsPlayer) {
+      // remove from playerIds and add to spectatorIds
+      data['playerIds'].remove(userId);
+      data['spectatorIds'].add(userId);
+    } else {
+      // remove from spectatorIds and add to playerIds
+      data['playerIds'].add(userId);
+      data['spectatorIds'].remove(userId);
+    }
+    await Firestore.instance
+        .collection('sessions')
+        .document(sessionId)
+        .setData(data);
+  }
+
+  _getSwitchSpectatorButton(data) {
+    bool userIsPlayer = data['playerIds'].contains(userId);
+    return RaisedGradientButton(
+        child: Text(userIsPlayer ? 'Switch to spectator' : 'Switch to player',
+            style: TextStyle(
+              fontSize: 12,
+            )),
+        height: 30,
+        width: 130,
+        gradient: LinearGradient(
+          colors: userIsPlayer
+              ? [Colors.grey[600], Colors.grey[500]]
+              : [
+                  Colors.blue[600],
+                  Colors.blue[500],
+                ],
+        ),
+        onPressed: () {
+          toggleSpectator(data);
+        });
   }
 
   @override
@@ -948,9 +1065,23 @@ class _LobbyScreenState extends State<LobbyScreen> {
                             ],
                           )
                         : Container(),
-                    Text('Rules', style: TextStyle(fontSize: 24)),
+                    Text(
+                      'Spectators:',
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    PageBreak(width: 50, color: Colors.grey),
+                    _getSpectators(data),
+                    SizedBox(height: 10),
+                    userId != data['leader']
+                        ? _getSwitchSpectatorButton(data)
+                        : Container(),
+                    SizedBox(height: 20),
+                    Text('Rules:', style: TextStyle(fontSize: 20)),
                     PageBreak(
-                      width: 80,
+                      width: 50,
                     ),
                     getRules(context, data),
                     userId == data['leader'] && !isStarting
