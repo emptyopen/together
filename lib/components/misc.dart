@@ -53,10 +53,12 @@ class SpectatorModeLogo extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(10),
       decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(5),
-          border: Border.all(
-            color: Colors.grey,
-          )),
+        borderRadius: BorderRadius.circular(5),
+        border: Border.all(
+          color: Colors.grey,
+        ),
+        color: Colors.grey.withAlpha(50),
+      ),
       child: Text(
         'SPECTATOR MODE',
         style: TextStyle(

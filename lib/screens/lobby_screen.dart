@@ -198,7 +198,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
         .updateData({'spectatorIds': currSpecators});
   }
 
-  setupTheHunt(data, rules) async {
+  setupTheHunt(data) async {
     // verify that there are sufficient number of players
     if (data['playerIds'].length < 3) {
       setState(() {
@@ -261,17 +261,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
     // set spyRevealed to noone
     data['spyRevealed'] = '';
 
-    data['state'] = 'started';
-    data['startTime'] = DateTime.now().add(Duration(seconds: 5));
-
-    // update data
-    await Firestore.instance
-        .collection('sessions')
-        .document(sessionId)
-        .setData(data);
+    return data;
   }
 
-  setupAbstract(data, rules) async {
+  setupAbstract(data) async {
+    var rules = data['rules'];
     // verify that there are sufficient number of players
     if ((rules['numTeams'] == 2 && data['playerIds'].length < 4) ||
         (rules['numTeams'] == 3 && data['playerIds'].length < 6)) {
@@ -399,56 +393,40 @@ class _LobbyScreenState extends State<LobbyScreen> {
           players.sublist(players.length ~/ 3 * 2, players.length);
       rules['purpleLeader'] = players[players.length ~/ 3 * 2];
     }
-    await Firestore.instance
-        .collection('sessions')
-        .document(sessionId)
-        .updateData({'rules': rules});
 
-    // start the timer, and initialize cumulative times
+    // initialize cumulative times
     if (rules['numTeams'] == 2) {
-      await Firestore.instance
-          .collection('sessions')
-          .document(sessionId)
-          .updateData({
-        'greenTime': 0,
-        'orangeTime': 0,
-        'greenStart': DateTime.now(),
-        'orangeStart': DateTime.now(),
-        'timer': DateTime.now().add(
-          Duration(
-              seconds:
-                  (rules['numTeams'] == 2 ? 9 : 8) * rules['turnTimer'] + 120),
-        ),
-        'state': 'started',
-        'startTime': DateTime.now().add(Duration(seconds: 5)),
-      });
+      data['greenTime'] = 0;
+      data['orangeTime'] = 0;
+      data['greenStart'] = DateTime.now();
+      data['orangeStart'] = DateTime.now();
+      data['timer'] = DateTime.now().add(
+        Duration(seconds: 9 * rules['turnTimer'] + 120),
+      );
     } else {
-      await Firestore.instance
-          .collection('sessions')
-          .document(sessionId)
-          .updateData({
-        'greenTime': 0,
-        'orangeTime': 0,
-        'purpleTime': 0,
-        'greenStart': DateTime.now(),
-        'orangeStart': DateTime.now(),
-        'purpleStart': DateTime.now(),
-        'timer': DateTime.now().add(
-          Duration(
-              seconds: (rules['numTeams'] == 2 ? 9 : 8) * rules['turnTimer']),
-        ),
-        'state': 'started',
-        'startTime': DateTime.now().add(Duration(seconds: 5)),
-      });
+      data['greenTime'] = 0;
+      data['orangeTime'] = 0;
+      data['purpleTime'] = 0;
+      data['greenStart'] = DateTime.now();
+      data['orangeStart'] = DateTime.now();
+      data['purpleStart'] = DateTime.now();
+      data['timer'] = DateTime.now().add(
+        Duration(seconds: 8 * rules['turnTimer'] + 120),
+      );
     }
+
+    data['rules'] = rules;
+    return data;
   }
 
-  setupBananaphone(data, rules) async {
+  setupBananaphone(data) async {
     // verify that there are sufficient number of players
-    if ((rules['numDrawDescribe'] == 2 && data['playerIds'].length < 4) ||
-        (rules['numDrawDescribe'] == 3 && data['playerIds'].length < 6)) {
+    if ((data['rules']['numDrawDescribe'] == 2 &&
+            data['playerIds'].length < 4) ||
+        (data['rules']['numDrawDescribe'] == 3 &&
+            data['playerIds'].length < 6)) {
       setState(() {
-        if (rules['numDrawDescribe'] == 2) {
+        if (data['rules']['numDrawDescribe'] == 2) {
           startError = 'Need at least 4 players for 2 rounds of draw/describe';
         } else {
           startError = 'Need at least 6 players for 3 rounds of draw/describe';
@@ -465,19 +443,13 @@ class _LobbyScreenState extends State<LobbyScreen> {
     // initialize random tool
     final _random = new Random();
 
-    // initialize score per player
-    var scores = [];
+    // initialize score and voteStatus per player
+    data['scores'] = [];
+    data['votes'] = [];
     data['playerIds'].asMap().forEach((i, v) async {
-      scores.add(0);
-      await Firestore.instance
-          .collection('sessions')
-          .document(sessionId)
-          .updateData({'player${i}Voted': false});
+      data['scores'].add(0);
+      data['votes'].add(false);
     });
-    await Firestore.instance
-        .collection('sessions')
-        .document(sessionId)
-        .updateData({'scores': scores});
 
     // set prompts (one per player per round)
     var prompts = [];
@@ -498,14 +470,13 @@ class _LobbyScreenState extends State<LobbyScreen> {
       }
       prompts.add(roundPrompt.toJson());
     }
-    rules['prompts'] = prompts;
-    await Firestore.instance
-        .collection('sessions')
-        .document(sessionId)
-        .updateData({'rules': rules});
+
+    data['rules']['prompts'] = prompts;
+
+    return data;
   }
 
-  setupThreeCrowns(data, rules) async {
+  setupThreeCrowns(data) async {
     // verify that there are sufficient number of players
     if (data['playerIds'].length < 3) {
       setState(() {
@@ -527,14 +498,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
         String randomCard = generateRandomThreeCrownsCard();
         data['player${v}Hand'].add(randomCard);
       }
-      await Firestore.instance
-          .collection('sessions')
-          .document(sessionId)
-          .updateData({
-        'player${i}Hand': data['player${v}Hand'],
-        'player${i}Tiles': [],
-        'player${i}Crowns': 0
-      });
+      data['player${i}Tiles'] = [];
+      data['player${i}Crowns'] = 0;
     });
 
     // add player names
@@ -547,19 +512,12 @@ class _LobbyScreenState extends State<LobbyScreen> {
           .data['name'];
     }
 
-    await Firestore.instance
-        .collection('sessions')
-        .document(sessionId)
-        .updateData({
-      'rules': rules,
-      'playerNames': data['playerNames'],
-      'duel': {'duelerIndex': 0, 'duelerCard': '', 'dueleeCard': ''},
-      'state': 'started',
-      'startTime': DateTime.now().add(Duration(seconds: 5)),
-    });
+    data['duel'] = {'duelerIndex': 0, 'duelerCard': '', 'dueleeCard': ''};
+
+    return data;
   }
 
-  setupRivers(data, rules) async {
+  setupRivers(data) async {
     // verify that there are sufficient number of players
     if (data['playerIds'].length < 2) {
       setState(() {
@@ -602,53 +560,55 @@ class _LobbyScreenState extends State<LobbyScreen> {
           .data['name'];
     }
 
-    await Firestore.instance
-        .collection('sessions')
-        .document(sessionId)
-        .updateData({
-      'rules': rules,
-      'cardsToPlay': 2,
-      'drawPile': shuffledDeck.sublist(shuffledDeckIndex, shuffledDeck.length),
-      'log': ['', '', ''],
-      'ascendPile1': [1],
-      'ascendPile2': [1],
-      'descendPile1': [data['rules']['cardRange']],
-      'descendPile2': [data['rules']['cardRange']],
-      'playerNames': data['playerNames'],
-      'state': 'started',
-      'startTime': DateTime.now().add(Duration(seconds: 5)),
-    });
+    data['log'] = ['', '', ''];
+    data['cardsToPlay'] = 2;
+    data['drawPile'] =
+        shuffledDeck.sublist(shuffledDeckIndex, shuffledDeck.length);
+    data['ascendPile1'] = [1];
+    data['ascendPile2'] = [1];
+    data['descendPile1'] = [data['rules']['cardRange']];
+    data['descendPile2'] = [data['rules']['cardRange']];
+
+    return data;
   }
 
   startGame(data) async {
-    var rules = data['rules'];
-
     // initialize final values/rules for games
     switch (gameName) {
       case 'The Hunt':
         print('Setting up The Hunt game...');
-        setupTheHunt(data, rules);
+        data = await setupTheHunt(data);
         break;
 
       case 'Abstract':
         print('Setting up Abstract game...');
-        setupAbstract(data, rules);
+        data = await setupAbstract(data);
         break;
 
       case 'Bananaphone':
         print('Setting up Bananaphone game...');
-        setupBananaphone(data, rules);
+        data = await setupBananaphone(data);
         break;
 
       case 'Three Crowns':
         print('Setting up Bananaphone game...');
-        setupThreeCrowns(data, rules);
+        data = await setupThreeCrowns(data);
         break;
 
       case 'Rivers':
         print('Setting up Rivers game...');
-        setupRivers(data, rules);
+        data = await setupRivers(data);
         break;
+    }
+
+    if (startError == '') {
+      // update data
+      data['state'] = 'started';
+      data['startTime'] = DateTime.now().add(Duration(seconds: 5));
+      await Firestore.instance
+          .collection('sessions')
+          .document(sessionId)
+          .setData(data);
     }
   }
 

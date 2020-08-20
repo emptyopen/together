@@ -34,11 +34,30 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
   var votes = {};
   String currPhase = 'draw1';
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
+  bool isSpectator = false;
+
+  @override
+  void initState() {
+    super.initState();
+    setUpGame();
+  }
 
   @override
   void dispose() {
     descriptionController.dispose();
     super.dispose();
+  }
+
+  setUpGame() async {
+    // get session info for locations
+    var data = (await Firestore.instance
+            .collection('sessions')
+            .document(widget.sessionId)
+            .get())
+        .data;
+    setState(() {
+      isSpectator = data['spectatorIds'].contains(widget.userId);
+    });
   }
 
   checkIfExit(data) async {
@@ -235,41 +254,20 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
     var playerIndex = data['playerIds'].indexOf(widget.userId);
     var phase = data['phase'];
     if (phase == 'draw1' || phase == 'draw2' || phase == 'draw3') {
-      // --------------------
-      var promptIndex = getPromptIndex(data);
-      var prompt =
-          data['rules']['prompts'][data['round']]['prompts'][playerIndex];
-      if (phase == 'draw2') {
-        prompt = data['describe1Prompt$promptIndex'];
-      }
-      if (phase == 'draw3') {
-        prompt = data['describe2Prompt$promptIndex'];
-      }
-      columnItems.add(Container(
-        constraints: BoxConstraints(maxWidth: 250),
-        padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: Theme.of(context).highlightColor,
-          ),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Column(
-          children: <Widget>[
-            Text('Draw this prompt:',
-                style: TextStyle(fontSize: 14), textAlign: TextAlign.center),
-            SizedBox(height: 5),
-            Text(prompt,
-                style: TextStyle(
-                    fontSize: 18, color: Theme.of(context).primaryColor),
-                textAlign: TextAlign.center),
-          ],
-        ),
-      ));
-    } else if (phase == 'describe1' ||
-        phase == 'describe2' ||
-        phase == 'describe3') {
-      columnItems.add(Container(
+      if (isSpectator) {
+        // do nothing
+      } else {
+        var promptIndex = getPromptIndex(data);
+        var prompt =
+            data['rules']['prompts'][data['round']]['prompts'][playerIndex];
+        if (phase == 'draw2') {
+          prompt = data['describe1Prompt$promptIndex'];
+        }
+        if (phase == 'draw3') {
+          prompt = data['describe2Prompt$promptIndex'];
+        }
+        columnItems.add(Container(
+          constraints: BoxConstraints(maxWidth: 250),
           padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
           decoration: BoxDecoration(
             border: Border.all(
@@ -277,10 +275,38 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
             ),
             borderRadius: BorderRadius.circular(20),
           ),
-          child: Text(
-            'Describe this picture!',
-            style: TextStyle(fontSize: 20),
-          )));
+          child: Column(
+            children: <Widget>[
+              Text('Draw this prompt:',
+                  style: TextStyle(fontSize: 14), textAlign: TextAlign.center),
+              SizedBox(height: 5),
+              Text(prompt,
+                  style: TextStyle(
+                      fontSize: 18, color: Theme.of(context).primaryColor),
+                  textAlign: TextAlign.center),
+            ],
+          ),
+        ));
+      }
+    } else if (phase == 'describe1' ||
+        phase == 'describe2' ||
+        phase == 'describe3') {
+      if (isSpectator) {
+        // do nothing
+      } else {
+        columnItems.add(Container(
+            padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: Theme.of(context).highlightColor,
+              ),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              'Describe this picture!',
+              style: TextStyle(fontSize: 20),
+            )));
+      }
     } else {
       columnItems.add(
         Container(
@@ -1212,7 +1238,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
     await Firestore.instance
         .collection('sessions')
         .document(widget.sessionId)
-        .updateData({'player${playerIndex}Voted': true});
+        .updateData({'votes'[playerIndex]: true});
 
     // check if all votes are in
     var sum = scores.reduce((a, b) => a + b);
@@ -1230,7 +1256,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
         data.remove('describe2Prompt$i');
         data.remove('draw3Prompt$i');
         data.remove('describe3Prompt$i');
-        data['player${i}Voted'] = false;
+        data['votes'][playerIndex] = false;
       });
       data['round'] += 1;
       data['phase'] = 'draw1';
@@ -1298,9 +1324,13 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
       );
     }
 
+    if (isSpectator) {
+      return Stack(children: stack);
+    }
+
     var playerIndex = data['playerIds'].indexOf(widget.userId);
 
-    if (data['player${playerIndex}Voted']) {
+    if (data['votes'][playerIndex]) {
       return Container(
           decoration: BoxDecoration(
               border: Border.all(color: Theme.of(context).highlightColor),
@@ -1343,10 +1373,16 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
     if (data['phase'] == 'draw1' ||
         data['phase'] == 'draw2' ||
         data['phase'] == 'draw3') {
+      if (isSpectator) {
+        return SpectatorModeLogo();
+      }
       return getDrawing(data);
     } else if (data['phase'] == 'describe1' ||
         data['phase'] == 'describe2' ||
         data['phase'] == 'describe3') {
+      if (isSpectator) {
+        return SpectatorModeLogo();
+      }
       return getDescription(data);
     } else {
       return getVotes(data);
@@ -1592,6 +1628,10 @@ class VotableSquare extends StatelessWidget {
     var playerIndex = data['playerIds'].indexOf(userId);
     if (getSubmitterIndex(phase, promptIndex, data) == playerIndex) {
       isSelf = true;
+    }
+    bool isSpectator = data['spectatorIds'].contains(userId);
+    if (isSpectator) {
+      isSelf = false;
     }
 
     Color color = Colors.greenAccent;

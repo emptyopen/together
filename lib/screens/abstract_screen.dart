@@ -10,6 +10,7 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:together/services/services.dart';
 import 'template/help_screen.dart';
 import 'lobby_screen.dart';
+import 'package:together/components/misc.dart';
 
 class AbstractScreen extends StatefulWidget {
   AbstractScreen({this.sessionId, this.userId, this.roomCode});
@@ -1091,18 +1092,23 @@ class _AbstractScreenState extends State<AbstractScreen> {
                   ),
                 ],
               ),
-              body: SingleChildScrollView(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    SizedBox(height: 20),
-                    getHeaders(data),
-                    SizedBox(height: 5),
-                    getSubHeaders(data),
-                    SizedBox(height: 10),
-                    getBoard(data),
-                  ],
-                ),
+              body: Stack(
+                children: <Widget>[
+                  SingleChildScrollView(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        SizedBox(height: 20),
+                        getHeaders(data),
+                        SizedBox(height: 5),
+                        getSubHeaders(data),
+                        SizedBox(height: 10),
+                        getBoard(data),
+                      ],
+                    ),
+                  ),
+                  Positioned(bottom: 20, right: 20, child: SpectatorModeLogo())
+                ],
               ));
         });
   }
