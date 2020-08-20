@@ -8,11 +8,12 @@ void main() => runApp(MyApp());
 // done:
 
 // next up:
-// BIG: add spectator mode (already added to default game creation from main menu)
-//  - ability to become spectator in lobby
-//  - add spectator view in each game
+// BIG: add spectator mode
+//  - add spectator view to bananaphone
+// rivers: add confirmation dialog to end game
 
 // TODO:
+// abstract: choose lists of words (nouns, adjectives, people, places, etc.)
 // rivers: fix DEBUG LOCKED
 // rivers: show num cards in each players hand
 // rivers: show stacks history

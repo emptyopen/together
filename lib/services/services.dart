@@ -57,12 +57,13 @@ checkUserInGame({String userId, String sessionId = ''}) async {
         'playerIds': FieldValue.arrayRemove([userId])
       });
       // check if room is empty, if so, delete session
-      var playerIds = (await Firestore.instance
+      var data = (await Firestore.instance
               .collection('sessions')
               .document(userData['currentGame'])
               .get())
-          .data['playerIds'];
-      if (playerIds.length == 0) {
+          .data;
+      if (data['playerIds'].length == 0) {
+        print('no players remaining for room ${data['roomCode']}, will delete');
         await Firestore.instance
             .collection('sessions')
             .document(userData['currentGame'])

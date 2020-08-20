@@ -347,6 +347,7 @@ class _LobbyDialogState extends State<LobbyDialog> {
         .then((event) async {
       if (event.documents.isNotEmpty) {
         var data = event.documents.single.data;
+        String sessionId = event.documents.single.documentID;
 
         // check password
         var correctPassword = data['password'];
@@ -361,27 +362,28 @@ class _LobbyDialogState extends State<LobbyDialog> {
           }
         }
 
-        // if game has started and player is not in session, reject
-        if (data['state'] == 'started' && !data['playerIds'].contains(userId)) {
-          setState(() {
-            isFormError = true;
-            formError = 'Game has already started';
-          });
-          return;
-        }
-
         // remove player from previous game
         await checkUserInGame(
             userId: userId, sessionId: event.documents.single.documentID);
 
-        // otherwise, append playerId to session
-        String sessionId = event.documents.single.documentID;
+        // determine if user needs to be added as a player or spectator
+        if (data['state'] == 'lobby') {
+          if (!data['playerIds'].contains(userId) &&
+              !data['spectatorIds'].contains(userId)) {
+            data['playerIds'].add(userId);
+          }
+        }
+        // if game has started, either user is a player or will get added as a spectator
+        if (data['state'] != 'lobby' && !data['playerIds'].contains(userId)) {
+          // add if they are not a spectator yet
+          if (!data['spectatorIds'].contains(userId)) {
+            data['spectatorIds'].add(userId);
+          }
+        }
         await Firestore.instance
             .collection('sessions')
             .document(sessionId)
-            .updateData({
-          'playerIds': FieldValue.arrayUnion([userId])
-        });
+            .setData(data);
 
         // update player's currentGame
         await Firestore.instance
@@ -389,19 +391,16 @@ class _LobbyDialogState extends State<LobbyDialog> {
             .document(userId)
             .updateData({'currentGame': sessionId});
 
-        // only move to room if password is correct
-        if (!isFormError) {
-          Navigator.of(context).pop();
-          slideTransition(
-            context,
-            LobbyScreen(
-              roomCode: _roomCodeController.text.toUpperCase(),
-            ),
-          );
-        }
+        // move to room
+        Navigator.of(context).pop();
+        slideTransition(
+          context,
+          LobbyScreen(
+            roomCode: _roomCodeController.text.toUpperCase(),
+          ),
+        );
       } else {
         // room doesn't exist
-        print('room doesn\'t exist');
         setState(() {
           isFormError = true;
           formError = 'Room does not exist';

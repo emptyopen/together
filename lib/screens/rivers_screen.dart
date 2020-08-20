@@ -25,6 +25,13 @@ class _RiversScreenState extends State<RiversScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   int clickedHandCard = -1;
   var currPlayer = '';
+  bool isSpectator = false;
+
+  @override
+  void initState() {
+    super.initState();
+    setUpGame();
+  }
 
   checkIfExit(data) async {
     // run async func to check if game is over, or back to lobby or deleted (main menu)
@@ -50,6 +57,18 @@ class _RiversScreenState extends State<RiversScreen> {
         HapticFeedback.vibrate();
       }
     }
+  }
+
+  setUpGame() async {
+    // get session info for locations
+    var data = (await Firestore.instance
+            .collection('sessions')
+            .document(widget.sessionId)
+            .get())
+        .data;
+    setState(() {
+      isSpectator = data['spectatorIds'].contains(widget.userId);
+    });
   }
 
   getHand(data) {
@@ -736,52 +755,57 @@ class _RiversScreenState extends State<RiversScreen> {
   }
 
   getGameboard(data) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: <Widget>[
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Column(
-                children: <Widget>[
-                  Text(
-                    'Room code: ${widget.roomCode}',
-                    style: TextStyle(
-                      color: Colors.grey,
+    return Stack(
+      children: <Widget>[
+        Column(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: <Widget>[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Column(
+                  children: <Widget>[
+                    Text(
+                      'Room code: ${widget.roomCode}',
+                      style: TextStyle(
+                        color: Colors.grey,
+                      ),
                     ),
-                  ),
+                    SizedBox(height: 10),
+                    getDrawPile(data),
+                    SizedBox(height: 15),
+                    widget.userId == data['turn']
+                        ? data['cardsToPlay'] > 0
+                            ? getGiveUpButton(data)
+                            : getEndTurnButton(data)
+                        : Container(height: 30),
+                  ],
+                ),
+                SizedBox(width: 30),
+                Column(children: <Widget>[
+                  getStatus(data),
                   SizedBox(height: 10),
-                  getDrawPile(data),
-                  SizedBox(height: 15),
-                  widget.userId == data['turn']
-                      ? data['cardsToPlay'] > 0
-                          ? getGiveUpButton(data)
-                          : getEndTurnButton(data)
-                      : Container(height: 30),
-                ],
-              ),
-              SizedBox(width: 30),
-              Column(children: <Widget>[
-                getStatus(data),
-                SizedBox(height: 10),
-                showLog(data),
-              ]),
-            ],
-          ),
-          getCenterCards(data),
-          getHand(data),
-          widget.userId == data['leader']
-              ? EndGameButton(
-                  gameName: 'Rivers',
-                  sessionId: widget.sessionId,
-                  fontSize: 14,
-                  height: 30,
-                  width: 100,
-                )
-              : Container(),
-        ],
-      ),
+                  showLog(data),
+                ]),
+              ],
+            ),
+            getCenterCards(data),
+            isSpectator ? Container() : getHand(data),
+            widget.userId == data['leader']
+                ? EndGameButton(
+                    gameName: 'Rivers',
+                    sessionId: widget.sessionId,
+                    fontSize: 14,
+                    height: 30,
+                    width: 100,
+                  )
+                : Container(),
+          ],
+        ),
+        isSpectator
+            ? Positioned(bottom: 35, right: 15, child: SpectatorModeLogo())
+            : Container(),
+      ],
     );
   }
 

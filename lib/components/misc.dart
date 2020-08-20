@@ -46,3 +46,24 @@ class RulesContainer extends StatelessWidget {
     );
   }
 }
+
+class SpectatorModeLogo extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(10),
+      decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(5),
+          border: Border.all(
+            color: Colors.grey,
+          )),
+      child: Text(
+        'SPECTATOR MODE',
+        style: TextStyle(
+          fontSize: 25,
+          color: Colors.grey,
+        ),
+      ),
+    );
+  }
+}

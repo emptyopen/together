@@ -25,6 +25,7 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
   List<dynamic> subList2;
   List<List<bool>> strikethroughs;
   bool roleIsVisible = false;
+  bool isSpectator = false;
   String currPlayer = '';
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
 
@@ -80,6 +81,9 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
       List.filled(subList1.length, false),
       List.filled(subList2.length, false),
     ];
+    setState(() {
+      isSpectator = data['spectatorIds'].contains(widget.userId);
+    });
   }
 
   updateTurn() async {
@@ -229,7 +233,11 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Text(
-              roleIsVisible ? '(Tap to hide role)' : 'Tap to show role',
+              isSpectator
+                  ? (roleIsVisible
+                      ? '(Tap to hide location)'
+                      : 'Tap to show location')
+                  : roleIsVisible ? '(Tap to hide role)' : 'Tap to show role',
               style: TextStyle(
                   fontSize: roleIsVisible ? 16 : 20,
                   color: roleIsVisible ? Colors.grey[400] : Colors.white),
@@ -273,22 +281,26 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
                             ),
                           ),
                           SizedBox(height: 10),
-                          Text(
-                            'Your role:',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey[400],
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          Text(
-                            '${data['playerRoles'][widget.userId]}',
-                            style: TextStyle(
-                              fontSize: 20,
-                              color: Colors.white,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
+                          isSpectator
+                              ? Container()
+                              : Text(
+                                  'Your role:',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey[400],
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                          isSpectator
+                              ? Container()
+                              : Text(
+                                  '${data['playerRoles'][widget.userId]}',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    color: Colors.white,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
                         ],
                       )
                 : Container(),
@@ -673,6 +685,7 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
                 ],
               )
             : Container(),
+        SizedBox(height: 20),
       ],
     );
   }
@@ -731,59 +744,66 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
                   ),
                 ],
               ),
-              body: SingleChildScrollView(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      SizedBox(height: 50),
-                      !data['accusation'].containsKey('charged')
-                          ? getTurn(context, data)
-                          : Container(),
-                      SizedBox(height: 20),
-                      getRoleButton(data),
-                      SizedBox(height: 20),
-                      getAccusation(data),
-                      SizedBox(height: 20),
-                      !data['accusation'].containsKey('charged')
-                          ? LocationBoard(
-                              subList1: subList1,
-                              subList2: subList2,
-                              strikethroughs: strikethroughs,
-                              callback: fakeCallback,
-                            )
-                          : Container(),
-                      SizedBox(
-                        height: 20,
+              body: Stack(
+                children: <Widget>[
+                  SingleChildScrollView(
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          SizedBox(height: 50),
+                          !data['accusation'].containsKey('charged')
+                              ? getTurn(context, data)
+                              : Container(),
+                          SizedBox(height: 20),
+                          getRoleButton(data),
+                          SizedBox(height: 20),
+                          isSpectator ? Container() : getAccusation(data),
+                          !data['accusation'].containsKey('charged')
+                              ? LocationBoard(
+                                  subList1: subList1,
+                                  subList2: subList2,
+                                  strikethroughs: strikethroughs,
+                                  callback: fakeCallback,
+                                )
+                              : Container(),
+                          SizedBox(
+                            height: 20,
+                          ),
+                          Text(
+                            'Room Code:',
+                            style: TextStyle(
+                              fontSize: 16,
+                            ),
+                          ),
+                          PageBreak(width: 80),
+                          Text(
+                            widget.roomCode,
+                            style: TextStyle(
+                              fontSize: 20,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                          ),
+                          SizedBox(height: 30),
+                          widget.userId == data['leader']
+                              ? EndGameButton(
+                                  gameName: 'The Hunt',
+                                  sessionId: widget.sessionId,
+                                  fontSize: 18,
+                                  height: 40,
+                                  width: 140,
+                                )
+                              : Container(),
+                          SizedBox(height: 80),
+                        ],
                       ),
-                      Text(
-                        'Room Code:',
-                        style: TextStyle(
-                          fontSize: 16,
-                        ),
-                      ),
-                      PageBreak(width: 80),
-                      Text(
-                        widget.roomCode,
-                        style: TextStyle(
-                          fontSize: 20,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                      ),
-                      SizedBox(height: 30),
-                      widget.userId == data['leader']
-                          ? EndGameButton(
-                              gameName: 'The Hunt',
-                              sessionId: widget.sessionId,
-                              fontSize: 18,
-                              height: 40,
-                              width: 140,
-                            )
-                          : Container(),
-                      SizedBox(height: 80),
-                    ],
+                    ),
                   ),
-                ),
+                  isSpectator
+                      ? Positioned(
+                          bottom: 15, right: 15, child: SpectatorModeLogo())
+                      : Container(),
+                ],
               ));
         });
   }

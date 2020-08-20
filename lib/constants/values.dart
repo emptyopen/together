@@ -204,7 +204,30 @@ List<String> bananaphonePossiblePromptsHard = [
   'Cereal without milk',
   'A sky-diving clown',
   'Sitting on a trashcan',
-  
+];
+
+List<String> abstractNounWords = [];
+
+List<String> abstractPeopleWords = [];
+
+List<String> abstractAdjectiveWords = [];
+
+List<String> abstractLocationWords = [
+  'Britain',
+  'Alaska',
+  'Hawaii',
+  'Italy',
+  'Mongolia',
+  'Europe',
+  'China',
+  'Mt Everest',
+  'Texas',
+  'London',
+  'Japan',
+  'Russia',
+  'Venezuela',
+  'Egypt',
+  'Greece',
 ];
 
 List<String> abstractPossibleWords = [
@@ -255,19 +278,12 @@ List<String> abstractPossibleWords = [
   'mistake',
   'distance',
   'fog',
-  'London',
-  'Japan',
-  'Russia',
-  'Venezuela',
   'rodeo',
-  'Texas',
   'frosting',
   'cake',
   'vape pen',
   'terrorist',
-  'Mt Everest',
   'ocean',
-  'China',
   'Brad Pitt',
   'microscope',
   'best',
@@ -280,7 +296,6 @@ List<String> abstractPossibleWords = [
   'location',
   'walkie-talkie',
   'wall',
-  'Europe',
   'orc',
   'elf',
   'forest',
@@ -336,8 +351,6 @@ List<String> abstractPossibleWords = [
   'divide',
   'register',
   'plank',
-  'Mongolia',
-  'Egypt',
   'pyramid',
   'infinity',
   'repeat',
@@ -409,8 +422,6 @@ List<String> abstractPossibleWords = [
   'glove',
   'generation',
   'husk',
-  'Italy',
-  'Greece',
   'Jessica Alba',
   'Skype',
   'control',
@@ -420,9 +431,6 @@ List<String> abstractPossibleWords = [
   'lemur',
   'yellow',
   'gold',
-  'Britain',
-  'Alaska',
-  'Hawaii',
   'swing',
   'sweat',
   'sweater',
