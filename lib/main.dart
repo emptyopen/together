@@ -6,16 +6,17 @@ import 'screens/root_screen.dart';
 void main() => runApp(MyApp());
 
 // done:
+// BIG: add spectator mode
 
 // next up:
-// BIG: add spectator mode
-//  - add spectator view to bananaphone
 // rivers: add confirmation dialog to end game
+// the hunt: add sounds and vibration for when game ends
+// rivers: run through completion of game
+// rivers: show num cards in each players hand
 
 // TODO:
 // abstract: choose lists of words (nouns, adjectives, people, places, etc.)
 // rivers: fix DEBUG LOCKED
-// rivers: show num cards in each players hand
 // rivers: show stacks history
 // add basic functionality to three crowns -
 // - play cards in duel

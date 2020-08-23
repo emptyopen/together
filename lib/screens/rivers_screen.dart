@@ -208,11 +208,11 @@ class _RiversScreenState extends State<RiversScreen> {
       nextTurnIndex = 0;
     }
     // skip until find player with cards
-    var numPlayersWithEmptyHand = 0;
+    var attempts = 0; // shouldn't need this but just in case
     while (data['player${nextTurnIndex}Hand'].length == 0) {
-      numPlayersWithEmptyHand += 1;
-      if (numPlayersWithEmptyHand == data['playerIds'].length) {
-        endGame(data);
+      attempts += 1;
+      if (attempts > 150) {
+        break;
       }
       nextTurnIndex = currentTurnIndex + 1;
       if (nextTurnIndex == data['playerIds'].length) {
@@ -276,11 +276,11 @@ class _RiversScreenState extends State<RiversScreen> {
       if (remainingCards == 0) {
         endGame(data);
       }
-    }
-
-    // if hand is empty, automatically end turn
-    if (data['player${playerIndex}Hand'].length == 0) {
-      endTurn(data);
+    } else {
+      // if hand is empty, automatically end turn
+      if (data['player${playerIndex}Hand'].length == 0) {
+        endTurn(data);
+      }
     }
 
     await Firestore.instance
@@ -613,7 +613,33 @@ class _RiversScreenState extends State<RiversScreen> {
 
   getGiveUpButton(data) {
     return RaisedGradientButton(
-      onPressed: () => endGame(data),
+      onPressed: () {
+        showDialog<Null>(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Give up confirmation'),
+              contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),
+              // content: Container(),
+              actions: <Widget>[
+                FlatButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('Cancel'),
+                ),
+                FlatButton(
+                  onPressed: () {
+                    endGame(data);
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('Confirm'),
+                ),
+              ],
+            );
+          },
+        );
+      },
       child: Text('Give up'),
       height: 30,
       width: 80,
