@@ -7,14 +7,13 @@ void main() => runApp(MyApp());
 
 // done:
 // BIG: add spectator mode
+// rivers: add confirmation dialog to end game
 
 // next up:
-// rivers: add confirmation dialog to end game
-// the hunt: add sounds and vibration for when game ends
-// rivers: run through completion of game
-// rivers: show num cards in each players hand
 
 // TODO:
+// the hunt: add sounds and vibration for when game ends
+// rivers: show num cards in each players hand
 // abstract: choose lists of words (nouns, adjectives, people, places, etc.)
 // rivers: fix DEBUG LOCKED
 // rivers: show stacks history
