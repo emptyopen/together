@@ -206,8 +206,6 @@ List<String> bananaphonePossiblePromptsHard = [
   'Sitting on a trashcan',
 ];
 
-List<String> abstractNounWords = [];
-
 List<String> abstractPeopleWords = [
   'Jessica Alba',
   'Marilyn Monroe',
@@ -239,9 +237,16 @@ List<String> abstractPeopleWords = [
   'Usain Bolt',
   'Anne Frank',
   'Tom Cruise',
+  'Jesus',
+  'Santa',
+  'Brad Pitt',
+  'Angelina Jolie',
+  'Harry Potter',
+  'Mickey Mouse',
+  'Donald Duck',
+  'Elsa',
+  'Cinderlla',
 ];
-
-List<String> abstractAdjectiveWords = [];
 
 List<String> abstractLocationWords = [
   'Britain',
@@ -259,9 +264,17 @@ List<String> abstractLocationWords = [
   'Venezuela',
   'Egypt',
   'Greece',
+  'New York City',
+  'Hollywood',
+  'Thailand',
+  'Paris',
+  'Germany',
+  'Grand Canyon',
+  'Disney World',
+  'The Louvre',
 ];
 
-List<String> abstractPossibleWords = [
+List<String> abstractGeneralWords = [
   'apple',
   'cider',
   'chocolate',
@@ -315,7 +328,6 @@ List<String> abstractPossibleWords = [
   'vape pen',
   'terrorist',
   'ocean',
-  'Brad Pitt',
   'microscope',
   'best',
   'nonsense',
@@ -340,7 +352,6 @@ List<String> abstractPossibleWords = [
   'reciprocate',
   'deny',
   'laugh',
-  'Santa',
   'screen',
   'check',
   'clock',
@@ -351,10 +362,9 @@ List<String> abstractPossibleWords = [
   'dinosaur',
   'harbor',
   'labor',
-  'Jesus',
   'keyboard',
   'incinerator',
-  'prime minister',
+  'president',
   'button',
   'LED',
   'owl',
@@ -437,13 +447,12 @@ List<String> abstractPossibleWords = [
   'sweater',
   'pull',
   'yoyo',
-  'Sudoku',
+  'sudoku',
   'acceptable',
   'ruin',
   'sponge',
   'wisdom',
   'cremation',
-  'Aztec',
   'dolphin',
   'account',
   'wire',

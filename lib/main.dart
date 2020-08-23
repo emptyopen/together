@@ -6,18 +6,17 @@ import 'screens/root_screen.dart';
 void main() => runApp(MyApp());
 
 // done:
-// BIG: add spectator mode
-// rivers: add confirmation dialog to end game
 
 // next up:
-
-// TODO:
 // the hunt: add sounds and vibration for when game ends
 // rivers: show num cards in each players hand
 // abstract: choose lists of words (nouns, adjectives, people, places, etc.)
+
+// TODO:
+// abstract: logic to ensure at least one group of words is selected
 // rivers: fix DEBUG LOCKED
 // rivers: show stacks history
-// add basic functionality to three crowns -
+// add basic functionality to three crowns
 // - play cards in duel
 // - continue duel winner logic
 // - add ability to match
@@ -35,7 +34,7 @@ void main() => runApp(MyApp());
 // add scores button to view scores in bananaphone
 // orange team needs to win when green wins for them
 // tiebreaker for abstract, with total time used as second marker
-// add timer to the hunt
+// add timer to the hunt?
 // abstract: ability to manually change teams (people can just join the team they want to be on?)
 // abstract should show leader view at end of game (not just solid blocks)
 // if leader leaves a game, need to assign remaining player the leader position - ORRRRR, "claim leadership" button would be more fun and easier

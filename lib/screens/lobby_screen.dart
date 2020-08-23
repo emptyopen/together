@@ -279,6 +279,14 @@ class _LobbyScreenState extends State<LobbyScreen> {
       return;
     }
 
+    // verify at least one word set is selected
+    if (!rules['generalWordsOn'] &&
+        !rules['locationsWordsOn'] &&
+        !rules['peopleWordsOn']) {
+      startError = 'At least one word set must be selected';
+      return;
+    }
+
     // clear error if we are good to start
     setState(() {
       startError = '';
@@ -290,16 +298,25 @@ class _LobbyScreenState extends State<LobbyScreen> {
       boardSize = 6;
     }
     List<RowList> words = [];
+    var possibleWords = [];
+    // add selected word sets
+    if (rules['generalWordsOn']) {
+      possibleWords.addAll(abstractGeneralWords);
+    }
+    if (rules['peopleWordsOn']) {
+      possibleWords.addAll(abstractPeopleWords);
+    }
+    if (rules['locationsWordsOn']) {
+      possibleWords.addAll(abstractLocationWords);
+    }
     var wordsHashSet = HashSet();
     for (var i = 0; i < boardSize; i++) {
       words.add(RowList());
       for (var j = 0; j < boardSize; j++) {
         Random _random = new Random();
-        String wordToAdd = abstractPossibleWords[
-            _random.nextInt(abstractPossibleWords.length)];
+        String wordToAdd = possibleWords[_random.nextInt(possibleWords.length)];
         while (wordsHashSet.contains(wordToAdd)) {
-          wordToAdd = abstractPossibleWords[
-              _random.nextInt(abstractPossibleWords.length)];
+          wordToAdd = possibleWords[_random.nextInt(possibleWords.length)];
         }
         wordsHashSet.add(wordToAdd);
         words[i].add(wordToAdd);
@@ -681,6 +698,45 @@ class _LobbyScreenState extends State<LobbyScreen> {
                 Text(
                   rules['turnTimer'].toString(),
                   style: TextStyle(fontSize: 18),
+                ),
+              ],
+            ),
+            SizedBox(height: 5),
+            RulesContainer(
+              rules: <Widget>[
+                Text(
+                  'General words on:',
+                  style: TextStyle(fontSize: 12),
+                ),
+                Text(
+                  rules['generalWordsOn'].toString(),
+                  style: TextStyle(fontSize: 12),
+                ),
+              ],
+            ),
+            SizedBox(height: 2),
+            RulesContainer(
+              rules: <Widget>[
+                Text(
+                  'People words on:',
+                  style: TextStyle(fontSize: 12),
+                ),
+                Text(
+                  rules['peopleWordsOn'].toString(),
+                  style: TextStyle(fontSize: 12),
+                ),
+              ],
+            ),
+            SizedBox(height: 2),
+            RulesContainer(
+              rules: <Widget>[
+                Text(
+                  'Locations words on:',
+                  style: TextStyle(fontSize: 12),
+                ),
+                Text(
+                  rules['locationsWordsOn'].toString(),
+                  style: TextStyle(fontSize: 12),
                 ),
               ],
             ),
@@ -1175,6 +1231,9 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
       case 'Abstract':
         rules['numTeams'] = sessionData['rules']['numTeams'];
         rules['turnTimer'] = sessionData['rules']['turnTimer'];
+        rules['generalWordsOn'] = sessionData['rules']['generalWordsOn'];
+        rules['peopleWordsOn'] = sessionData['rules']['peopleWordsOn'];
+        rules['locationsWordsOn'] = sessionData['rules']['peopleWordsOn'];
         break;
       case 'Bananaphone':
         rules['numRounds'] = sessionData['rules']['numRounds'];
@@ -1271,7 +1330,6 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
           title: Text('Edit game rules:'),
           contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),
           content: Container(
-            // decoration: BoxDecoration(border: Border.all()),
             height:
                 subList2 != null ? 120 + 40 * subList1.length.toDouble() : 100,
             width: width * 0.95,
@@ -1338,7 +1396,7 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
           contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),
           content: Container(
             // decoration: BoxDecoration(border: Border.all()),
-            height: 200,
+            height: 310,
             width: width * 0.95,
             child: ListView(
               children: <Widget>[
@@ -1397,6 +1455,78 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
                             style: TextStyle(fontFamily: 'Balsamiq')),
                       );
                     }).toList(),
+                  ),
+                ),
+                SizedBox(height: 20),
+                Text('Words:'),
+                Container(
+                  width: 80,
+                  child: Column(
+                    children: <Widget>[
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            rules['generalWordsOn'] = !rules['generalWordsOn'];
+                          });
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            color: rules['generalWordsOn']
+                                ? Theme.of(context).primaryColor
+                                : Colors.grey,
+                          ),
+                          padding: EdgeInsets.all(5),
+                          child: Text(
+                            'General',
+                            style: TextStyle(fontSize: 14, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 5),
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            rules['peopleWordsOn'] = !rules['peopleWordsOn'];
+                          });
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            color: rules['peopleWordsOn']
+                                ? Theme.of(context).primaryColor
+                                : Colors.grey,
+                          ),
+                          padding: EdgeInsets.all(5),
+                          child: Text(
+                            'People',
+                            style: TextStyle(fontSize: 14, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 5),
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            rules['locationsWordsOn'] =
+                                !rules['locationsWordsOn'];
+                          });
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            color: rules['locationsWordsOn']
+                                ? Theme.of(context).primaryColor
+                                : Colors.grey,
+                          ),
+                          padding: EdgeInsets.all(5),
+                          child: Text(
+                            'Locations',
+                            style: TextStyle(fontSize: 14, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],

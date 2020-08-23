@@ -87,6 +87,9 @@ getDefaultRules(String gameName) {
       return {
         'numTeams': 2,
         'turnTimer': 30,
+        'generalWordsOn': true,
+        'locationsWordsOn': true,
+        'peopleWordsOn': true,
       };
       break;
     case 'Bananaphone':

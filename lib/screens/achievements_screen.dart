@@ -63,6 +63,12 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
           .document(widget.userId)
           .updateData({'threeCrownsScore': 0});
     }
+    if (data['riversScore'] == null) {
+      await Firestore.instance
+          .collection('users')
+          .document(widget.userId)
+          .updateData({'riversScore': 0});
+    }
     data = (await Firestore.instance
             .collection('users')
             .document(widget.userId)
