@@ -196,7 +196,7 @@ class _RiversScreenState extends State<RiversScreen> {
     data['playerIds'].asMap().forEach((i, v) {
       missingCards += data['rules']['handSize'] - data['player${i}Hand'].length;
     });
-    if (data['drawPile'].length - missingCards == 0) {
+    if (data['drawPile'].length - missingCards <= 0) {
       data['cardsToPlay'] = 1;
     } else {
       data['cardsToPlay'] = 2;
@@ -262,7 +262,7 @@ class _RiversScreenState extends State<RiversScreen> {
     HapticFeedback.vibrate();
     logEvent(data, '$playerName played $cardToAdd');
 
-    // check if turn is over
+    // check if required cards are played
     if (data['cardsToPlay'] > 0) {
       data['cardsToPlay'] -= 1;
     }
@@ -322,7 +322,7 @@ class _RiversScreenState extends State<RiversScreen> {
               MdiIcons.chevronDoubleUp,
               size: 70,
             ),
-            SizedBox(width: 20),
+            SizedBox(width: 10),
             RiversCard(
               value: data['ascendPile1'].last.toString(),
               clickable: ascend1Clickable,
@@ -376,7 +376,7 @@ class _RiversScreenState extends State<RiversScreen> {
                 }
               },
             ),
-            SizedBox(width: 20),
+            SizedBox(width: 10),
             Icon(
               MdiIcons.chevronDoubleUp,
               size: 70,
@@ -420,7 +420,7 @@ class _RiversScreenState extends State<RiversScreen> {
               MdiIcons.chevronDoubleDown,
               size: 70,
             ),
-            SizedBox(width: 20),
+            SizedBox(width: 10),
             RiversCard(
               value: data['descendPile1'].last.toString(),
               clickable: descend1Clickable,
@@ -474,7 +474,7 @@ class _RiversScreenState extends State<RiversScreen> {
                 }
               },
             ),
-            SizedBox(width: 20),
+            SizedBox(width: 10),
             Icon(
               MdiIcons.chevronDoubleDown,
               size: 70,
@@ -498,7 +498,10 @@ class _RiversScreenState extends State<RiversScreen> {
 
   getStatus(data) {
     var currentPlayerName = data['playerNames'][data['turn']];
-    Text currentTurn = Text('It is $currentPlayerName\'s turn:');
+    Text currentTurn = Text('It is $currentPlayerName\'s turn:',
+        style: TextStyle(
+          color: Colors.white,
+        ));
     if (widget.userId == data['turn']) {
       currentTurn = Text(
         'It is your turn:',
@@ -528,7 +531,10 @@ class _RiversScreenState extends State<RiversScreen> {
               ),
             ),
       SizedBox(height: 5),
-      PageBreak(width: 20),
+      PageBreak(
+        width: 20,
+        color: Colors.grey,
+      ),
     ];
     data['playerIds'].forEach((v) {
       String name = data['playerNames'][v];
@@ -549,9 +555,7 @@ class _RiversScreenState extends State<RiversScreen> {
             name,
             style: TextStyle(
               fontSize: 12,
-              color: v == data['turn']
-                  ? Theme.of(context).highlightColor
-                  : Colors.grey,
+              color: v == data['turn'] ? Colors.white : Colors.grey,
             ),
           ),
         ],
