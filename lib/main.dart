@@ -6,11 +6,12 @@ import 'screens/root_screen.dart';
 void main() => runApp(MyApp());
 
 // done:
+// abstract: choose lists of words (nouns, adjectives, people, places, etc.)
 
 // next up:
-// the hunt: add sounds and vibration for when game ends
+// add sounds and vibration
+// change button texture when loading during async call
 // rivers: show num cards in each players hand
-// abstract: choose lists of words (nouns, adjectives, people, places, etc.)
 
 // TODO:
 // abstract: logic to ensure at least one group of words is selected

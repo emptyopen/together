@@ -32,6 +32,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
   DateTime _now;
   bool isUpdating = false;
   String currTeam = '';
+  bool isSpectator = false;
 
   @override
   void initState() {
@@ -101,6 +102,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
 
     setState(() {
       numTeams = data['rules']['numTeams'];
+      isSpectator = data['spectatorIds'].contains(widget.userId);
 
       if (data['rules']['numTeams'] == 2) {
         userIsTeamLeader = data['rules']['greenLeader'] == widget.userId ||
@@ -1107,7 +1109,10 @@ class _AbstractScreenState extends State<AbstractScreen> {
                       ],
                     ),
                   ),
-                  Positioned(bottom: 20, right: 20, child: SpectatorModeLogo())
+                  isSpectator
+                      ? Positioned(
+                          bottom: 20, right: 20, child: SpectatorModeLogo())
+                      : Container()
                 ],
               ));
         });

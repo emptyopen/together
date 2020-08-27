@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
+import 'package:audioplayers/audio_cache.dart';
 
 import '../screens/lobby_screen.dart';
 
@@ -116,6 +117,7 @@ createGame(BuildContext context, String game, String password, bool pop) async {
   String randLetter() => letters[_rnd.nextInt(letters.length)];
   String randRoomCode() => randLetter() + randLetter() + randLetter();
   var _roomCode = randRoomCode();
+  final player = new AudioCache(prefix: 'sounds/');
 
   // check that room code doesn't exist
   bool roomCodeExists = true;
@@ -185,6 +187,7 @@ createGame(BuildContext context, String game, String password, bool pop) async {
   if (pop) {
     Navigator.of(context).pop();
   }
+  player.play('new-lobby.mp3');
   slideTransition(
     context,
     LobbyScreen(

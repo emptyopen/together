@@ -523,7 +523,6 @@ class _LobbyDialogState extends State<LobbyDialog> {
               Navigator.of(context).pop();
             },
             child: const Text("Cancel")),
-        // This button results in adding the contact to the database
         FlatButton(
             onPressed: () {
               widget.isJoin

@@ -6,6 +6,7 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import 'dart:collection';
 import 'dart:math';
 import 'package:flutter/services.dart';
+import 'package:audioplayers/audio_cache.dart';
 
 import '../components/buttons.dart';
 import '../components/layouts.dart';
@@ -44,6 +45,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
   bool willVibrate1 = true;
   bool willVibrate2 = true;
   bool willVibrate3 = true;
+  final player = new AudioCache(prefix: 'sounds/');
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
 
   @override
@@ -622,6 +624,9 @@ class _LobbyScreenState extends State<LobbyScreen> {
       // update data
       data['state'] = 'started';
       data['startTime'] = DateTime.now().add(Duration(seconds: 5));
+
+      player.play('reveal.wav');
+
       await Firestore.instance
           .collection('sessions')
           .document(sessionId)

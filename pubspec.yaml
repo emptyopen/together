@@ -16,6 +16,7 @@ dependencies:
   shimmer: ^1.1.1
   auto_size_text: ^2.1.0
   marquee_widget: ^0.8.0
+  audioplayers: ^0.15.0
 
   firebase_core: ^0.4.5
   firebase_analytics: ^5.0.14
@@ -42,4 +43,20 @@ flutter:
         - asset: assets/fonts/BalsamiqSans-Regular.ttf
         - asset: assets/fonts/BalsamiqSans-Italic.ttf
           style: italic
+  assets:
+    - assets/sounds/approved-notification.wav
+    - assets/sounds/birds.mp3
+    - assets/sounds/complete-notification.wav
+    - assets/sounds/excellent.wav
+    - assets/sounds/giant-breathing.wav
+    - assets/sounds/howling.wav
+    - assets/sounds/music-box-1.wav
+    - assets/sounds/music-box-2.mp3
+    - assets/sounds/music-box-3.mp3
+    - assets/sounds/new-lobby.mp3
+    - assets/sounds/new-player.wav
+    - assets/sounds/open-notification.mp3
+    - assets/sounds/reveal.wav
+    - assets/sounds/sent-notification.wav
+
  
