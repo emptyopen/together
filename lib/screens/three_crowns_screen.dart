@@ -85,16 +85,20 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     return int.parse(v);
   }
 
-  cleanCenter(data) async {
-    // clean duelee/dueler card
+  cleanupDuel(data) async {
     data['duel']['dueleeCard'] = '';
     data['duel']['duelerCard'] = '';
-    // clean matching cards
     data['duel']['matchingCards'] = [];
-    // clean peasant cards
     data['duel']['peasantCards'] = [];
-    // reset joust
     data['duel']['joust'] = 1;
+    data['duel']['tilePrize'] = 0;
+    data['duel']['pillagePrize'] = 0;
+    // next duel
+    data['duel']['duelerIndex'] += 1;
+    if (data['duel']['duelerIndex'] >= data['playerIds'].length) {
+      data['duel']['duelerIndex'] = 0;
+    }
+    data['duel']['state'] = 'duel';
   }
 
   showLog(data) {
@@ -218,7 +222,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
   }
 
   playerNameFromIndex(int index, data) {
-    var playerId = data['playerIds'][data['duel']['duelerIndex']];
+    var playerId = data['playerIds'][index];
     return data['playerNames'][playerId];
   }
 
@@ -230,10 +234,10 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     var name = playerNameFromIndex(winnerIndex, data);
     if (winnerIndex == data['duelerIndex']) {
       data['log'].add(
-          '$name wins: ${data['duel']['duelerCard']} > ${data['duel']['dueleeCard']}');
+          '$name wins: ${data['duel']['duelerCard']} beats ${data['duel']['dueleeCard']}');
     } else {
       data['log'].add(
-          '$name wins: ${data['duel']['dueleeCard']} > ${data['duel']['duelerCard']}');
+          '$name wins: ${data['duel']['dueleeCard']} beats ${data['duel']['duelerCard']}');
     }
   }
 
@@ -260,7 +264,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
 
     // if there is a value tie, immediately move to next joust
     if (duelerValue == dueleeValue) {
-      print('moving to second joust');
+      print('joust');
       data['duel']['joust'] += 1;
       data['log'].add(
           'Tie of ${data['duel']['duelerCard'][0]}, moving to joust #${data['duel']['joust']}');
@@ -270,8 +274,9 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
         data['duel']['tilePrize'] = 3;
       }
     }
-    // check if there is a siege (A and facevalue)
+    // check if there is a siege ('1' and facevalue)
     else if (letterCardInvolved && oneCardInvolved) {
+      print('seige');
       if (flipWinners) {
         // letter card owner wins
         if (dueleeValue == '1') {
@@ -290,6 +295,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
       data['duel']['pillagePrize'] = 1 * data['duel']['joust'];
       data['duel']['state'] = 'collection';
     } else if (flipWinners) {
+      print('flip winners');
       // winners are flipped, lower value wins
       if (stringToNumeric(duelerValue) > stringToNumeric(dueleeValue)) {
         setWinner(data['duel']['duelerIndex'] + 1, data);
@@ -300,8 +306,9 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
       data['duel']['tilePrize'] = tilePrize;
       data['duel']['state'] = 'collection';
     } else {
+      print('non flip winner');
       // winners are NOT flipped, higher value wins
-      if (stringToNumeric(duelerValue) > stringToNumeric(dueleeValue)) {
+      if (stringToNumeric(duelerValue) < stringToNumeric(dueleeValue)) {
         data['duel']['matcherIndex'] = data['duel']['duelerIndex'];
       } else {
         int matcherIndex = data['duel']['duelerIndex'] + 1;
@@ -323,7 +330,38 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
 
   playCard(data, i, val) async {
     var playerIndex = data['playerIds'].indexOf(widget.userId);
-    if (playerIndex == data['duel']['duelerIndex']) {
+    if (data['duel']['state'] == 'collection') {
+      _scaffoldKey.currentState.showSnackBar(SnackBar(
+        content: Text('Can\'t play during collection!'),
+        duration: Duration(seconds: 3),
+      ));
+      return;
+    } else if (data['duel']['state'] == 'matching') {
+      if (data['duel']['matcherIndex'] != playerIndex) {
+        _scaffoldKey.currentState.showSnackBar(SnackBar(
+          content: Text('Someone else is matching!'),
+          duration: Duration(seconds: 3),
+        ));
+        return;
+      }
+      // remaining difference
+      var diff = (stringToNumeric(data['duel']['dueleeCard'][0]) -
+              stringToNumeric(data['duel']['duelerCard'][0]))
+          .abs();
+      print(diff);
+      var matchingCardsSum = stringToNumeric(val[0]);
+      data['duel']['matchingCards'].forEach((v) {
+        matchingCardsSum += stringToNumeric(v[0]);
+      });
+      if (diff < matchingCardsSum) {
+        _scaffoldKey.currentState.showSnackBar(SnackBar(
+          content: Text('Matching cards over limit!'),
+          duration: Duration(seconds: 3),
+        ));
+        return;
+      }
+      data['duel']['matchingCards'].add(val);
+    } else if (playerIndex == data['duel']['duelerIndex']) {
       // player is dueler
       if (data['duel']['duelerCard'] != '') {
         _scaffoldKey.currentState.showSnackBar(SnackBar(
@@ -513,6 +551,52 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
   }
 
   getStatus(data) {
+    // collections
+    if (data['duel']['state'] == 'collection') {
+      if (widget.userId == data['playerIds'][data['duel']['winnerIndex']]) {
+        return Text('Collect your winnings!');
+      } else {
+        String winner = playerNameFromIndex(data['duel']['winnerIndex'], data);
+        return Column(
+          children: <Widget>[
+            Text(
+              winner,
+              style: TextStyle(
+                fontSize: 20,
+                color: Theme.of(context).primaryColor,
+              ),
+            ),
+            SizedBox(height: 3),
+            Text('is collecting their winnings!'),
+          ],
+        );
+      }
+    }
+    // matching
+    if (data['duel']['state'] == 'matching') {
+      if (widget.userId == data['playerIds'][data['duel']['matcherIndex']]) {
+        return Text('Can you match?');
+      } else {
+        String matcher =
+            playerNameFromIndex(data['duel']['matcherIndex'], data);
+        return Column(
+          children: <Widget>[
+            Text('Waiting to see if '),
+            SizedBox(height: 3),
+            Text(
+              matcher,
+              style: TextStyle(
+                fontSize: 20,
+                color: Theme.of(context).primaryColor,
+              ),
+            ),
+            SizedBox(height: 3),
+            Text('can match!'),
+          ],
+        );
+      }
+    }
+    // duel
     bool playerIsInDuel = playerInDuel(data, widget.userId);
     if (playerIsInDuel) {
       var opponent = data['playerIds'][data['duel']['duelerIndex']];
@@ -551,7 +635,154 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
         );
       }
     }
-    return Text('STATUS HERE');
+    return getPlayerWaitingForDuel(data);
+  }
+
+  addTile(data) async {
+    if (data['duel']['tilePrize'] > 0) {
+      data['duel']['tilePrize'] -= 1;
+      int winnerIndex = data['duel']['winnerIndex'];
+      data['player${winnerIndex}Tiles'].add(generateRandomLetter());
+      String winner = playerNameFromIndex(data['duel']['winnerIndex'], data);
+      data['log'].add('$winner collected a tile');
+    }
+    // if player has collected all rewards, move to next duel
+    if (data['duel']['tilePrize'] == 0) {
+      cleanupDuel(data);
+    }
+
+    await Firestore.instance
+        .collection('sessions')
+        .document(widget.sessionId)
+        .setData(data);
+  }
+
+  getAction(data) {
+    Widget action = Container();
+    if (data['duel']['state'] == 'collection') {
+      if (widget.userId == data['playerIds'][data['duel']['winnerIndex']]) {
+        List<Widget> rowItems = [];
+        if (data['duel']['tilePrize'] > 0) {
+          String plural = data['duel']['tilePrize'] == 1 ? 'tile' : 'tiles';
+          rowItems.add(
+            RaisedGradientButton(
+                child: Text(
+                  '${data['duel']['tilePrize']} ' + plural + ' left!',
+                  style: TextStyle(fontSize: 18),
+                ),
+                height: 50,
+                width: 120,
+                gradient: LinearGradient(
+                  colors: <Color>[
+                    Theme.of(context).primaryColor,
+                    Theme.of(context).accentColor,
+                  ],
+                ),
+                onPressed: () {
+                  addTile(data);
+                }),
+          );
+        }
+        action = Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: rowItems,
+        );
+      }
+    } else if (data['duel']['state'] == 'matching') {
+      if (widget.userId == data['playerIds'][data['duel']['matcherIndex']]) {
+        String sumStatus = '';
+        int i = 0;
+        while (i < data['duel']['matchingCards'].length) {
+          sumStatus +=
+              stringToNumeric(data['duel']['matchingCards'][i][0]).toString();
+          if (i < data['duel']['matchingCards'].length) {
+            sumStatus += ' +';
+          }
+          i += 1;
+        }
+        action = Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                data['duel']['matchingCards'].length == 0
+                    ? Card(
+                        empty: true,
+                        size: 'small',
+                      )
+                    : Card(
+                        value: data['duel']['matchingCards'].last,
+                        size: 'small',
+                        callback: () {
+                          print('yo');
+                        },
+                      ),
+                SizedBox(height: 5),
+                Text(
+                  sumStatus,
+                  style: TextStyle(
+                    fontSize: 14,
+                  ),
+                )
+              ],
+            ),
+            SizedBox(width: 40),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                RaisedGradientButton(
+                  child: Text(
+                    'Match',
+                    style: TextStyle(fontSize: 19),
+                  ),
+                  height: 40,
+                  width: 110,
+                  onPressed: () {
+                    print('will match');
+                  },
+                  gradient: LinearGradient(
+                    colors: [
+                      Theme.of(context).primaryColor,
+                      Theme.of(context).accentColor,
+                    ],
+                  ),
+                ),
+                SizedBox(height: 8),
+                RaisedGradientButton(
+                  child: Text(
+                    'I can only bow',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  height: 30,
+                  width: 110,
+                  onPressed: () {
+                    print('will concede');
+                  },
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.red[700],
+                      Colors.red[500],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      }
+    } else {
+      action = Text('no actions');
+    }
+    return Container(
+      height: 100,
+      width: 300,
+      decoration: BoxDecoration(
+        border: Border.all(color: Theme.of(context).highlightColor),
+        borderRadius: BorderRadius.circular(5),
+      ),
+      child: action,
+    );
   }
 
   getCenter(data) {
@@ -597,15 +828,23 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
             showLog(data),
             SizedBox(height: 20),
             getCenter(data),
-            SizedBox(height: 30),
+            SizedBox(height: 20),
+            getAction(data),
+            SizedBox(height: 20),
             getHand(data),
-            SizedBox(height: 30),
-            EndGameButton(
-              sessionId: widget.sessionId,
-              height: 35,
-              width: 100,
-              gameName: 'Three Crowns',
-            ),
+            widget.userId == data['leader']
+                ? Column(
+                    children: <Widget>[
+                      SizedBox(height: 30),
+                      EndGameButton(
+                        sessionId: widget.sessionId,
+                        height: 35,
+                        width: 100,
+                        gameName: 'Three Crowns',
+                      ),
+                    ],
+                  )
+                : Container(),
           ],
         ),
       ),
@@ -688,6 +927,7 @@ class Card extends StatelessWidget {
   final double rotation;
   final Function callback;
   final bool faceDown;
+  final bool empty;
 
   Card({
     this.value,
@@ -695,6 +935,7 @@ class Card extends StatelessWidget {
     this.rotation,
     this.callback,
     this.faceDown = false,
+    this.empty = false,
   });
 
   getIcon(size) {
@@ -743,8 +984,20 @@ class Card extends StatelessWidget {
     double height = 80;
     double width = 60;
     double fontSize = 24;
-    if (size == 'medium') {
-      // do nothing
+    if (size == 'small') {
+      height = 55;
+      width = 40;
+      fontSize = 18;
+    }
+    if (empty) {
+      return Container(
+          height: height,
+          width: width,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(color: Theme.of(context).highlightColor),
+            borderRadius: BorderRadius.circular(10),
+          ));
     }
     if (faceDown) {
       return Container(
