@@ -657,6 +657,17 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
         .setData(data);
   }
 
+  returnMatchingCard(data) async {
+    var playerIndex = data['playerIds'].indexOf(widget.userId);
+    data['player${playerIndex}Hand'].add(data['duel']['matchingCards'].last);
+    data['duel']['matchingCards'].removeLast();
+
+    await Firestore.instance
+        .collection('sessions')
+        .document(widget.sessionId)
+        .setData(data);
+  }
+
   getAction(data) {
     Widget action = Container();
     if (data['duel']['state'] == 'collection') {
@@ -691,17 +702,36 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     } else if (data['duel']['state'] == 'matching') {
       if (widget.userId == data['playerIds'][data['duel']['matcherIndex']]) {
         String sumStatus = '';
-        int i = 0;
-        while (i < data['duel']['matchingCards'].length) {
-          sumStatus +=
-              stringToNumeric(data['duel']['matchingCards'][i][0]).toString();
-          if (i < data['duel']['matchingCards'].length) {
-            sumStatus += ' +';
+        var diff = (stringToNumeric(data['duel']['dueleeCard'][0]) -
+                stringToNumeric(data['duel']['duelerCard'][0]))
+            .abs();
+        if (data['duel']['matchingCards'].length == 0) {
+          sumStatus = 'Need $diff more!';
+        } else if (data['duel']['matchingCards'].length == 1) {
+          if (data['duel']['matchingCards'][0][0] == diff) {
+            sumStatus = 'Nice!';
+          } else {
+            sumStatus = '${data['duel']['matchingCards'][0][0]} < $diff';
           }
-          i += 1;
+        } else {
+          int i = 0;
+          while (i < data['duel']['matchingCards'].length) {
+            sumStatus +=
+                stringToNumeric(data['duel']['matchingCards'][i][0]).toString();
+            i += 1;
+            if (i < data['duel']['matchingCards'].length) {
+              sumStatus += ' + ';
+            }
+          }
+          var sum = data['duel']['matchingCards']
+              .reduce((a, b) => stringToNumeric(a[0]) + stringToNumeric(b[0]));
+          sumStatus += ' = $sum (need $diff)';
+          if (sum == diff) {
+            sumStatus = 'Nice!';
+          }
         }
         action = Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: <Widget>[
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -715,19 +745,18 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
                         value: data['duel']['matchingCards'].last,
                         size: 'small',
                         callback: () {
-                          print('yo');
+                          returnMatchingCard(data);
                         },
                       ),
                 SizedBox(height: 5),
                 Text(
                   sumStatus,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 12,
                   ),
                 )
               ],
             ),
-            SizedBox(width: 40),
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
