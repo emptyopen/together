@@ -53,12 +53,6 @@ void main() => runApp(MyApp());
 // vanessa@g.com  z5SqbMUvLVb7CfSxQz4OEk9VyDE3
 // greg@gmail.com  djawU3QzVCXkLq32mlmd6W81CqK2
 
-// temp banana: UMR
-// Markus
-// Cassie
-// Henry
-// Vanessa
-
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override

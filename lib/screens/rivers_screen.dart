@@ -74,7 +74,6 @@ class _RiversScreenState extends State<RiversScreen> {
   getHand(data) {
     var playerIndex = data['playerIds'].indexOf(widget.userId);
     var playerHand = data['player${playerIndex}Hand'];
-    // return Text('Player hand: $playerIndex $playerHand');
     List<Widget> cards = [
       SizedBox(
         width: 5,
@@ -191,7 +190,6 @@ class _RiversScreenState extends State<RiversScreen> {
   }
 
   endTurn(data) async {
-    // TODO: add logic here to check if deck will be empty if cards are drawn
     var missingCards = 0;
     data['playerIds'].asMap().forEach((i, v) {
       missingCards += data['rules']['handSize'] - data['player${i}Hand'].length;
@@ -624,7 +622,6 @@ class _RiversScreenState extends State<RiversScreen> {
             return AlertDialog(
               title: Text('Give up confirmation'),
               contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),
-              // content: Container(),
               actions: <Widget>[
                 FlatButton(
                   onPressed: () {

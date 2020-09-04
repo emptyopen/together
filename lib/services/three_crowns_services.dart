@@ -119,7 +119,7 @@ fillHand({data, scaffoldKey, userId, sessionId, force = false}) async {
   var playerIndex = data['playerIds'].indexOf(userId);
   bool changed = false;
   var cnt = 0;
-  while (data['player${playerIndex}Hand'].length < 5 && cnt < 8) {
+  while (data['player${playerIndex}Hand'].length < 6 && cnt < 10) {
     String randomCard = generateRandomThreeCrownsCard();
     data['player${playerIndex}Hand'].add(randomCard);
     changed = true;

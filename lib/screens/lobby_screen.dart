@@ -512,10 +512,10 @@ class _LobbyScreenState extends State<LobbyScreen> {
     // initialize players' data
     var playerIds = data['playerIds'];
     playerIds.asMap().forEach((i, v) async {
-      data['player${v}Hand'] = [];
-      while (data['player${v}Hand'].length < 5) {
+      data['player${i}Hand'] = [];
+      while (data['player${i}Hand'].length < 5) {
         String randomCard = generateRandomThreeCrownsCard();
-        data['player${v}Hand'].add(randomCard);
+        data['player${i}Hand'].add(randomCard);
       }
       data['player${i}Tiles'] = [];
       data['player${i}Crowns'] = 0;
@@ -531,7 +531,21 @@ class _LobbyScreenState extends State<LobbyScreen> {
           .data['name'];
     }
 
-    data['duel'] = {'duelerIndex': 0, 'duelerCard': '', 'dueleeCard': ''};
+    data['log'] = ['', '', ''];
+
+    data['duel'] = {
+      'duelerIndex': 0,
+      'duelerCard': '',
+      'dueleeCard': '',
+      'joust': 1,
+      'state': 'duel',
+      'matchingCards': [],
+      'peasantCards': [],
+      'tilePrize': 0,
+      'pillagePrize': 0,
+      'matcherIndex': 0,
+      'winnerIndex': 0,
+    };
 
     return data;
   }
@@ -610,7 +624,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
         break;
 
       case 'Three Crowns':
-        print('Setting up Bananaphone game...');
+        print('Setting up Three Crowns game...');
         data = await setupThreeCrowns(data);
         break;
 
@@ -1400,7 +1414,6 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
           title: Text('Edit game rules:'),
           contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),
           content: Container(
-            // decoration: BoxDecoration(border: Border.all()),
             height: 310,
             width: width * 0.95,
             child: ListView(

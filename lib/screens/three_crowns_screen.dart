@@ -52,10 +52,9 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     // check if both cards are played, if so show snackbar (duel already started!)
     if (data['duel']['duelerCard'] != '' && data['duel']['dueleeCard'] != '') {
       _scaffoldKey.currentState.showSnackBar(SnackBar(
-          content:
-              Text('Duel has already started!'),
-          duration: Duration(seconds: 3),
-        ));
+        content: Text('Duel has already started!'),
+        duration: Duration(seconds: 3),
+      ));
       // return;
     }
     var playerIndex = data['playerIds'].indexOf(widget.userId);
@@ -79,57 +78,247 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     }
     if (v == 'B') {
       return 9;
-    } 
+    }
     if (v == 'A') {
       return 10;
     }
     return int.parse(v);
   }
 
-  determineDuelWinner(data) {
+  cleanCenter(data) async {
+    // clean duelee/dueler card
+    data['duel']['dueleeCard'] = '';
+    data['duel']['duelerCard'] = '';
+    // clean matching cards
+    data['duel']['matchingCards'] = [];
+    // clean peasant cards
+    data['duel']['peasantCards'] = [];
+    // reset joust
+    data['duel']['joust'] = 1;
+  }
+
+  showLog(data) {
+    var latestLog = data['log'].last;
+    var secondLatestLog = data['log'][data['log'].length - 2];
+    var thirdLatestLog = data['log'][data['log'].length - 3];
+
+    List<Widget> fullLogs = [];
+    data['log'].sublist(3).reversed.forEach((v) {
+      fullLogs.add(
+        Text(
+          v,
+          style: TextStyle(
+            fontSize: v.startsWith('Now') && v.endsWith('turn') ? 14 : 16,
+            color: v.startsWith('Now') && v.endsWith('turn')
+                ? Colors.grey
+                : Colors.white,
+          ),
+        ),
+      );
+    });
+
+    return Container(
+      width: 240,
+      height: 70,
+      child: RaisedButton(
+        onPressed: () {
+          showDialog<Null>(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text('Logs:'),
+                contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),
+                content: Container(
+                  height: 200,
+                  child: Column(
+                    children: <Widget>[
+                      SizedBox(height: 10),
+                      Container(
+                        height: 190,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                                color: Theme.of(context).highlightColor),
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          padding: EdgeInsets.all(10),
+                          child: SingleChildScrollView(
+                            child: Column(
+                              children: fullLogs,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                actions: <Widget>[
+                  Container(
+                    child: FlatButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: Text('OK'),
+                    ),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+        shape: RoundedRectangleBorder(
+            side: BorderSide(width: 1, color: Colors.white),
+            borderRadius: BorderRadius.circular(5.0)),
+        padding: const EdgeInsets.all(0.0),
+        child: Container(
+          constraints: BoxConstraints(),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(color: Colors.grey[900]),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              SizedBox(height: 3),
+              Text(
+                '-   ' + latestLog + '   -',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.white,
+                ),
+              ),
+              SizedBox(height: 3),
+              Text(
+                secondLatestLog,
+                style: TextStyle(
+                  fontSize: 9,
+                  color: Colors.grey[200],
+                ),
+              ),
+              SizedBox(height: 3),
+              Text(
+                thirdLatestLog,
+                style: TextStyle(
+                  fontSize: 9,
+                  color: Colors.grey[400],
+                ),
+              ),
+              SizedBox(height: 3),
+              Text(
+                '(click to show full logs)',
+                style: TextStyle(
+                  fontSize: 8,
+                  color: Colors.grey[500],
+                ),
+              ),
+              SizedBox(height: 3),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  playerNameFromIndex(int index, data) {
+    var playerId = data['playerIds'][data['duel']['duelerIndex']];
+    return data['playerNames'][playerId];
+  }
+
+  setWinner(winnerIndex, data) {
+    if (winnerIndex >= data['playerIds'].length) {
+      winnerIndex = 0;
+    }
+    data['duel']['winnerIndex'] = winnerIndex;
+    var name = playerNameFromIndex(winnerIndex, data);
+    if (winnerIndex == data['duelerIndex']) {
+      data['log'].add(
+          '$name wins: ${data['duel']['duelerCard']} > ${data['duel']['dueleeCard']}');
+    } else {
+      data['log'].add(
+          '$name wins: ${data['duel']['dueleeCard']} > ${data['duel']['duelerCard']}');
+    }
+  }
+
+  determineDuelWinner(data) async {
     print('determining winner');
-    // determine dueler and duelee
-    // compare cards
+
+    // set up values
     bool flipWinners = false;
     String duelerValue = data['duel']['duelerCard'][0];
     String duelerSuit = data['duel']['duelerCard'][1];
     String dueleeValue = data['duel']['dueleeCard'][0];
     String dueleeSuit = data['duel']['dueleeCard'][1];
-    // if there is a value tie, immediately move to next joust
-    if (duelerValue == dueleeValue) {
-      print('moving to second joust');
-      return;
-    }
     // check for same suit
     if (duelerSuit == dueleeSuit) {
       flipWinners = !flipWinners;
     }
-    // flip for each 4
-    if (duelerValue == '4') {
+    // flip for any 4
+    if (duelerValue == '4' || dueleeValue == '4') {
       flipWinners = !flipWinners;
     }
-    if (dueleeValue == '4') {
-      flipWinners = !flipWinners;
+    bool letterCardInvolved = ['A', 'B', 'C'].contains(dueleeValue) ||
+        ['A', 'B', 'C'].contains(duelerValue);
+    bool oneCardInvolved = dueleeValue == '1' || duelerValue == '1';
+
+    // if there is a value tie, immediately move to next joust
+    if (duelerValue == dueleeValue) {
+      print('moving to second joust');
+      data['duel']['joust'] += 1;
+      data['log'].add(
+          'Tie of ${data['duel']['duelerCard'][0]}, moving to joust #${data['duel']['joust']}');
+      if (data['duel']['joust'] == 4) {
+        data['log'].add('Three jousts complete! Both players get three tiles.');
+        data['duel']['state'] = 'collection';
+        data['duel']['tilePrize'] = 3;
+      }
     }
     // check if there is a siege (A and facevalue)
-    // if there is a winner, allow matching or "kneel"
-    if (flipWinners) {
-      print('winners are flipped, lower value wins');
-      if (stringToNumeric(duelerValue) > stringToNumeric(dueleeValue)) {
-        print('duelee wins');
+    else if (letterCardInvolved && oneCardInvolved) {
+      if (flipWinners) {
+        // letter card owner wins
+        if (dueleeValue == '1') {
+          setWinner(data['duel']['duelerIndex'], data);
+        } else {
+          setWinner(data['duel']['duelerIndex'] + 1, data);
+        }
       } else {
-        print('dueler wins');
+        // one card owner wins
+        if (dueleeValue == '1') {
+          setWinner(data['duel']['duelerIndex'] + 1, data);
+        } else {
+          setWinner(data['duel']['duelerIndex'], data);
+        }
       }
+      data['duel']['pillagePrize'] = 1 * data['duel']['joust'];
+      data['duel']['state'] = 'collection';
+    } else if (flipWinners) {
+      // winners are flipped, lower value wins
+      if (stringToNumeric(duelerValue) > stringToNumeric(dueleeValue)) {
+        setWinner(data['duel']['duelerIndex'] + 1, data);
+      } else {
+        setWinner(data['duel']['duelerIndex'], data);
+      }
+      int tilePrize = (letterCardInvolved ? 2 : 1) * data['duel']['joust'];
+      data['duel']['tilePrize'] = tilePrize;
+      data['duel']['state'] = 'collection';
     } else {
-      print('winners are NOT flipped, higher value wins');
+      // winners are NOT flipped, higher value wins
       if (stringToNumeric(duelerValue) > stringToNumeric(dueleeValue)) {
-        print('dueler wins');
+        data['duel']['matcherIndex'] = data['duel']['duelerIndex'];
       } else {
-        print('duelee wins');
+        int matcherIndex = data['duel']['duelerIndex'] + 1;
+        if (matcherIndex >= data['playerIds'].length) {
+          matcherIndex = 0;
+        }
+        data['duel']['matcherIndex'] = matcherIndex;
       }
+      int tilePrize = (letterCardInvolved ? 2 : 1) * data['duel']['joust'];
+      data['duel']['tilePrize'] = tilePrize;
+      data['duel']['state'] = 'matching';
     }
-    // if there is a tie, move to second joust
-    // if there is a siege ("A" and "face card"), winner gets to pillage (steal tile if available or get two tiles)
+
+    await Firestore.instance
+        .collection('sessions')
+        .document(widget.sessionId)
+        .setData(data);
   }
 
   playCard(data, i, val) async {
@@ -260,7 +449,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
             height: 80,
             width: 60,
             decoration: BoxDecoration(
-              border: Border.all(),
+              border: Border.all(color: Theme.of(context).highlightColor),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Center(
@@ -286,7 +475,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
             height: 80,
             width: 60,
             decoration: BoxDecoration(
-              border: Border.all(),
+              border: Border.all(color: Theme.of(context).highlightColor),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Center(
@@ -326,12 +515,12 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
   getStatus(data) {
     bool playerIsInDuel = playerInDuel(data, widget.userId);
     if (playerIsInDuel) {
-      var opponent = data['playerIds']
-          [data['duel']['duelerIndex']]; //data['playerNames'][]
+      var opponent = data['playerIds'][data['duel']['duelerIndex']];
       if (playerIsDueler(data)) {
         opponent = data['playerIds'][data['duel']['duelerIndex'] + 1];
       }
-      if (data['duel']['dueleeCard'] == '' || data['duel']['dueleeCard'] == '') {
+      if (data['duel']['dueleeCard'] == '' ||
+          data['duel']['dueleeCard'] == '') {
         return Column(
           children: <Widget>[
             Text('You are dueling:'),
@@ -345,7 +534,8 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
             ),
           ],
         );
-      } else if (data['duel']['dueleeCard'] != '' && data['duel']['dueleeCard'] != '') {
+      } else if (data['duel']['dueleeCard'] != '' &&
+          data['duel']['dueleeCard'] != '') {
         return Column(
           children: <Widget>[
             Text('You are dueling:'),
@@ -368,7 +558,9 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     // check if player is part of duel
     return Container(
         decoration: BoxDecoration(
-          border: Border.all(),
+          border: Border.all(
+            color: Theme.of(context).highlightColor,
+          ),
           borderRadius: BorderRadius.circular(10),
         ),
         padding: EdgeInsets.all(10),
@@ -402,16 +594,18 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            showLog(data),
+            SizedBox(height: 20),
             getCenter(data),
-            SizedBox(height: 40),
+            SizedBox(height: 30),
             getHand(data),
             SizedBox(height: 30),
             EndGameButton(
-                    sessionId: widget.sessionId,
-                    height: 35,
-                    width: 100,
-                    gameName: 'Three Crowns',
-                  ),
+              sessionId: widget.sessionId,
+              height: 35,
+              width: 100,
+              gameName: 'Three Crowns',
+            ),
           ],
         ),
       ),
