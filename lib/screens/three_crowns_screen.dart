@@ -85,22 +85,6 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     return int.parse(v);
   }
 
-  cleanupDuel(data) async {
-    data['duel']['dueleeCard'] = '';
-    data['duel']['duelerCard'] = '';
-    data['duel']['matchingCards'] = [];
-    data['duel']['peasantCards'] = [];
-    data['duel']['joust'] = 1;
-    data['duel']['tilePrize'] = 0;
-    data['duel']['pillagePrize'] = 0;
-    // next duel
-    data['duel']['duelerIndex'] += 1;
-    if (data['duel']['duelerIndex'] >= data['playerIds'].length) {
-      data['duel']['duelerIndex'] = 0;
-    }
-    data['duel']['state'] = 'duel';
-  }
-
   showLog(data) {
     var latestLog = data['log'].last;
     var secondLatestLog = data['log'][data['log'].length - 2];
@@ -219,11 +203,6 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
         ),
       ),
     );
-  }
-
-  playerNameFromIndex(int index, data) {
-    var playerId = data['playerIds'][index];
-    return data['playerNames'][playerId];
   }
 
   setWinner(winnerIndex, data) {
@@ -721,143 +700,18 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
       showDialog<Null>(
         context: context,
         builder: (BuildContext context) {
-          var playerIndex = data['playerIds'].indexOf(widget.userId);
           List<int> possiblePlayerIndices = List<int>.generate(
               data['playerIds'].length, (int index) => index);
+          var playerIndex = data['playerIds'].indexOf(widget.userId);
           possiblePlayerIndices.remove(playerIndex);
-          int selectedPlayerIndex = possiblePlayerIndices[0];
-          int selectedTileIndex = -1;
-          if (data['player${selectedPlayerIndex}Tiles'].length > 0) {
-            selectedTileIndex = data['player${selectedPlayerIndex}Tiles'][0];
-          }
-          print('working with $possiblePlayerIndices');
-          fljsdkfjf
-          // have to figure out how to filter tiles for the selected player
-          return AlertDialog(
-            title: Text('Choose your spoils!'),
-            contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                DropdownButton<int>(
-                  isExpanded: true,
-                  value: selectedPlayerIndex,
-                  iconSize: 24,
-                  elevation: 16,
-                  style: TextStyle(color: Theme.of(context).highlightColor),
-                  underline: Container(
-                    height: 2,
-                    color: Theme.of(context).highlightColor,
-                  ),
-                  onChanged: (int newValue) {
-                    setState(() {
-                      print('setting to $newValue');
-                      selectedPlayerIndex = newValue;
-                    });
-                  },
-                  items: possiblePlayerIndices
-                      .map<DropdownMenuItem<int>>((int value) {
-                    return DropdownMenuItem<int>(
-                      value: value,
-                      child: Text(data['playerNames'][data['playerIds'][value]],
-                          style: TextStyle(
-                            fontFamily: 'Balsamiq',
-                            fontSize: 18,
-                          )),
-                    );
-                  }).toList(),
-                ),
-                data['player${selectedPlayerIndex}Tiles'].length > 0
-                    ? DropdownButton<int>(
-                        isExpanded: true,
-                        value: selectedTileIndex,
-                        iconSize: 24,
-                        elevation: 16,
-                        style:
-                            TextStyle(color: Theme.of(context).highlightColor),
-                        underline: Container(
-                          height: 2,
-                          color: Theme.of(context).highlightColor,
-                        ),
-                        onChanged: (int newValue) {
-                          selectedTileIndex = newValue;
-                        },
-                        items: data['player${selectedPlayerIndex}Tiles']
-                            .map<DropdownMenuItem<int>>((int value) {
-                          return DropdownMenuItem<int>(
-                            value: value,
-                            child: Text(
-                                data['player${selectedPlayerIndex}Tiles']
-                                    [selectedTileIndex],
-                                style: TextStyle(
-                                  fontFamily: 'Balsamiq',
-                                  fontSize: 18,
-                                )),
-                          );
-                        }).toList(),
-                      )
-                    : Container(),
-              ],
-            ),
-            actions: <Widget>[
-              FlatButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: Text('cancel'),
-              ),
-              RaisedGradientButton(
-                onPressed: () {
-                  // ensure that tile is selected
-                  data['duel']['pillagePrize'] -= 1;
-                  Navigator.of(context).pop();
-                },
-                height: 30,
-                width: 100,
-                child: Text('Steal Tile!'),
-                gradient: LinearGradient(
-                  colors: <Color>[
-                    Color.fromARGB(255, 255, 185, 0),
-                    Color.fromARGB(255, 255, 213, 0),
-                  ],
-                ),
-              ),
-              RaisedGradientButton(
-                onPressed: () {
-                  // steal tile
-                  int winnerIndex = data['duel']['winnerIndex'];
-                  String winner =
-                      playerNameFromIndex(data['duel']['winnerIndex'], data);
-                  data['player${winnerIndex}Tiles'].add(generateRandomLetter());
-                  data['player${winnerIndex}Tiles'].add(generateRandomLetter());
-                  data['log'].add('$winner collected two tiles!');
-                  data['duel']['pillagePrize'] -= 1;
-                  Navigator.of(context).pop();
-                },
-                child: Text('2 Tiles!'),
-                height: 30,
-                width: 100,
-                gradient: LinearGradient(
-                  colors: <Color>[
-                    Colors.green[500],
-                    Colors.green[300],
-                  ],
-                ),
-              ),
-            ],
+          return PillageDialog(
+            data: data,
+            possiblePlayerIndices: possiblePlayerIndices,
+            sessionId: widget.sessionId,
           );
         },
       );
     }
-    // if player has collected all rewards, move to next duel
-    if (data['duel']['pillagePrize'] == 0) {
-      cleanupDuel(data);
-    }
-
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
   }
 
   returnMatchingCard(data) async {
@@ -1191,6 +1045,9 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     } else {
       action = Text('no actions');
     }
+
+    // TODO: add permament button (if available) to win!!
+
     return Container(
       height: 100,
       width: 300,
@@ -1199,6 +1056,24 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
         borderRadius: BorderRadius.circular(5),
       ),
       child: action,
+    );
+  }
+
+  getTiles(data) {
+    List<Widget> rowItems = [];
+    var playerIndex = data['playerIds'].indexOf(widget.userId);
+    data['player${playerIndex}Tiles'].forEach((v) {
+      rowItems.add(
+        Tile(value: v),
+      );
+      rowItems.add(
+        SizedBox(width: 5),
+      );
+    });
+    rowItems.removeAt(rowItems.length - 1);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: rowItems,
     );
   }
 
@@ -1249,6 +1124,9 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
             getAction(data),
             SizedBox(height: 20),
             getHand(data),
+            SizedBox(height: 20),
+            getTiles(data),
+            SizedBox(height: 20),
             widget.userId == data['leader']
                 ? Column(
                     children: <Widget>[
@@ -1470,6 +1348,241 @@ class Card extends StatelessWidget {
               ),
             ],
           )),
+    );
+  }
+}
+
+class PillageDialog extends StatefulWidget {
+  final data;
+  final List<int> possiblePlayerIndices;
+  final sessionId;
+
+  PillageDialog({
+    this.data,
+    this.possiblePlayerIndices,
+    this.sessionId,
+  });
+
+  @override
+  _PillageDialogState createState() => _PillageDialogState();
+}
+
+class _PillageDialogState extends State<PillageDialog> {
+  int selectedPlayerIndex;
+  int selectedTileIndex;
+  List<int> possibleTileIndices;
+
+  @override
+  void initState() {
+    super.initState();
+    selectedPlayerIndex = widget.possiblePlayerIndices[0];
+    selectedTileIndex = -1;
+    if (widget.data['player${selectedPlayerIndex}Tiles'].length > 0) {
+      selectedTileIndex = 0;
+    }
+    possibleTileIndices = List<int>.generate(
+        widget.data['player${selectedPlayerIndex}Tiles'].length,
+        (int index) => index);
+  }
+
+  stealTiles() async {
+    var tile =
+        widget.data['player${selectedPlayerIndex}Tiles'][selectedTileIndex];
+    // add tile to winner index
+    var winnerIndex = widget.data['duel']['winnerIndex'];
+    widget.data['player${winnerIndex}Tiles'].add(tile);
+    // remove tile from selectedPlayerIndex
+    widget.data['player${selectedPlayerIndex}Tiles'].remove(tile);
+    String winner =
+        playerNameFromIndex(widget.data['duel']['winnerIndex'], widget.data);
+    String selected = playerNameFromIndex(selectedPlayerIndex, widget.data);
+    widget.data['log']
+        .add('$winner stole a ${tile.toUpperCase()} from $selected!');
+
+    widget.data['duel']['pillagePrize'] -= 1;
+
+    // if player has collected all rewards, move to next duel
+    if (widget.data['duel']['pillagePrize'] == 0) {
+      cleanupDuel(widget.data);
+    }
+
+    await Firestore.instance
+        .collection('sessions')
+        .document(widget.sessionId)
+        .setData(widget.data);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Choose your spoils!'),
+      contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          DropdownButton<int>(
+            isExpanded: true,
+            value: selectedPlayerIndex,
+            iconSize: 24,
+            elevation: 16,
+            style: TextStyle(color: Theme.of(context).highlightColor),
+            underline: Container(
+              height: 2,
+              color: Theme.of(context).highlightColor,
+            ),
+            onChanged: (int newValue) {
+              setState(() {
+                selectedPlayerIndex = newValue;
+                possibleTileIndices = List<int>.generate(
+                    widget.data['player${selectedPlayerIndex}Tiles'].length,
+                    (int index) => index);
+                if (widget.data['player${selectedPlayerIndex}Tiles'].length >
+                    0) {
+                  selectedTileIndex = 0;
+                }
+              });
+            },
+            items: widget.possiblePlayerIndices.map((int value) {
+              return DropdownMenuItem<int>(
+                value: value,
+                child: Text(
+                    widget.data['playerNames'][widget.data['playerIds'][value]],
+                    style: TextStyle(
+                      fontFamily: 'Balsamiq',
+                      fontSize: 18,
+                    )),
+              );
+            }).toList(),
+          ),
+          widget.data['player${selectedPlayerIndex}Tiles'].length > 0 &&
+                  selectedTileIndex != -1
+              ? DropdownButton<int>(
+                  isExpanded: true,
+                  value: selectedTileIndex,
+                  iconSize: 24,
+                  elevation: 16,
+                  style: TextStyle(color: Theme.of(context).highlightColor),
+                  underline: Container(
+                    height: 2,
+                    color: Theme.of(context).highlightColor,
+                  ),
+                  onChanged: (int newValue) {
+                    selectedTileIndex = newValue;
+                  },
+                  items: possibleTileIndices
+                      .map<DropdownMenuItem<int>>((int value) {
+                    return DropdownMenuItem<int>(
+                      value: value,
+                      child: Text(
+                        widget.data['player${selectedPlayerIndex}Tiles'][value],
+                        style: TextStyle(
+                          fontFamily: 'Balsamiq',
+                          fontSize: 18,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                )
+              : Container(),
+          SizedBox(height: 15),
+        ],
+      ),
+      actions: <Widget>[
+        RaisedGradientButton(
+          onPressed: () {
+            // ensure that tile is selected
+            if (widget.data['player${selectedPlayerIndex}Tiles'].length == 0 ||
+                selectedTileIndex == -1) {
+              print('display message in dialog that tile needs to be selected');
+              return;
+            }
+            stealTiles();
+            Navigator.of(context).pop();
+          },
+          height: 30,
+          width: 100,
+          child: Text(
+            'Steal Tile!',
+            style: TextStyle(
+              color: Colors.black,
+            ),
+          ),
+          gradient: LinearGradient(
+            colors: <Color>[
+              Color.fromARGB(255, 255, 185, 0),
+              Color.fromARGB(255, 255, 213, 0),
+            ],
+          ),
+        ),
+        RaisedGradientButton(
+          onPressed: () async {
+            // get two tiles
+            int winnerIndex = widget.data['duel']['winnerIndex'];
+            String winner = playerNameFromIndex(
+                widget.data['duel']['winnerIndex'], widget.data);
+            widget.data['player${winnerIndex}Tiles']
+                .add(generateRandomLetter());
+            widget.data['player${winnerIndex}Tiles']
+                .add(generateRandomLetter());
+            widget.data['log'].add('$winner collected two tiles!');
+            widget.data['duel']['pillagePrize'] -= 1;
+            // if player has collected all rewards, move to next duel
+            if (widget.data['duel']['pillagePrize'] == 0) {
+              cleanupDuel(widget.data);
+            }
+
+            await Firestore.instance
+                .collection('sessions')
+                .document(widget.sessionId)
+                .setData(widget.data);
+
+            Navigator.of(context).pop();
+          },
+          child: Text('2 Tiles!'),
+          height: 30,
+          width: 80,
+          gradient: LinearGradient(
+            colors: <Color>[
+              Colors.green[500],
+              Colors.green[300],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class Tile extends StatelessWidget {
+  final String value;
+
+  Tile({this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 30,
+      width: 30,
+      padding: EdgeInsets.all(5),
+      decoration: BoxDecoration(
+        border: Border.all(),
+        borderRadius: BorderRadius.circular(5),
+        gradient: LinearGradient(
+          colors: [
+            Colors.purple[500],
+            Colors.pink[300],
+          ],
+        ),
+      ),
+      child: Center(
+        child: Text(
+          value.toUpperCase(),
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.white,
+          ),
+        ),
+      ),
     );
   }
 }

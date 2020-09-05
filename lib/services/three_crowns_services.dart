@@ -145,3 +145,24 @@ bool playerInDuel(data, userId) {
   }
   return true;
 }
+
+playerNameFromIndex(int index, data) {
+  var playerId = data['playerIds'][index];
+  return data['playerNames'][playerId];
+}
+
+cleanupDuel(data) async {
+  data['duel']['dueleeCard'] = '';
+  data['duel']['duelerCard'] = '';
+  data['duel']['matchingCards'] = [];
+  data['duel']['peasantCards'] = [];
+  data['duel']['joust'] = 1;
+  data['duel']['tilePrize'] = 0;
+  data['duel']['pillagePrize'] = 0;
+  // next duel
+  data['duel']['duelerIndex'] += 1;
+  if (data['duel']['duelerIndex'] >= data['playerIds'].length) {
+    data['duel']['duelerIndex'] = 0;
+  }
+  data['duel']['state'] = 'duel';
+}
