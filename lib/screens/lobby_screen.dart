@@ -544,6 +544,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
       'tilePrize': 0,
       'pillagePrize': 0,
       'matcherIndex': 0,
+      'responderIndex': 0,
       'winnerIndex': 0,
     };
 
