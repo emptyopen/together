@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:math';
+import 'package:random_words/random_words.dart';
+
+int threeCardsHandSize = 6;
 
 // Three crowns
 
@@ -59,11 +62,11 @@ var deck = [
   '5S',
   '6S',
   '7S',
-  // '8S',
-  // '9S',
-  'CS',
-  'BS',
-  'AS',
+  '8S',
+  '9S',
+  'JS',
+  'QS',
+  'KS',
   '1H',
   '2H',
   '3H',
@@ -71,11 +74,11 @@ var deck = [
   '5H',
   '6H',
   '7H',
-  // '8H',
-  // '9H',
-  'CH',
-  'BH',
-  'AH',
+  '8H',
+  '9H',
+  'JH',
+  'QH',
+  'KH',
   '1C',
   '2C',
   '3C',
@@ -83,11 +86,11 @@ var deck = [
   '5C',
   '6C',
   '7C',
-  // '8C',
-  // '9C',
-  'CC',
-  'BC',
-  'AC',
+  '8C',
+  '9C',
+  'JC',
+  'QC',
+  'KC',
   '1D',
   '2D',
   '3D',
@@ -95,12 +98,25 @@ var deck = [
   '5D',
   '6D',
   '7D',
-  // '8D',
-  // '9D',
-  'CD',
-  'BD',
-  'AD',
+  '8D',
+  '9D',
+  'JD',
+  'QD',
+  'KD',
 ];
+
+stringToNumeric(String v) {
+  if (v == 'J') {
+    return 10;
+  }
+  if (v == 'Q') {
+    return 11;
+  }
+  if (v == 'K') {
+    return 12;
+  }
+  return int.parse(v);
+}
 
 generateRandomThreeCrownsCard() {
   final _random = new Random();
@@ -119,7 +135,8 @@ fillHand({data, scaffoldKey, userId, sessionId, force = false}) async {
   var playerIndex = data['playerIds'].indexOf(userId);
   bool changed = false;
   var cnt = 0;
-  while (data['player${playerIndex}Hand'].length < 6 && cnt < 10) {
+  while (data['player${playerIndex}Hand'].length < threeCardsHandSize &&
+      cnt < 10) {
     String randomCard = generateRandomThreeCrownsCard();
     data['player${playerIndex}Hand'].add(randomCard);
     changed = true;
@@ -135,15 +152,8 @@ fillHand({data, scaffoldKey, userId, sessionId, force = false}) async {
 
 bool playerInDuel(data, userId) {
   var playerIndex = data['playerIds'].indexOf(userId);
-  var duelerIndex = data['duel']['duelerIndex'];
-  var dueleeIndex = duelerIndex + 1;
-  if (dueleeIndex > data['playerIds'].length) {
-    dueleeIndex = 0;
-  }
-  if (playerIndex != duelerIndex && playerIndex != dueleeIndex) {
-    return false;
-  }
-  return true;
+  return playerIndex == data['duel']['duelerIndex'] ||
+      playerIndex == data['duel']['dueleeIndex'];
 }
 
 playerNameFromIndex(int index, data) {
@@ -164,5 +174,34 @@ cleanupDuel(data) async {
   if (data['duel']['duelerIndex'] >= data['playerIds'].length) {
     data['duel']['duelerIndex'] = 0;
   }
+  data['duel']['dueleeIndex'] += 1;
+  if (data['duel']['dueleeIndex'] >= data['playerIds'].length) {
+    data['duel']['dueleeIndex'] = 0;
+  }
+  // fill hands for dueler and duelee
+  int duelerIndex = data['duel']['duelerIndex'];
+  while (data['player${duelerIndex}Hand'].length < threeCardsHandSize) {
+    String randomCard = generateRandomThreeCrownsCard();
+    data['player${duelerIndex}Hand'].add(randomCard);
+  }
+  int dueleeIndex = data['duel']['dueleeIndex'];
+  while (data['player${dueleeIndex}Hand'].length < threeCardsHandSize) {
+    String randomCard = generateRandomThreeCrownsCard();
+    data['player${dueleeIndex}Hand'].add(randomCard);
+  }
   data['duel']['state'] = 'duel';
+}
+
+generateRandomWord(int minLength, int maxLength) {
+  final _random = new Random();
+  int tries = 0;
+  var word = all[_random.nextInt(all.length)];
+  while (word.length < minLength || word.length > maxLength) {
+    word = all[_random.nextInt(all.length)];
+    tries += 1;
+    if (tries > 200) {
+      break;
+    }
+  }
+  return word;
 }

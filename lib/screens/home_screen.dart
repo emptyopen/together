@@ -196,7 +196,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(
                     '* no password',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 11,
                       color: Colors.grey,
                     ),
                   ),

@@ -17,6 +17,7 @@ dependencies:
   auto_size_text: ^2.1.0
   marquee_widget: ^0.8.0
   audioplayers: ^0.15.0
+  random_words: ^1.0.2
 
   firebase_core: ^0.4.5
   firebase_analytics: ^5.0.14

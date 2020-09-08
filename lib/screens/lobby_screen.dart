@@ -513,7 +513,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
     var playerIds = data['playerIds'];
     playerIds.asMap().forEach((i, v) async {
       data['player${i}Hand'] = [];
-      while (data['player${i}Hand'].length < 5) {
+      while (data['player${i}Hand'].length < threeCardsHandSize) {
         String randomCard = generateRandomThreeCrownsCard();
         data['player${i}Hand'].add(randomCard);
       }
@@ -533,8 +533,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
     data['log'] = ['', '', ''];
 
+    data['targetWord'] = generateRandomWord(4, 7);
+
     data['duel'] = {
       'duelerIndex': 0,
+      'dueleeIndex': 1,
       'duelerCard': '',
       'dueleeCard': '',
       'joust': 1,
