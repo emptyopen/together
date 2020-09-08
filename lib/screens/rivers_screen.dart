@@ -675,7 +675,7 @@ class _RiversScreenState extends State<RiversScreen> {
             fontSize: v.startsWith('Now') && v.endsWith('turn') ? 14 : 16,
             color: v.startsWith('Now') && v.endsWith('turn')
                 ? Colors.grey
-                : Colors.white,
+                : Theme.of(context).highlightColor,
           ),
         ),
       );

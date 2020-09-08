@@ -86,7 +86,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
             fontSize: v.startsWith('Now') && v.endsWith('turn') ? 14 : 16,
             color: v.startsWith('Now') && v.endsWith('turn')
                 ? Colors.grey
-                : Colors.white,
+                : Theme.of(context).highlightColor,
           ),
         ),
       );
@@ -230,7 +230,8 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
 
     // if there is a value tie, immediately move to next joust
     if (duelerValue == dueleeValue) {
-      print('joust');
+      data['duelerCard'] = '';
+      data['dueleeCard'] = '';
       data['duel']['joust'] += 1;
       data['log'].add(
           'Tie of ${data['duel']['duelerCard'][0]}, moving to joust #${data['duel']['joust']}');
