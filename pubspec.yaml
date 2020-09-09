@@ -1,7 +1,7 @@
 name: together
 description: An app for friends to play games remotely.
 
-version: 1.1.11+23
+version: 1.1.12+24
 
 environment:
   sdk: ">=2.6.0 <3.0.0"
@@ -16,7 +16,7 @@ dependencies:
   shimmer: ^1.1.1
   auto_size_text: ^2.1.0
   marquee_widget: ^0.8.0
-  audioplayers: ^0.15.0
+  # audioplayers: ^0.16.1
   random_words: ^1.0.2
 
   firebase_core: ^0.4.5

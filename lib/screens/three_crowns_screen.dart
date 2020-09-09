@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:together/components/buttons.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 
 import 'package:together/services/services.dart';
 import 'package:together/services/three_crowns_services.dart';
@@ -153,24 +154,30 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               SizedBox(height: 3),
-              Text(
+              AutoSizeText(
                 '-   ' + latestLog + '   -',
+                maxLines: 1,
+                minFontSize: 7,
                 style: TextStyle(
                   fontSize: 11,
                   color: Colors.white,
                 ),
               ),
               SizedBox(height: 3),
-              Text(
+              AutoSizeText(
                 secondLatestLog,
+                maxLines: 1,
+                minFontSize: 7,
                 style: TextStyle(
                   fontSize: 9,
                   color: Colors.grey[200],
                 ),
               ),
               SizedBox(height: 3),
-              Text(
+              AutoSizeText(
                 thirdLatestLog,
+                maxLines: 1,
+                minFontSize: 7,
                 style: TextStyle(
                   fontSize: 9,
                   color: Colors.grey[400],
@@ -196,7 +203,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     if (winnerIndex >= data['playerIds'].length) {
       winnerIndex = 0;
     }
-    data['duel']['winnerIndex'] = winnerIndex;
+    data['duel']['winnerIndexes'] = [winnerIndex];
     var name = playerNameFromIndex(winnerIndex, data);
     if (winnerIndex == data['duelerIndex']) {
       data['log'].add(
@@ -230,15 +237,19 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
 
     // if there is a value tie, immediately move to next joust
     if (duelerValue == dueleeValue) {
-      data['duelerCard'] = '';
-      data['dueleeCard'] = '';
       data['duel']['joust'] += 1;
       data['log'].add(
           'Tie of ${data['duel']['duelerCard'][0]}, moving to joust #${data['duel']['joust']}');
+      data['duel']['duelerCard'] = '';
+      data['duel']['dueleeCard'] = '';
       if (data['duel']['joust'] == 4) {
         data['log'].add('Three jousts complete! Both players get three tiles.');
+        data['duel']['winnerIndexes'] = [
+          data['duel']['duelerIndex'],
+          [data['duel']['dueleeIndex']]
+        ];
         data['duel']['state'] = 'collection';
-        data['duel']['tilePrize'] = 3;
+        data['duel']['tilePrizes'] = [3, 3];
       }
     }
     // check if there is a siege ('1' and facevalue)
@@ -270,7 +281,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
         setWinner(data['duel']['duelerIndex'], data);
       }
       int tilePrize = (letterCardInvolved ? 2 : 1) * data['duel']['joust'];
-      data['duel']['tilePrize'] = tilePrize;
+      data['duel']['tilePrizes'] = [tilePrize];
       data['duel']['state'] = 'collection';
     } else {
       print('non flip winner');
@@ -285,7 +296,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
         data['duel']['responderIndex'] = data['duel']['duelerIndex'];
       }
       int tilePrize = (letterCardInvolved ? 2 : 1) * data['duel']['joust'];
-      data['duel']['tilePrize'] = tilePrize;
+      data['duel']['tilePrizes'] = [tilePrize];
       data['duel']['state'] = 'matching';
     }
 
@@ -551,15 +562,17 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
   }
 
   addTile(data) async {
-    if (data['duel']['tilePrize'] > 0) {
-      data['duel']['tilePrize'] -= 1;
-      int winnerIndex = data['duel']['winnerIndex'];
-      data['player${winnerIndex}Tiles'].add(generateRandomLetter());
-      String winner = playerNameFromIndex(data['duel']['winnerIndex'], data);
+    var playerIndex = data['playerIds'].indexOf(widget.userId);
+    // should normally be zero but could be one for multiple winners
+    var winnerIndex = data['duel']['winnerIndexes'].indexOf(playerIndex);
+    if (data['duel']['tilePrizes'][winnerIndex] > 0) {
+      data['duel']['tilePrizes'][winnerIndex] -= 1;
+      data['player${playerIndex}Tiles'].add(generateRandomLetter());
+      String winner = playerNameFromIndex(playerIndex, data);
       data['log'].add('$winner collected a tile');
     }
     // if player has collected all rewards, move to next duel
-    if (data['duel']['tilePrize'] == 0) {
+    if (data['duel']['tilePrizes'][winnerIndex] == 0) {
       cleanupDuel(data);
     }
 
@@ -583,6 +596,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
             data: data,
             possiblePlayerIndices: possiblePlayerIndices,
             sessionId: widget.sessionId,
+            userId: widget.userId,
           );
         },
       );
@@ -640,17 +654,17 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     var responderName = data['playerNames'][responderId];
     if (response == 1) {
       data['log'].add('Peasant\'s Blockade by $responderName!');
-      data['duel']['tilePrize'] = 2 * data['duel']['joust'];
-      data['duel']['winnerIndex'] = data['duel']['matcherIndex'];
+      data['duel']['tilePrizes'] = [2 * data['duel']['joust']];
+      data['duel']['winnerIndexes'] = [data['duel']['matcherIndex']];
     } else if (response == 2) {
       data['log'].add('Peasant\'s Reversal by $responderName!');
       data['duel']['pillagePrize'] = 2 * data['duel']['joust'];
-      data['duel']['winnerIndex'] = data['duel']['responderIndex'];
+      data['duel']['winnerIndexes'] = [data['duel']['responderIndex']];
     } else {
       data['log'].add('Peasant\'s Uprising by $responderName!');
       data['log'].add('$responderName wins a crown!');
       addCrown(responderId, data);
-      data['duel']['winnerIndex'] = data['duel']['responderIndex'];
+      data['duel']['winnerIndexes'] = [data['duel']['responderIndex']];
       return;
     }
     data['duel']['state'] = 'collection';
@@ -668,26 +682,30 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
         ['K', 'Q', 'J'].contains(duelerValue);
     if (data['duel']['state'] == 'matching') {
       // matcher concedes, responder wins
+      var winnerIndex = data['duel']['winnerIndexes'][0];
       data['duel']['state'] = 'collection';
-      data['duel']['winnerIndex'] = data['duel']['responderIndex'];
-      data['duel']['tilePrize'] = 1 * data['duel']['joust'];
+      data['duel']['winnerIndexes'] = [data['duel']['responderIndex']];
+      data['duel']['tilePrizes'] = [1 * data['duel']['joust']];
       if (letterCardInvolved) {
-        data['duel']['tilePrize'] = 2 * data['duel']['joust'];
+        data['duel']['tilePrizes'] = [2 * data['duel']['joust']];
       }
-      String plural = data['duel']['tilePrize'] <= 1 ? 'tile' : 'tiles';
+      String plural =
+          data['duel']['tilePrizes'][winnerIndex] <= 1 ? 'tile' : 'tiles';
       String winner = playerNameFromIndex(data['duel']['responderIndex'], data);
-      data['log'].add('$winner wins ${data['duel']['tilePrize']} $plural!');
-      cleanupDuel(data);
+      data['log'].add(
+          '$winner wins ${data['duel']['tilePrizes'][winnerIndex]} $plural!');
     } else {
       // responder concedes, matcher wins
+      var winnerIndex = data['duel']['winnerIndexes'][0];
       data['duel']['state'] = 'collection';
-      data['duel']['winnerIndex'] = data['duel']['matcherIndex'];
+      data['duel']['winnerIndexes']
+          [winnerIndex] = [data['duel']['matcherIndex']];
       data['duel']['pillagePrize'] = 1 * data['duel']['joust'];
-      String plural = data['duel']['tilePrize'] <= 1 ? 'time' : 'times';
+      String plural =
+          data['duel']['tilePrizes'][winnerIndex] <= 1 ? 'time' : 'times';
       String winner = playerNameFromIndex(data['duel']['matcherIndex'], data);
       data['log']
           .add('$winner pillages ${data['duel']['pillagePrize']} $plural!');
-      cleanupDuel(data);
     }
 
     await Firestore.instance
@@ -699,14 +717,19 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
   getAction(data) {
     Widget action = Container();
     if (data['duel']['state'] == 'collection') {
-      if (widget.userId == data['playerIds'][data['duel']['winnerIndex']]) {
+      var playerIndex = data['playerIds'].indexOf(widget.userId);
+      if (data['duel']['winnerIndexes'].contains(playerIndex)) {
+        var winnerIndex = data['duel']['winnerIndexes'].indexOf(playerIndex);
         List<Widget> rowItems = [];
-        if (data['duel']['tilePrize'] > 0) {
-          String plural = data['duel']['tilePrize'] == 1 ? 'tile' : 'tiles';
+        if (data['duel']['tilePrizes'] > 0) {
+          String plural =
+              data['duel']['tilePrizes'][winnerIndex] == 1 ? 'tile' : 'tiles';
           rowItems.add(
             RaisedGradientButton(
                 child: Text(
-                  '${data['duel']['tilePrize']} ' + plural + ' left!',
+                  '${data['duel']['tilePrizes'][winnerIndex]} ' +
+                      plural +
+                      ' left!',
                   style: TextStyle(fontSize: 18),
                 ),
                 height: 50,
@@ -986,26 +1009,50 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
   }
 
   getTiles(data) {
-    List<Widget> holyTiles = [];
-    List<Widget> nonHolyTiles = [];
+    List<Widget> holyTiles = [
+      SizedBox(
+        height: 30,
+      ),
+    ];
+    List<Widget> nonHolyTiles = [
+      SizedBox(
+        height: 30,
+      )
+    ];
     var playerIndex = data['playerIds'].indexOf(widget.userId);
     data['player${playerIndex}Tiles'].forEach((v) {
       if (data['targetWord'].contains(v)) {
         holyTiles.add(
-          Tile(value: v),
+          Tile(
+            value: v,
+            holy: true,
+          ),
         );
         holyTiles.add(
           SizedBox(width: 5),
         );
       } else {
         nonHolyTiles.add(
-          Tile(value: v),
+          Tile(
+            value: v,
+            holy: false,
+          ),
         );
         nonHolyTiles.add(
           SizedBox(width: 5),
         );
       }
     });
+    holyTiles.add(
+      SizedBox(
+        height: 30,
+      ),
+    );
+    nonHolyTiles.add(
+      SizedBox(
+        height: 30,
+      ),
+    );
     if (holyTiles.length > 0) {
       holyTiles.removeAt(holyTiles.length - 1);
     }
@@ -1029,14 +1076,23 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
 
   getLeftStatus(data) {
     if (data['duel']['state'] == 'collection') {
-      if (widget.userId == data['playerIds'][data['duel']['winnerIndex']]) {
+      var playerIndex = data['playerIds'].indexOf(widget.userId);
+
+      if (data['duel']['winnerIndexes'].contains(playerIndex)) {
         return Text('Collect your winnings!');
       } else {
-        String winner = playerNameFromIndex(data['duel']['winnerIndex'], data);
+        var winners = '';
+        data['duel']['winnerIndexes'].forEach((v) {
+          if (winners == '') {
+            winners += playerNameFromIndex(v, data);
+          } else {
+            winners += ', ' + playerNameFromIndex(v, data);
+          }
+        });
         return Column(
           children: <Widget>[
             Text(
-              winner,
+              winners,
               style: TextStyle(
                 fontSize: 20,
                 color: Theme.of(context).primaryColor,
@@ -1503,11 +1559,13 @@ class PillageDialog extends StatefulWidget {
   final data;
   final List<int> possiblePlayerIndices;
   final sessionId;
+  final userId;
 
   PillageDialog({
     this.data,
     this.possiblePlayerIndices,
     this.sessionId,
+    this.userId,
   });
 
   @override
@@ -1536,12 +1594,11 @@ class _PillageDialogState extends State<PillageDialog> {
     var tile =
         widget.data['player${selectedPlayerIndex}Tiles'][selectedTileIndex];
     // add tile to winner index
-    var winnerIndex = widget.data['duel']['winnerIndex'];
-    widget.data['player${winnerIndex}Tiles'].add(tile);
+    var playerIndex = widget.data['playerIds'].indexOf(widget.userId);
+    widget.data['player${playerIndex}Tiles'].add(tile);
     // remove tile from selectedPlayerIndex
     widget.data['player${selectedPlayerIndex}Tiles'].remove(tile);
-    String winner =
-        playerNameFromIndex(widget.data['duel']['winnerIndex'], widget.data);
+    String winner = playerNameFromIndex(playerIndex, widget.data);
     String selected = playerNameFromIndex(selectedPlayerIndex, widget.data);
     widget.data['log']
         .add('$winner stole a ${tile.toUpperCase()} from $selected!');
@@ -1664,9 +1721,9 @@ class _PillageDialogState extends State<PillageDialog> {
         RaisedGradientButton(
           onPressed: () async {
             // get two tiles
-            int winnerIndex = widget.data['duel']['winnerIndex'];
-            String winner = playerNameFromIndex(
-                widget.data['duel']['winnerIndex'], widget.data);
+            var playerIndex = widget.data['playerIds'].indexOf(widget.userId);
+            int winnerIndex = widget.data['duel'][playerIndex];
+            String winner = playerNameFromIndex(winnerIndex, widget.data);
             widget.data['player${winnerIndex}Tiles']
                 .add(generateRandomLetter());
             widget.data['player${winnerIndex}Tiles']
@@ -1702,8 +1759,9 @@ class _PillageDialogState extends State<PillageDialog> {
 
 class Tile extends StatelessWidget {
   final String value;
+  final bool holy;
 
-  Tile({this.value});
+  Tile({this.value, this.holy});
 
   @override
   Widget build(BuildContext context) {
@@ -1712,13 +1770,20 @@ class Tile extends StatelessWidget {
       width: 30,
       padding: EdgeInsets.all(5),
       decoration: BoxDecoration(
-        border: Border.all(),
+        border: Border.all(
+          color: Colors.grey,
+        ),
         borderRadius: BorderRadius.circular(5),
         gradient: LinearGradient(
-          colors: [
-            Colors.purple[500],
-            Colors.pink[300],
-          ],
+          colors: holy
+              ? [
+                  Colors.purple[500],
+                  Colors.pink[300],
+                ]
+              : [
+                  Colors.grey[800],
+                  Colors.grey[500],
+                ],
         ),
       ),
       child: Center(
