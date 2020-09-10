@@ -7,6 +7,36 @@ int threeCardsHandSize = 6;
 
 // Three crowns
 
+var letterValues = {
+  'a': 1,
+  'b': 3,
+  'c': 3,
+  'd': 2,
+  'e': 1,
+  'f': 5,
+  'g': 2,
+  'h': 5,
+  'i': 1,
+  'j': 9,
+  'k': 6,
+  'l': 1,
+  'm': 3,
+  'n': 2,
+  'o': 1,
+  'p': 3,
+  'q': 1,
+  'r': 2,
+  's': 1,
+  't': 1,
+  'u': 1,
+  'v': 4,
+  'w': 4,
+  'x': 8,
+  'y': 4,
+  'z': 10,
+  ' ': 0,
+};
+
 var letterFrequencies = {
   'a': 8,
   'b': 2,

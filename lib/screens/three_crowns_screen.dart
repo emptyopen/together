@@ -485,16 +485,18 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
   getDuel(data) {
     var playerIndex = data['playerIds'].indexOf(widget.userId);
     // player not in duel
-    if (playerIndex != data['duel']['duelerIndex'] &&
-        playerIndex != data['duel']['dueleeIndex']) {
-      return Text('not dueler or duelee');
-    }
+    bool playerNotInDuel = playerIndex != data['duel']['duelerIndex'] &&
+        playerIndex != data['duel']['dueleeIndex'];
     var playerCardValue = playerIsDueler(data)
         ? data['duel']['duelerCard']
         : data['duel']['dueleeCard'];
     var oppositeCardValue = !playerIsDueler(data)
         ? data['duel']['duelerCard']
         : data['duel']['dueleeCard'];
+    if (playerNotInDuel) {
+      playerCardValue = data['duel']['dueleeCard'];
+      oppositeCardValue = data['duel']['duelerCard'];
+    }
     var screenWidth = MediaQuery.of(context).size.width;
     var width = screenWidth / 7;
     var height = width * 1.25;
@@ -516,14 +518,42 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
               ),
             ),
           )
-        : playerCardValue == ''
-            ? Card(
-                faceDown: true,
+        : playerNotInDuel || playerCardValue == ''
+            ? Container(
+                height: height,
+                width: width,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Theme.of(context).highlightColor),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Center(
+                  child: Text(
+                    'waiting...',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ),
               )
             : Card(
                 value: oppositeCardValue,
                 size: 'medium',
               );
+    if (playerNotInDuel && oppositeCardValue != '') {
+      if (data['duel']['duelerCard'] != '' &&
+          data['duel']['dueleeCard'] != '') {
+        oppositeCard = Card(
+          value: oppositeCardValue,
+          size: 'medium',
+        );
+      } else {
+        oppositeCard = Card(
+          faceDown: true,
+        );
+      }
+    }
     var playerCard = playerCardValue == ''
         ? Container(
             height: height,
@@ -534,20 +564,52 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
             ),
             child: Center(
               child: Text(
-                'play a card!',
+                playerNotInDuel ? 'waiting...' : 'play a card!',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 10,
                   color: Colors.grey,
                 ),
               ),
             ),
           )
-        : Card(
-            value: playerCardValue,
-            size: 'medium',
-            callback: () => returnCard(data),
-          );
+        : playerNotInDuel
+            ? Container(
+                height: height,
+                width: width,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Theme.of(context).highlightColor),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Center(
+                  child: Text(
+                    'waiting...',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ),
+              )
+            : Card(
+                value: playerCardValue,
+                size: 'medium',
+                callback: () => returnCard(data),
+              );
+    if (playerNotInDuel && playerCardValue != '') {
+      if (data['duel']['duelerCard'] != '' &&
+          data['duel']['dueleeCard'] != '') {
+        playerCard = Card(
+          value: playerCardValue,
+          size: 'medium',
+        );
+      } else {
+        playerCard = Card(
+          faceDown: true,
+        );
+      }
+    }
     return Container(
       width: 150,
       child: Column(
@@ -627,6 +689,12 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
 
   matchDuel(data) async {
     data['duel']['state'] = 'peasantsResponse';
+    var playerIndex = data['playerIds'].indexOf(widget.userId);
+    String player = playerNameFromIndex(
+      playerIndex,
+      data,
+    );
+    data['log'].add('$player matches!');
 
     await Firestore.instance
         .collection('sessions')
@@ -689,8 +757,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
       if (letterCardInvolved) {
         data['duel']['tilePrizes'] = [2 * data['duel']['joust']];
       }
-      String plural =
-          data['duel']['tilePrizes'][winnerIndex] <= 1 ? 'tile' : 'tiles';
+      String plural = data['duel']['tilePrizes'][0] <= 1 ? 'tile' : 'tiles';
       String winner = playerNameFromIndex(data['duel']['responderIndex'], data);
       data['log'].add(
           '$winner wins ${data['duel']['tilePrizes'][winnerIndex]} $plural!');
@@ -698,11 +765,9 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
       // responder concedes, matcher wins
       var winnerIndex = data['duel']['winnerIndexes'][0];
       data['duel']['state'] = 'collection';
-      data['duel']['winnerIndexes']
-          [winnerIndex] = [data['duel']['matcherIndex']];
+      data['duel']['winnerIndexes'] = [data['duel']['matcherIndex']];
       data['duel']['pillagePrize'] = 1 * data['duel']['joust'];
-      String plural =
-          data['duel']['tilePrizes'][winnerIndex] <= 1 ? 'time' : 'times';
+      String plural = data['duel']['tilePrizes'][0] <= 1 ? 'time' : 'times';
       String winner = playerNameFromIndex(data['duel']['matcherIndex'], data);
       data['log']
           .add('$winner pillages ${data['duel']['pillagePrize']} $plural!');
@@ -714,6 +779,75 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
         .setData(data);
   }
 
+  grabCrown(data) async {
+    // generate new word
+    // clean board
+    // peasants after winner start
+    // go to screen where crown-owners pick their letter
+
+    await Firestore.instance
+        .collection('sessions')
+        .document(widget.sessionId)
+        .setData(data);
+  }
+
+  transmogrify(data) async {
+    // burn selected tiles and add tiles worth their value
+    // add to log
+
+    await Firestore.instance
+        .collection('sessions')
+        .document(widget.sessionId)
+        .setData(data);
+  }
+
+  showOthersDialog(data) {
+    List<Widget> others = [
+      SizedBox(
+        height: 25,
+      )
+    ];
+    List playerIds = data['playerIds'];
+    playerIds.remove(widget.userId);
+    playerIds.forEach((v) {
+      var playerIndex = data['playerIds'].indexOf(v);
+      var playerName = data['playerNames'][v];
+      others.add(
+        Text(playerName),
+      );
+      others.add(
+        getTiles(playerIndex, data),
+      );
+      others.add(SizedBox(height: 25));
+    });
+    showDialog<Null>(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Others:'),
+            contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),
+            content: Container(
+              height: 400,
+              child: SingleChildScrollView(
+                child: Column(
+                  children: others,
+                ),
+              ),
+            ),
+            actions: <Widget>[
+              Container(
+                child: FlatButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('OK'),
+                ),
+              ),
+            ],
+          );
+        });
+  }
+
   getAction(data) {
     Widget action = Container();
     if (data['duel']['state'] == 'collection') {
@@ -721,7 +855,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
       if (data['duel']['winnerIndexes'].contains(playerIndex)) {
         var winnerIndex = data['duel']['winnerIndexes'].indexOf(playerIndex);
         List<Widget> rowItems = [];
-        if (data['duel']['tilePrizes'] > 0) {
+        if (data['duel']['tilePrizes'][winnerIndex] > 0) {
           String plural =
               data['duel']['tilePrizes'][winnerIndex] == 1 ? 'tile' : 'tiles';
           rowItems.add(
@@ -837,6 +971,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
                 )
               ],
             ),
+            SizedBox(width: 10),
             playerIsInDuel
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -873,14 +1008,21 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
                         ),
                         height: 30,
                         width: 110,
-                        onPressed: () {
-                          concede(data);
-                        },
+                        onPressed: sum == diff
+                            ? null
+                            : () {
+                                concede(data);
+                              },
                         gradient: LinearGradient(
-                          colors: [
-                            Colors.red[700],
-                            Colors.red[500],
-                          ],
+                          colors: sum == diff
+                              ? [
+                                  Colors.grey[400],
+                                  Colors.grey[300],
+                                ]
+                              : [
+                                  Colors.red[700],
+                                  Colors.red[500],
+                                ],
                         ),
                       ),
                     ],
@@ -904,16 +1046,16 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
       }
       if (data['duel']['peasantCards'].length >= 1) {
         canRespond = true;
-        statusText = 'Peasant\'s Blockage !';
+        statusText = 'Peasant\'s\nBlockage !';
       }
       if (data['duel']['peasantCards'].length >= 2) {
-        statusText = 'Peasant\'s Reversal !!';
+        statusText = 'Peasant\'s\nReversal !!';
       }
       if (data['duel']['peasantCards'].length >= 3) {
-        statusText = 'Peasant\'s Uprising !!!';
+        statusText = 'Peasant\'s\nUprising !!!';
       }
       action = Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -934,11 +1076,12 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
               Text(
                 statusText,
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: data['duel']['peasantCards'].length > 0 ? 10 : 12,
                 ),
               )
             ],
           ),
+          SizedBox(width: 10),
           playerIsResponding
               ? Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -946,10 +1089,10 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
                     RaisedGradientButton(
                       child: Text(
                         'Respond',
-                        style: TextStyle(fontSize: 17),
+                        style: TextStyle(fontSize: 16),
                       ),
                       height: 40,
-                      width: 110,
+                      width: 100,
                       onPressed: canRespond
                           ? () {
                               peasantResponse(data);
@@ -971,18 +1114,25 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
                     RaisedGradientButton(
                       child: Text(
                         'I can only bow',
-                        style: TextStyle(fontSize: 12),
+                        style: TextStyle(fontSize: 11),
                       ),
                       height: 30,
-                      width: 110,
-                      onPressed: () {
-                        concede(data);
-                      },
+                      width: 100,
+                      onPressed: canRespond
+                          ? null
+                          : () {
+                              concede(data);
+                            },
                       gradient: LinearGradient(
-                        colors: [
-                          Colors.red[700],
-                          Colors.red[500],
-                        ],
+                        colors: canRespond
+                            ? [
+                                Colors.grey[400],
+                                Colors.grey[300],
+                              ]
+                            : [
+                                Colors.red[700],
+                                Colors.red[500],
+                              ],
                       ),
                     ),
                   ],
@@ -995,7 +1145,11 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
       action = Container();
     }
 
-    // TODO: add permament button (if available) to win!!
+    // check if crown can be grabbed
+    bool canGrab = false;
+
+    // check if sufficent tiles are selected
+    bool canBurn = false;
 
     return Container(
       height: 100,
@@ -1004,22 +1158,90 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
         border: Border.all(color: Theme.of(context).highlightColor),
         borderRadius: BorderRadius.circular(5),
       ),
-      child: action,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          action,
+          SizedBox(width: 20),
+          // default actions to see other players stuff and win game
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              RaisedGradientButton(
+                height: 25,
+                width: 80,
+                child: Text(
+                  'Crown!',
+                  style: TextStyle(
+                    color: canGrab ? Colors.black : Colors.white,
+                  ),
+                ),
+                onPressed: canGrab
+                    ? () {
+                        grabCrown(data);
+                      }
+                    : null,
+                gradient: LinearGradient(
+                  colors: canGrab
+                      ? [
+                          Colors.amber[500],
+                          Colors.amber[100],
+                        ]
+                      : [
+                          Colors.grey[400],
+                          Colors.grey[200],
+                        ],
+                ),
+              ),
+              SizedBox(height: 5),
+              RaisedGradientButton(
+                height: 25,
+                width: 80,
+                child: Text('Burn!'),
+                onPressed: canBurn
+                    ? () {
+                        transmogrify(data);
+                      }
+                    : null,
+                gradient: LinearGradient(
+                  colors: canBurn
+                      ? [
+                          Colors.red,
+                          Colors.orange,
+                        ]
+                      : [
+                          Colors.grey[400],
+                          Colors.grey[200],
+                        ],
+                ),
+              ),
+              SizedBox(height: 5),
+              RaisedGradientButton(
+                height: 25,
+                width: 80,
+                child: Text('Others'),
+                onPressed: () {
+                  showOthersDialog(data);
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
-  getTiles(data) {
+  getTiles(playerIndex, data) {
     List<Widget> holyTiles = [
       SizedBox(
-        height: 30,
+        height: 34,
       ),
     ];
     List<Widget> nonHolyTiles = [
       SizedBox(
-        height: 30,
+        height: 34,
       )
     ];
-    var playerIndex = data['playerIds'].indexOf(widget.userId);
     data['player${playerIndex}Tiles'].forEach((v) {
       if (data['targetWord'].contains(v)) {
         holyTiles.add(
@@ -1077,6 +1299,10 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
   getLeftStatus(data) {
     if (data['duel']['state'] == 'collection') {
       var playerIndex = data['playerIds'].indexOf(widget.userId);
+      var plural = 'is';
+      if (data['duel']['winnerIndexes'].length > 1) {
+        plural = 'are';
+      }
 
       if (data['duel']['winnerIndexes'].contains(playerIndex)) {
         return Text('Collect your winnings!');
@@ -1099,7 +1325,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
               ),
             ),
             SizedBox(height: 3),
-            Text('is collecting their winnings!'),
+            Text('$plural collecting their winnings!'),
           ],
         );
       }
@@ -1191,7 +1417,32 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
         );
       }
     }
-    return Container();
+    // player is not in duel
+    var duelerId = data['playerIds'][data['duel']['duelerIndex']];
+    var duelerName = data['playerNames'][duelerId];
+    var dueleeId = data['playerIds'][data['duel']['dueleeIndex']];
+    var dueleeName = data['playerNames'][dueleeId];
+    return Column(
+      children: <Widget>[
+        Text(
+          duelerName,
+          style: TextStyle(
+            fontSize: 18,
+            color: Theme.of(context).primaryColor,
+          ),
+        ),
+        SizedBox(height: 3),
+        Text('is dueling'),
+        SizedBox(height: 3),
+        Text(
+          dueleeName,
+          style: TextStyle(
+            fontSize: 18,
+            color: Theme.of(context).primaryColor,
+          ),
+        ),
+      ],
+    );
   }
 
   getRightStatus(data) {
@@ -1281,20 +1532,51 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
           ),
         ),
         SizedBox(width: 10),
-        Container(
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: Theme.of(context).highlightColor,
+        Column(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: Theme.of(context).highlightColor,
+                ),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              padding: EdgeInsets.all(10),
+              child: getRightStatus(data),
             ),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          padding: EdgeInsets.all(10),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Container(child: getRightStatus(data)),
-            ],
-          ),
+            SizedBox(height: 10),
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: Theme.of(context).highlightColor,
+                ),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              padding: EdgeInsets.all(10),
+              child: getCrowns(data),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  getCrowns(data) {
+    var playerIndex = data['playerIds'].indexOf(widget.userId);
+    var numCrowns = data['player${playerIndex}Crowns'];
+    return Row(
+      children: [
+        Icon(
+          MdiIcons.crown,
+          color: numCrowns > 0 ? Colors.amber : Colors.grey.withAlpha(50),
+        ),
+        Icon(
+          MdiIcons.crown,
+          color: numCrowns > 1 ? Colors.amber : Colors.grey.withAlpha(50),
+        ),
+        Icon(
+          MdiIcons.crown,
+          color: numCrowns > 2 ? Colors.amber : Colors.grey.withAlpha(50),
         ),
       ],
     );
@@ -1311,6 +1593,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     }
     var width = MediaQuery.of(context).size.width;
     var height = MediaQuery.of(context).size.height;
+    var playerIndex = data['playerIds'].indexOf(widget.userId);
     return SafeArea(
       child: Container(
         height: height,
@@ -1326,12 +1609,11 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
             SizedBox(height: 10),
             getHand(data),
             SizedBox(height: 10),
-            getTiles(data),
-            SizedBox(height: 10),
+            getTiles(playerIndex, data),
             widget.userId == data['leader']
                 ? Column(
                     children: <Widget>[
-                      SizedBox(height: 30),
+                      SizedBox(height: 20),
                       EndGameButton(
                         sessionId: widget.sessionId,
                         height: 35,
@@ -1345,6 +1627,10 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
         ),
       ),
     );
+  }
+
+  getScoreboard(data) {
+    // show each player's tiles and crowns
   }
 
   @override
@@ -1444,7 +1730,7 @@ class Card extends StatelessWidget {
         return Icon(
           MdiIcons.cardsSpade,
           // MdiIcons.fish,
-          color: Colors.blue,
+          color: Colors.blue.withAlpha(230),
           size: size,
         );
         break;
@@ -1452,7 +1738,7 @@ class Card extends StatelessWidget {
         return Icon(
           MdiIcons.cardsHeart,
           // MdiIcons.ladybug,
-          color: Colors.red,
+          color: Colors.red.withAlpha(230),
           size: size,
         );
         break;
@@ -1460,7 +1746,7 @@ class Card extends StatelessWidget {
         return Icon(
           MdiIcons.cardsClub,
           // MdiIcons.alien,
-          color: Colors.green,
+          color: Colors.green.withAlpha(230),
           size: size,
         );
         break;
@@ -1468,7 +1754,7 @@ class Card extends StatelessWidget {
         return Icon(
           MdiIcons.cardsDiamond,
           // MdiIcons.duck,
-          color: Colors.amber,
+          color: Colors.amber.withAlpha(230),
           size: size,
         );
         break;
@@ -1481,11 +1767,13 @@ class Card extends StatelessWidget {
     // medium defaults
     var width = screenWidth / 7;
     var height = width * 1.25;
-    double fontSize = 20;
+    double fontSize = 40;
+    double iconSize = 60;
     if (size == 'small') {
       height = 55;
       width = 40;
-      fontSize = 18;
+      fontSize = 36;
+      iconSize = 50;
     }
     if (empty) {
       return Container(
@@ -1536,18 +1824,25 @@ class Card extends StatelessWidget {
             border: Border.all(color: Theme.of(context).highlightColor),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          child: Stack(
             children: <Widget>[
-              Text(
-                value[0],
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: fontSize,
+              Positioned(
+                left: 1,
+                top: 1,
+                child: getIcon(
+                  iconSize,
                 ),
               ),
-              getIcon(
-                fontSize,
+              Positioned(
+                child: Text(
+                  value[0],
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: fontSize,
+                  ),
+                ),
+                top: 3,
+                left: 5,
               ),
             ],
           )),
@@ -1722,11 +2017,10 @@ class _PillageDialogState extends State<PillageDialog> {
           onPressed: () async {
             // get two tiles
             var playerIndex = widget.data['playerIds'].indexOf(widget.userId);
-            int winnerIndex = widget.data['duel'][playerIndex];
-            String winner = playerNameFromIndex(winnerIndex, widget.data);
-            widget.data['player${winnerIndex}Tiles']
+            String winner = playerNameFromIndex(playerIndex, widget.data);
+            widget.data['player${playerIndex}Tiles']
                 .add(generateRandomLetter());
-            widget.data['player${winnerIndex}Tiles']
+            widget.data['player${playerIndex}Tiles']
                 .add(generateRandomLetter());
             widget.data['log'].add('$winner collected two tiles!');
             widget.data['duel']['pillagePrize'] -= 1;
@@ -1766,9 +2060,8 @@ class Tile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 30,
-      width: 30,
-      padding: EdgeInsets.all(5),
+      height: 32,
+      width: 32,
       decoration: BoxDecoration(
         border: Border.all(
           color: Colors.grey,
@@ -1782,17 +2075,37 @@ class Tile extends StatelessWidget {
                 ]
               : [
                   Colors.grey[800],
-                  Colors.grey[500],
+                  Colors.grey[600],
                 ],
         ),
       ),
-      child: Center(
-        child: Text(
-          value.toUpperCase(),
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.white,
-          ),
+      child: Container(
+        // decoration: BoxDecoration(border: Border.all()),
+        child: Stack(
+          children: [
+            Positioned(
+              top: 3,
+              left: 5,
+              child: Text(
+                value.toUpperCase(),
+                style: TextStyle(
+                  fontSize: 17,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: 2,
+              right: 3,
+              child: Text(
+                letterValues[value].toString(),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.white.withAlpha(220),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
