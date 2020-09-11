@@ -101,7 +101,8 @@ getDefaultRules(String gameName) {
       break;
     case 'Three Crowns':
       return {
-        'maxWordLength': 6,
+        'minWordLength': 4,
+        'maxWordLength': 7,
       };
     case 'Rivers':
       return {

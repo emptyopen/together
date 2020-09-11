@@ -69,7 +69,7 @@ var letterFrequencies = {
 
 generateRandomLetter() {
   // initialize random tool
-  var letters = 'abcdefghijklmnopqrstuvwxyz';
+  var letters = 'abcdefghijklmnopqrstuvwxyz ';
   final _random = new Random();
   var randInt100 = _random.nextDouble() * 100;
   double frequencyIndex = 0.0;

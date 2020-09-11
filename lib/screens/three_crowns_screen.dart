@@ -22,6 +22,7 @@ class ThreeCrownsScreen extends StatefulWidget {
 
 class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
+  Map selectedTiles = {};
 
   checkIfExit(data) async {
     // run async func to check if game is over, or back to lobby or deleted (main menu)
@@ -380,7 +381,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
       if (data['duel']['dueleeCard'] != '') {
         determineDuelWinner(data);
       }
-    } else {
+    } else if (playerIndex == data['duel']['dueleeIndex']) {
       // duel ---------
       // player is duelee
       if (data['duel']['dueleeCard'] != '') {
@@ -395,6 +396,13 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
       if (data['duel']['duelerCard'] != '') {
         determineDuelWinner(data);
       }
+    } else {
+      // player is not involved at all
+      _scaffoldKey.currentState.showSnackBar(SnackBar(
+        content: Text('Not your turn!'),
+        duration: Duration(seconds: 3),
+      ));
+      return;
     }
     data['player${playerIndex}Hand'].removeAt(i);
 
@@ -518,7 +526,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
               ),
             ),
           )
-        : playerNotInDuel || playerCardValue == ''
+        : playerNotInDuel
             ? Container(
                 height: height,
                 width: width,
@@ -537,10 +545,12 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
                   ),
                 ),
               )
-            : Card(
-                value: oppositeCardValue,
-                size: 'medium',
-              );
+            : playerCardValue == ''
+                ? Card(faceDown: true)
+                : Card(
+                    value: oppositeCardValue,
+                    size: 'medium',
+                  );
     if (playerNotInDuel && oppositeCardValue != '') {
       if (data['duel']['duelerCard'] != '' &&
           data['duel']['dueleeCard'] != '') {
@@ -749,25 +759,24 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     bool letterCardInvolved = ['K', 'Q', 'J'].contains(dueleeValue) ||
         ['K', 'Q', 'J'].contains(duelerValue);
     if (data['duel']['state'] == 'matching') {
-      // matcher concedes, responder wins
-      var winnerIndex = data['duel']['winnerIndexes'][0];
+      // matcher concedes, responder wins normal tiles
       data['duel']['state'] = 'collection';
       data['duel']['winnerIndexes'] = [data['duel']['responderIndex']];
       data['duel']['tilePrizes'] = [1 * data['duel']['joust']];
       if (letterCardInvolved) {
         data['duel']['tilePrizes'] = [2 * data['duel']['joust']];
       }
+      data['duel']['pillagePrize'] = 0;
       String plural = data['duel']['tilePrizes'][0] <= 1 ? 'tile' : 'tiles';
       String winner = playerNameFromIndex(data['duel']['responderIndex'], data);
-      data['log'].add(
-          '$winner wins ${data['duel']['tilePrizes'][winnerIndex]} $plural!');
-    } else {
-      // responder concedes, matcher wins
-      var winnerIndex = data['duel']['winnerIndexes'][0];
+      data['log'].add('$winner wins ${data['duel']['tilePrizes'][0]} $plural!');
+    } else if (data['duel']['state'] == 'peasantsResponse') {
+      // responder concedes, matcher wins a pillage
       data['duel']['state'] = 'collection';
       data['duel']['winnerIndexes'] = [data['duel']['matcherIndex']];
+      data['duel']['tilePrizes'] = [0];
       data['duel']['pillagePrize'] = 1 * data['duel']['joust'];
-      String plural = data['duel']['tilePrizes'][0] <= 1 ? 'time' : 'times';
+      String plural = data['duel']['pillagePrize'] <= 1 ? 'time' : 'times';
       String winner = playerNameFromIndex(data['duel']['matcherIndex'], data);
       data['log']
           .add('$winner pillages ${data['duel']['pillagePrize']} $plural!');
@@ -780,10 +789,14 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
   }
 
   grabCrown(data) async {
-    // generate new word
-    // clean board
-    // peasants after winner start
+    // get crown
+    var playerIndex = data['playerIds'].indexOf(widget.userId);
+    data['player${playerIndex}Crowns'] += 1;
+    data['crownWinner'] = widget.userId;
+    data['targetWord'] = generateRandomWord(
+        data['rules']['minWordLength'], data['rules']['maxWordLength']);
     // go to screen where crown-owners pick their letter
+    data['state'] = 'transition';
 
     await Firestore.instance
         .collection('sessions')
@@ -793,7 +806,25 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
 
   transmogrify(data) async {
     // burn selected tiles and add tiles worth their value
+    var totalValue = 0;
+    var playerIndex = data['playerIds'].indexOf(widget.userId);
+    selectedTiles.forEach((i, v) {
+      if (v[0]) {
+        data['player${playerIndex}Tiles'].remove(v[1]);
+        totalValue += letterValues[v[1]];
+      }
+    });
+    // clear selections
+    setState(() {
+      selectedTiles = {};
+    });
+    var tilesTransmogrified = totalValue ~/ 5;
+    for (var i = 0; i < tilesTransmogrified; i++) {
+      data['player${playerIndex}Tiles'].add(generateRandomLetter());
+    }
     // add to log
+    var playerName = data['playerNames'][widget.userId];
+    data['log'].add('$playerName burned for ${tilesTransmogrified} tiles!');
 
     await Firestore.instance
         .collection('sessions')
@@ -848,258 +879,148 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
         });
   }
 
-  getAction(data) {
-    Widget action = Container();
-    if (data['duel']['state'] == 'collection') {
-      var playerIndex = data['playerIds'].indexOf(widget.userId);
-      if (data['duel']['winnerIndexes'].contains(playerIndex)) {
-        var winnerIndex = data['duel']['winnerIndexes'].indexOf(playerIndex);
-        List<Widget> rowItems = [];
-        if (data['duel']['tilePrizes'][winnerIndex] > 0) {
-          String plural =
-              data['duel']['tilePrizes'][winnerIndex] == 1 ? 'tile' : 'tiles';
-          rowItems.add(
-            RaisedGradientButton(
-                child: Text(
-                  '${data['duel']['tilePrizes'][winnerIndex]} ' +
-                      plural +
-                      ' left!',
-                  style: TextStyle(fontSize: 18),
-                ),
-                height: 50,
-                width: 120,
-                gradient: LinearGradient(
-                  colors: <Color>[
-                    Theme.of(context).primaryColor,
-                    Theme.of(context).accentColor,
-                  ],
-                ),
-                onPressed: () {
-                  addTile(data);
-                }),
-          );
-        }
-        if (data['duel']['pillagePrize'] > 0) {
-          String plural =
-              data['duel']['pillagePrize'] == 1 ? 'pillage' : 'pillages';
-          rowItems.add(
-            RaisedGradientButton(
-                child: Text(
-                  '${data['duel']['pillagePrize']} ' + plural + ' left!',
-                  style: TextStyle(fontSize: 18),
-                ),
-                height: 50,
-                width: 150,
-                gradient: LinearGradient(
-                  colors: <Color>[
-                    Theme.of(context).primaryColor,
-                    Theme.of(context).accentColor,
-                  ],
-                ),
-                onPressed: () {
-                  pillage(data);
-                }),
-          );
-        }
-        action = Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: rowItems,
+  getCollectionAction(data) {
+    var playerIndex = data['playerIds'].indexOf(widget.userId);
+    if (data['duel']['winnerIndexes'].contains(playerIndex)) {
+      var winnerIndex = data['duel']['winnerIndexes'].indexOf(playerIndex);
+      List<Widget> rowItems = [];
+      if (data['duel']['tilePrizes'][winnerIndex] > 0) {
+        String plural =
+            data['duel']['tilePrizes'][winnerIndex] == 1 ? 'tile' : 'tiles';
+        rowItems.add(
+          RaisedGradientButton(
+              child: Text(
+                '${data['duel']['tilePrizes'][winnerIndex]} ' +
+                    plural +
+                    ' left!',
+                style: TextStyle(fontSize: 18),
+              ),
+              height: 50,
+              width: 120,
+              gradient: LinearGradient(
+                colors: <Color>[
+                  Theme.of(context).primaryColor,
+                  Theme.of(context).accentColor,
+                ],
+              ),
+              onPressed: () {
+                addTile(data);
+              }),
         );
       }
-    } else if (data['duel']['state'] == 'matching') {
-      bool playerIsInDuel = playerInDuel(data, widget.userId);
-      if (widget.userId == data['playerIds'][data['duel']['matcherIndex']]) {
-        String sumStatus = '';
-        var diff = (stringToNumeric(data['duel']['dueleeCard'][0]) -
-                stringToNumeric(data['duel']['duelerCard'][0]))
-            .abs();
-        var sum = -1;
-        if (data['duel']['matchingCards'].length > 0) {
-          sum = int.parse(data['duel']['matchingCards'][0][0]);
-        }
-        if (data['duel']['matchingCards'].length > 1) {
-          sum = data['duel']['matchingCards']
-              .reduce((a, b) => stringToNumeric(a[0]) + stringToNumeric(b[0]));
-        }
-        if (data['duel']['matchingCards'].length == 0) {
-          sumStatus = 'Need $diff!';
+      if (data['duel']['pillagePrize'] > 0) {
+        String plural =
+            data['duel']['pillagePrize'] == 1 ? 'pillage' : 'pillages';
+        rowItems.add(
+          RaisedGradientButton(
+              child: Text(
+                '${data['duel']['pillagePrize']} ' + plural + ' left!',
+                style: TextStyle(fontSize: 18),
+              ),
+              height: 50,
+              width: 150,
+              gradient: LinearGradient(
+                colors: <Color>[
+                  Theme.of(context).primaryColor,
+                  Theme.of(context).accentColor,
+                ],
+              ),
+              onPressed: () {
+                pillage(data);
+              }),
+        );
+      }
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: rowItems,
+      );
+    }
+  }
+
+  getMatchingAction(data) {
+    bool playerIsInDuel = playerInDuel(data, widget.userId);
+    if (widget.userId == data['playerIds'][data['duel']['matcherIndex']]) {
+      String sumStatus = '';
+      var diff = (stringToNumeric(data['duel']['dueleeCard'][0]) -
+              stringToNumeric(data['duel']['duelerCard'][0]))
+          .abs();
+      var sum = -1;
+      if (data['duel']['matchingCards'].length > 0) {
+        sum = int.parse(data['duel']['matchingCards'][0][0]);
+      }
+      if (data['duel']['matchingCards'].length > 1) {
+        sum = data['duel']['matchingCards']
+            .reduce((a, b) => stringToNumeric(a[0]) + stringToNumeric(b[0]));
+      }
+      if (data['duel']['matchingCards'].length == 0) {
+        sumStatus = 'Need $diff!';
+      } else {
+        if (sum == diff) {
+          sumStatus = 'Nice!';
         } else {
-          if (sum == diff) {
-            sumStatus = 'Nice!';
-          } else {
-            sumStatus = '${data['duel']['matchingCards'][0][0]} < $diff';
-            sumStatus = '';
-            int i = 0;
-            while (i < data['duel']['matchingCards'].length) {
-              sumStatus += stringToNumeric(data['duel']['matchingCards'][i][0])
-                  .toString();
-              i += 1;
-              if (i < data['duel']['matchingCards'].length) {
-                sumStatus += ' + ';
-              }
-            }
-            sumStatus += ' = $sum (need $diff)';
-            if (sum == diff) {
-              sumStatus = 'Nice!';
+          sumStatus = '${data['duel']['matchingCards'][0][0]} < $diff';
+          sumStatus = '';
+          int i = 0;
+          while (i < data['duel']['matchingCards'].length) {
+            sumStatus +=
+                stringToNumeric(data['duel']['matchingCards'][i][0]).toString();
+            i += 1;
+            if (i < data['duel']['matchingCards'].length) {
+              sumStatus += ' + ';
             }
           }
+          sumStatus += ' = $sum (need $diff)';
+          if (sum == diff) {
+            sumStatus = 'Nice!';
+          }
         }
-        action = Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: <Widget>[
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                data['duel']['matchingCards'].length == 0
-                    ? Card(
-                        empty: true,
-                        size: 'small',
-                      )
-                    : Card(
-                        value: data['duel']['matchingCards'].last,
-                        size: 'small',
-                        callback: () {
-                          returnMatchingCard(data);
-                        },
-                      ),
-                SizedBox(height: 5),
-                Text(
-                  sumStatus,
-                  style: TextStyle(
-                    fontSize: 12,
-                  ),
-                )
-              ],
-            ),
-            SizedBox(width: 10),
-            playerIsInDuel
-                ? Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      RaisedGradientButton(
-                        child: Text(
-                          'Match',
-                          style: TextStyle(fontSize: 19),
-                        ),
-                        height: 40,
-                        width: 110,
-                        onPressed: sum == diff
-                            ? () {
-                                matchDuel(data);
-                              }
-                            : null,
-                        gradient: LinearGradient(
-                          colors: sum == diff
-                              ? [
-                                  Theme.of(context).primaryColor,
-                                  Theme.of(context).accentColor,
-                                ]
-                              : [
-                                  Colors.grey[400],
-                                  Colors.grey[300],
-                                ],
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      RaisedGradientButton(
-                        child: Text(
-                          'I can only bow',
-                          style: TextStyle(fontSize: 12),
-                        ),
-                        height: 30,
-                        width: 110,
-                        onPressed: sum == diff
-                            ? null
-                            : () {
-                                concede(data);
-                              },
-                        gradient: LinearGradient(
-                          colors: sum == diff
-                              ? [
-                                  Colors.grey[400],
-                                  Colors.grey[300],
-                                ]
-                              : [
-                                  Colors.red[700],
-                                  Colors.red[500],
-                                ],
-                        ),
-                      ),
-                    ],
-                  )
-                : Container(),
-          ],
-        );
       }
-    } else if (data['duel']['state'] == 'peasantsResponse') {
-      var playerIndex = data['playerIds'].indexOf(widget.userId);
-      bool playerIsResponding = playerIndex == data['duel']['responderIndex'];
-      bool canRespond = false;
-      var responderIndex = data['duel']['responderIndex'];
-      var cardVal = data['duel']['dueleeCard'];
-      if (responderIndex == data['duel']['duelerIndex']) {
-        cardVal = data['duel']['duelerCard'];
-      }
-      String statusText = 'Play a "${cardVal[0]}"';
-      if (playerIndex != data['duel']['responderIndex']) {
-        statusText = '';
-      }
-      if (data['duel']['peasantCards'].length >= 1) {
-        canRespond = true;
-        statusText = 'Peasant\'s\nBlockage !';
-      }
-      if (data['duel']['peasantCards'].length >= 2) {
-        statusText = 'Peasant\'s\nReversal !!';
-      }
-      if (data['duel']['peasantCards'].length >= 3) {
-        statusText = 'Peasant\'s\nUprising !!!';
-      }
-      action = Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: <Widget>[
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              data['duel']['peasantCards'].length == 0
+              data['duel']['matchingCards'].length == 0
                   ? Card(
                       empty: true,
                       size: 'small',
                     )
                   : Card(
-                      value: data['duel']['peasantCards'].last,
+                      value: data['duel']['matchingCards'].last,
                       size: 'small',
                       callback: () {
-                        returnPeasantCard(data);
+                        returnMatchingCard(data);
                       },
                     ),
               SizedBox(height: 5),
               Text(
-                statusText,
+                sumStatus,
                 style: TextStyle(
-                  fontSize: data['duel']['peasantCards'].length > 0 ? 10 : 12,
+                  fontSize: 12,
                 ),
               )
             ],
           ),
           SizedBox(width: 10),
-          playerIsResponding
+          playerIsInDuel
               ? Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
                     RaisedGradientButton(
                       child: Text(
-                        'Respond',
-                        style: TextStyle(fontSize: 16),
+                        'Match',
+                        style: TextStyle(fontSize: 19),
                       ),
                       height: 40,
-                      width: 100,
-                      onPressed: canRespond
+                      width: 110,
+                      onPressed: sum == diff
                           ? () {
-                              peasantResponse(data);
+                              matchDuel(data);
                             }
                           : null,
                       gradient: LinearGradient(
-                        colors: canRespond
+                        colors: sum == diff
                             ? [
                                 Theme.of(context).primaryColor,
                                 Theme.of(context).accentColor,
@@ -1114,17 +1035,17 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
                     RaisedGradientButton(
                       child: Text(
                         'I can only bow',
-                        style: TextStyle(fontSize: 11),
+                        style: TextStyle(fontSize: 12),
                       ),
                       height: 30,
-                      width: 100,
-                      onPressed: canRespond
+                      width: 110,
+                      onPressed: sum == diff
                           ? null
                           : () {
                               concede(data);
                             },
                       gradient: LinearGradient(
-                        colors: canRespond
+                        colors: sum == diff
                             ? [
                                 Colors.grey[400],
                                 Colors.grey[300],
@@ -1140,16 +1061,197 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
               : Container(),
         ],
       );
+    }
+  }
+
+  getResponseAction(data) {
+    var playerIndex = data['playerIds'].indexOf(widget.userId);
+    bool playerIsResponding = playerIndex == data['duel']['responderIndex'];
+    bool canRespond = false;
+    var responderIndex = data['duel']['responderIndex'];
+    var cardVal = data['duel']['dueleeCard'];
+    if (responderIndex == data['duel']['duelerIndex']) {
+      cardVal = data['duel']['duelerCard'];
+    }
+    String statusText = 'Play a "${cardVal[0]}"';
+    if (playerIndex != data['duel']['responderIndex']) {
+      statusText = '';
+    }
+    if (data['duel']['peasantCards'].length >= 1) {
+      canRespond = true;
+      statusText = 'Peasant\'s\nBlockage !';
+    }
+    if (data['duel']['peasantCards'].length >= 2) {
+      statusText = 'Peasant\'s\nReversal !!';
+    }
+    if (data['duel']['peasantCards'].length >= 3) {
+      statusText = 'Peasant\'s\nUprising !!!';
+    }
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            data['duel']['peasantCards'].length == 0
+                ? Card(
+                    empty: true,
+                    size: 'small',
+                  )
+                : Card(
+                    value: data['duel']['peasantCards'].last,
+                    size: 'small',
+                    callback: () {
+                      returnPeasantCard(data);
+                    },
+                  ),
+            SizedBox(height: 5),
+            Text(
+              statusText,
+              style: TextStyle(
+                fontSize: data['duel']['peasantCards'].length > 0 ? 10 : 12,
+              ),
+            )
+          ],
+        ),
+        SizedBox(width: 10),
+        playerIsResponding
+            ? Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  RaisedGradientButton(
+                    child: Text(
+                      'Respond',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    height: 40,
+                    width: 100,
+                    onPressed: canRespond
+                        ? () {
+                            peasantResponse(data);
+                          }
+                        : null,
+                    gradient: LinearGradient(
+                      colors: canRespond
+                          ? [
+                              Theme.of(context).primaryColor,
+                              Theme.of(context).accentColor,
+                            ]
+                          : [
+                              Colors.grey[400],
+                              Colors.grey[300],
+                            ],
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  RaisedGradientButton(
+                    child: Text(
+                      'I can only bow',
+                      style: TextStyle(fontSize: 11),
+                    ),
+                    height: 30,
+                    width: 100,
+                    onPressed: canRespond
+                        ? null
+                        : () {
+                            concede(data);
+                          },
+                    gradient: LinearGradient(
+                      colors: canRespond
+                          ? [
+                              Colors.grey[400],
+                              Colors.grey[300],
+                            ]
+                          : [
+                              Colors.red[700],
+                              Colors.red[500],
+                            ],
+                    ),
+                  ),
+                ],
+              )
+            : Container(),
+      ],
+    );
+  }
+
+  getAction(data) {
+    Widget action = Container();
+    if (data['duel']['state'] == 'collection') {
+      action = getCollectionAction(data);
+    } else if (data['duel']['state'] == 'matching') {
+      action = getMatchingAction(data);
+    } else if (data['duel']['state'] == 'peasantsResponse') {
+      action = getResponseAction(data);
     } else {
       // no actions
       action = Container();
     }
 
+    if (action == null) {
+      action = Container();
+    }
+
     // check if crown can be grabbed
     bool canGrab = false;
+    var holyLetters = [];
+    var playerIndex = data['playerIds'].indexOf(widget.userId);
+    data['player${playerIndex}Tiles'].forEach((v) {
+      if (data['targetWord'].contains(v)) {
+        holyLetters.add(v);
+      }
+    });
+    // convert target word to char frequency map
+    Map targetWordCharCount = {};
+    data['targetWord'].runes.forEach((v) {
+      String char = String.fromCharCode(v);
+      if (targetWordCharCount.containsKey(char)) {
+        targetWordCharCount[char] += 1;
+      } else {
+        targetWordCharCount[char] = 1;
+      }
+    });
+    // convert tiles to char frequency map
+    Map tilesCharCount = {};
+    holyLetters.forEach((v) {
+      if (tilesCharCount.containsKey(v)) {
+        tilesCharCount[v] += 1;
+      } else {
+        tilesCharCount[v] = 1;
+      }
+    });
+    // iterate over tile map, reducing both maps
+    tilesCharCount.forEach((i, v) {
+      while (targetWordCharCount[i] > 0 && tilesCharCount[i] > 0) {
+        targetWordCharCount[i] -= 1;
+        tilesCharCount[i] -= 1;
+      }
+    });
+    // if at the end the target word map is empty, allow grab
+    // or, if the total remaining is less than ~/3 remaining tiles, allow grab
+    var remainingTargetLetters =
+        targetWordCharCount.values.reduce((sum, element) => sum + element);
+    var remainingTiles =
+        tilesCharCount.values.reduce((sum, element) => sum + element);
+    if (remainingTargetLetters <= 0 ||
+        remainingTargetLetters <= (remainingTiles ~/ 3)) {
+      canGrab = true;
+    }
 
     // check if sufficent tiles are selected
     bool canBurn = false;
+    var sumSelectedTilePoints = 0;
+    selectedTiles.forEach((i, v) {
+      if (v[0]) {
+        // get tile
+        var letter = v[1];
+        // add point for value of tile
+        sumSelectedTilePoints += letterValues[letter];
+      }
+    });
+    if (sumSelectedTilePoints >= 5) {
+      canBurn = true;
+    }
 
     return Container(
       height: 100,
@@ -1169,13 +1271,8 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
             children: [
               RaisedGradientButton(
                 height: 25,
-                width: 80,
-                child: Text(
-                  'Crown!',
-                  style: TextStyle(
-                    color: canGrab ? Colors.black : Colors.white,
-                  ),
-                ),
+                width: 70,
+                child: Text('Crown!'),
                 onPressed: canGrab
                     ? () {
                         grabCrown(data);
@@ -1184,8 +1281,8 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
                 gradient: LinearGradient(
                   colors: canGrab
                       ? [
-                          Colors.amber[500],
-                          Colors.amber[100],
+                          Colors.amber[800],
+                          Colors.amber[600],
                         ]
                       : [
                           Colors.grey[400],
@@ -1196,7 +1293,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
               SizedBox(height: 5),
               RaisedGradientButton(
                 height: 25,
-                width: 80,
+                width: 70,
                 child: Text('Burn!'),
                 onPressed: canBurn
                     ? () {
@@ -1218,8 +1315,17 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
               SizedBox(height: 5),
               RaisedGradientButton(
                 height: 25,
-                width: 80,
-                child: Text('Others'),
+                width: 70,
+                child: Text(
+                  'Others',
+                  style: TextStyle(
+                    color: Colors.black,
+                  ),
+                ),
+                gradient: LinearGradient(colors: [
+                  Colors.blue[400],
+                  Colors.blue[200],
+                ]),
                 onPressed: () {
                   showOthersDialog(data);
                 },
@@ -1229,6 +1335,16 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
         ],
       ),
     );
+  }
+
+  toggleTile(val, i) async {
+    setState(() {
+      if (selectedTiles.containsKey(i)) {
+        selectedTiles[i] = [!selectedTiles[i][0], val];
+      } else {
+        selectedTiles[i] = [true, val];
+      }
+    });
   }
 
   getTiles(playerIndex, data) {
@@ -1242,12 +1358,19 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
         height: 34,
       )
     ];
-    data['player${playerIndex}Tiles'].forEach((v) {
+    data['player${playerIndex}Tiles'].asMap().forEach((i, v) {
+      var selected = false;
+      if (selectedTiles.containsKey(i)) {
+        if (selectedTiles[i][0]) {
+          selected = true;
+        }
+      }
       if (data['targetWord'].contains(v)) {
         holyTiles.add(
           Tile(
             value: v,
             holy: true,
+            selected: false,
           ),
         );
         holyTiles.add(
@@ -1258,6 +1381,10 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
           Tile(
             value: v,
             holy: false,
+            selected: selected,
+            callback: () {
+              toggleTile(v, i);
+            },
           ),
         );
         nonHolyTiles.add(
@@ -1357,7 +1484,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     // peasants response
     if (data['duel']['state'] == 'peasantsResponse') {
       if (widget.userId == data['playerIds'][data['duel']['responderIndex']]) {
-        return Text('Can you match?');
+        return Text('Can you respond?');
       } else {
         String matcher =
             playerNameFromIndex(data['duel']['responderIndex'], data);
@@ -1629,6 +1756,107 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     );
   }
 
+  getTransition(data) {
+    Widget tilePicking = Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          'Next round will start when\ncrown owners pick their tiles!',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 20,
+          ),
+        ),
+        SizedBox(width: 10),
+        Icon(
+          MdiIcons.arrowRight,
+          size: 30,
+        )
+      ],
+    );
+    var playerIndex = data['playerIds'].indexOf(widget.userId);
+    if (data['player${playerIndex}Crowns'] > 0) {
+      data['targetWord'].runes.forEach((v) {});
+      tilePicking = Column(
+        children: [
+          Text('Pick 3 more tiles!'),
+        ],
+      );
+    }
+
+    List<Widget> everyone = [];
+    List playerIds = data['playerIds'];
+    playerIds.forEach((v) {
+      var playerIndex = data['playerIds'].indexOf(v);
+      var playerName = data['playerNames'][v];
+      List<Widget> crowns = [];
+      for (int i = 0; i < data['player${playerIndex}Crowns']; i++) {
+        crowns.add(
+          Icon(
+            MdiIcons.crown,
+            color: Colors.amber,
+          ),
+        );
+      }
+      everyone.add(
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              playerName,
+              style: TextStyle(
+                fontSize: 20,
+              ),
+            ),
+            SizedBox(width: 10),
+            Row(children: crowns),
+          ],
+        ),
+      );
+      everyone.add(SizedBox(height: 5));
+      everyone.add(
+        getTiles(playerIndex, data),
+      );
+      everyone.add(SizedBox(height: 15));
+    });
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            data['playerNames'][data['crownWinner']],
+            style: TextStyle(
+              fontSize: 40,
+              color: Colors.lightBlue,
+            ),
+          ),
+          Text(
+            'wins a crown!',
+            style: TextStyle(
+              fontSize: 30,
+            ),
+          ),
+          SizedBox(height: 20),
+          Column(children: everyone),
+          SizedBox(height: 30),
+          Text(
+            'Next word is',
+            style: TextStyle(
+              fontSize: 24,
+            ),
+          ),
+          Text(
+            data['nextTargetWord'].toUpperCase(),
+            style: TextStyle(fontSize: 40, color: Colors.green),
+          ),
+          SizedBox(height: 30),
+          tilePicking,
+        ],
+      ),
+    );
+  }
+
   getScoreboard(data) {
     // show each player's tiles and crowns
   }
@@ -1686,7 +1914,11 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
                 ),
               ],
             ),
-            body: getGameboard(data),
+            body: data['state'] == 'complete'
+                ? getScoreboard(data)
+                : data['state'] == 'transition'
+                    ? getTransition(data)
+                    : getGameboard(data),
           );
         });
   }
@@ -1844,6 +2076,28 @@ class Card extends StatelessWidget {
                 top: 3,
                 left: 5,
               ),
+              value[0] == '4' && size == 'medium'
+                  ? Positioned(
+                      child: Icon(
+                        MdiIcons.autorenew,
+                        size: 20,
+                        color: Colors.black.withAlpha(100),
+                      ),
+                      bottom: 1,
+                      right: 1,
+                    )
+                  : Container(),
+              value[0] == '1' && size == 'medium'
+                  ? Positioned(
+                      child: Icon(
+                        Icons.star,
+                        size: 20,
+                        color: Colors.black.withAlpha(100),
+                      ),
+                      bottom: 1,
+                      right: 1,
+                    )
+                  : Container(),
             ],
           )),
     );
@@ -2054,58 +2308,68 @@ class _PillageDialogState extends State<PillageDialog> {
 class Tile extends StatelessWidget {
   final String value;
   final bool holy;
+  final Function callback;
+  final bool selected;
 
-  Tile({this.value, this.holy});
+  Tile({this.value, this.holy, this.callback, this.selected});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 32,
-      width: 32,
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: Colors.grey,
-        ),
-        borderRadius: BorderRadius.circular(5),
-        gradient: LinearGradient(
-          colors: holy
-              ? [
-                  Colors.purple[500],
-                  Colors.pink[300],
-                ]
-              : [
-                  Colors.grey[800],
-                  Colors.grey[600],
-                ],
-        ),
-      ),
+    return GestureDetector(
+      onTap: () {
+        if (callback != null) {
+          callback();
+        }
+      },
       child: Container(
-        // decoration: BoxDecoration(border: Border.all()),
-        child: Stack(
-          children: [
-            Positioned(
-              top: 3,
-              left: 5,
-              child: Text(
-                value.toUpperCase(),
-                style: TextStyle(
-                  fontSize: 17,
-                  color: Colors.white,
+        height: 32,
+        width: 32,
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: selected ? Colors.green : Colors.grey,
+            width: selected ? 2 : 1,
+          ),
+          borderRadius: BorderRadius.circular(5),
+          gradient: LinearGradient(
+            colors: holy
+                ? [
+                    Colors.purple[500],
+                    Colors.pink[300],
+                  ]
+                : [
+                    Colors.grey[800],
+                    Colors.grey[600],
+                  ],
+          ),
+        ),
+        child: Container(
+          // decoration: BoxDecoration(border: Border.all()),
+          child: Stack(
+            children: [
+              Positioned(
+                top: selected ? 2 : 3,
+                left: selected ? 4 : 5,
+                child: Text(
+                  value.toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 17,
+                    color: Colors.white,
+                  ),
                 ),
               ),
-            ),
-            Positioned(
-              bottom: 2,
-              right: 3,
-              child: Text(
-                letterValues[value].toString(),
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.white.withAlpha(220),
+              Positioned(
+                bottom: selected ? 1 : 2,
+                right: selected ? 2 : 3,
+                child: Text(
+                  letterValues[value].toString(),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.white.withAlpha(220),
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

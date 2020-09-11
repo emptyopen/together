@@ -533,7 +533,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
     data['log'] = ['', '', ''];
 
-    data['targetWord'] = generateRandomWord(4, 7);
+    data['targetWord'] = generateRandomWord(
+        data['rules']['minWordLength'], data['rules']['maxWordLength']);
 
     data['duel'] = {
       'duelerIndex': 0,
