@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:together/components/buttons.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:auto_size_text/auto_size_text.dart';
 
 import 'package:together/services/services.dart';
 import 'package:together/services/three_crowns_services.dart';
 import 'template/help_screen.dart';
 import 'lobby_screen.dart';
+import 'package:together/components/log.dart';
 
 class ThreeCrownsScreen extends StatefulWidget {
   ThreeCrownsScreen({this.sessionId, this.userId, this.roomCode});
@@ -72,132 +72,6 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
         .collection('sessions')
         .document(widget.sessionId)
         .setData(data);
-  }
-
-  showLog(data) {
-    var latestLog = data['log'].last;
-    var secondLatestLog = data['log'][data['log'].length - 2];
-    var thirdLatestLog = data['log'][data['log'].length - 3];
-
-    List<Widget> fullLogs = [];
-    data['log'].sublist(3).reversed.forEach((v) {
-      fullLogs.add(
-        Text(
-          v,
-          style: TextStyle(
-            fontSize: v.startsWith('Now') && v.endsWith('turn') ? 14 : 16,
-            color: v.startsWith('Now') && v.endsWith('turn')
-                ? Colors.grey
-                : Theme.of(context).highlightColor,
-          ),
-        ),
-      );
-    });
-
-    return Container(
-      width: 240,
-      height: 70,
-      child: RaisedButton(
-        onPressed: () {
-          showDialog<Null>(
-            context: context,
-            builder: (BuildContext context) {
-              return AlertDialog(
-                title: Text('Logs:'),
-                contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),
-                content: Container(
-                  height: 200,
-                  child: Column(
-                    children: <Widget>[
-                      SizedBox(height: 10),
-                      Container(
-                        height: 190,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                                color: Theme.of(context).highlightColor),
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                          padding: EdgeInsets.all(10),
-                          child: SingleChildScrollView(
-                            child: Column(
-                              children: fullLogs,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                actions: <Widget>[
-                  Container(
-                    child: FlatButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                      child: Text('OK'),
-                    ),
-                  ),
-                ],
-              );
-            },
-          );
-        },
-        shape: RoundedRectangleBorder(
-            side: BorderSide(width: 1, color: Colors.white),
-            borderRadius: BorderRadius.circular(5.0)),
-        padding: const EdgeInsets.all(0.0),
-        child: Container(
-          constraints: BoxConstraints(),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(color: Colors.grey[900]),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              SizedBox(height: 3),
-              AutoSizeText(
-                '-   ' + latestLog + '   -',
-                maxLines: 1,
-                minFontSize: 7,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.white,
-                ),
-              ),
-              SizedBox(height: 3),
-              AutoSizeText(
-                secondLatestLog,
-                maxLines: 1,
-                minFontSize: 7,
-                style: TextStyle(
-                  fontSize: 9,
-                  color: Colors.grey[200],
-                ),
-              ),
-              SizedBox(height: 3),
-              AutoSizeText(
-                thirdLatestLog,
-                maxLines: 1,
-                minFontSize: 7,
-                style: TextStyle(
-                  fontSize: 9,
-                  color: Colors.grey[400],
-                ),
-              ),
-              SizedBox(height: 3),
-              Text(
-                '(click to show full logs)',
-                style: TextStyle(
-                  fontSize: 8,
-                  color: Colors.grey[500],
-                ),
-              ),
-              SizedBox(height: 3),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   setWinner(winnerIndex, data) {
@@ -568,6 +442,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
         ? Container(
             height: height,
             width: width,
+            padding: EdgeInsets.all(5),
             decoration: BoxDecoration(
               border: Border.all(color: Theme.of(context).highlightColor),
               borderRadius: BorderRadius.circular(10),
@@ -639,9 +514,10 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     var winnerIndex = data['duel']['winnerIndexes'].indexOf(playerIndex);
     if (data['duel']['tilePrizes'][winnerIndex] > 0) {
       data['duel']['tilePrizes'][winnerIndex] -= 1;
-      data['player${playerIndex}Tiles'].add(generateRandomLetter());
+      String letter = generateRandomLetter();
+      data['player${playerIndex}Tiles'].add(letter);
       String winner = playerNameFromIndex(playerIndex, data);
-      data['log'].add('$winner collected a tile');
+      data['log'].add('$winner collected a tile: ${letter.toUpperCase()}');
     }
     // if player has collected all rewards, move to next duel
     if (data['duel']['tilePrizes'][winnerIndex] == 0) {
@@ -712,20 +588,6 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
         .setData(data);
   }
 
-  addCrown(winnerId, data) async {
-    data['player${winnerId}Crowns'] += 1;
-    if (data['player${winnerId}Crowns'] >= 3) {
-      // end game
-      print('will end game');
-      // data['state'] = 'complete';
-    }
-
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
-  }
-
   peasantResponse(data) async {
     var response = data['duel']['peasantCards'].length;
     var responderId = data['playerIds'][data['duel']['responderIndex']];
@@ -733,16 +595,18 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     if (response == 1) {
       data['log'].add('Peasant\'s Blockade by $responderName!');
       data['duel']['tilePrizes'] = [2 * data['duel']['joust']];
+      data['duel']['pillagePrize'] = 0;
       data['duel']['winnerIndexes'] = [data['duel']['matcherIndex']];
     } else if (response == 2) {
       data['log'].add('Peasant\'s Reversal by $responderName!');
-      data['duel']['pillagePrize'] = 2 * data['duel']['joust'];
+      data['duel']['tilePrizes'] = [0];
+      data['duel']['pillagePrize'] = 1 * data['duel']['joust'];
       data['duel']['winnerIndexes'] = [data['duel']['responderIndex']];
     } else {
       data['log'].add('Peasant\'s Uprising by $responderName!');
       data['log'].add('$responderName wins a crown!');
-      addCrown(responderId, data);
       data['duel']['winnerIndexes'] = [data['duel']['responderIndex']];
+      grabCrown(data);
       return;
     }
     data['duel']['state'] = 'collection';
@@ -781,6 +645,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
       data['log']
           .add('$winner pillages ${data['duel']['pillagePrize']} $plural!');
     }
+    // TODO: need to restore matching/responding cards to their owner
 
     await Firestore.instance
         .collection('sessions')
@@ -793,10 +658,10 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     var playerIndex = data['playerIds'].indexOf(widget.userId);
     data['player${playerIndex}Crowns'] += 1;
     data['crownWinner'] = widget.userId;
-    data['targetWord'] = generateRandomWord(
+    data['nextTargetWord'] = generateRandomWord(
         data['rules']['minWordLength'], data['rules']['maxWordLength']);
     // go to screen where crown-owners pick their letter
-    data['state'] = 'transition';
+    data['state'] = 'roundEnd';
 
     await Firestore.instance
         .collection('sessions')
@@ -804,7 +669,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
         .setData(data);
   }
 
-  transmogrify(data) async {
+  burnTiles(data) async {
     // burn selected tiles and add tiles worth their value
     var totalValue = 0;
     var playerIndex = data['playerIds'].indexOf(widget.userId);
@@ -819,12 +684,25 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
       selectedTiles = {};
     });
     var tilesTransmogrified = totalValue ~/ 5;
+    var newTiles = [];
     for (var i = 0; i < tilesTransmogrified; i++) {
-      data['player${playerIndex}Tiles'].add(generateRandomLetter());
+      String randomTile = generateRandomLetter();
+      newTiles.add(randomTile);
+      data['player${playerIndex}Tiles'].add(randomTile);
     }
     // add to log
+    String logString = '';
+    if (newTiles.length == 1) {
+      logString = newTiles[0].toUpperCase();
+    } else {
+      logString = newTiles[0].toUpperCase();
+      for (int i = 1; i < newTiles.length; i++) {
+        logString += ', ${newTiles[i].toUpperCase()}';
+      }
+    }
     var playerName = data['playerNames'][widget.userId];
-    data['log'].add('$playerName burned for ${tilesTransmogrified} tiles!');
+    data['log']
+        .add('$playerName burned for $tilesTransmogrified tiles: $logString');
 
     await Firestore.instance
         .collection('sessions')
@@ -832,36 +710,46 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
         .setData(data);
   }
 
-  showOthersDialog(data) {
-    List<Widget> others = [
+  showPlayersDialog(data) {
+    List<Widget> players = [
       SizedBox(
         height: 25,
       )
     ];
     List playerIds = data['playerIds'];
-    playerIds.remove(widget.userId);
     playerIds.forEach((v) {
       var playerIndex = data['playerIds'].indexOf(v);
       var playerName = data['playerNames'][v];
-      others.add(
-        Text(playerName),
+      players.add(
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(playerName,
+                style: TextStyle(
+                  fontSize: 24,
+                )),
+            SizedBox(width: 10),
+            getCrowns(playerIndex, data),
+          ],
+        ),
       );
-      others.add(
+      players.add(SizedBox(height: 8));
+      players.add(
         getTiles(playerIndex, data),
       );
-      others.add(SizedBox(height: 25));
+      players.add(SizedBox(height: 25));
     });
     showDialog<Null>(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: Text('Others:'),
+            title: Text('Players:'),
             contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),
             content: Container(
               height: 400,
               child: SingleChildScrollView(
                 child: Column(
-                  children: others,
+                  children: players,
                 ),
               ),
             ),
@@ -949,8 +837,10 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
         sum = int.parse(data['duel']['matchingCards'][0][0]);
       }
       if (data['duel']['matchingCards'].length > 1) {
-        sum = data['duel']['matchingCards']
-            .reduce((a, b) => stringToNumeric(a[0]) + stringToNumeric(b[0]));
+        sum = 0;
+        data['duel']['matchingCards'].forEach((v) {
+          sum += stringToNumeric(v[0]);
+        });
       }
       if (data['duel']['matchingCards'].length == 0) {
         sumStatus = 'Need $diff!';
@@ -966,10 +856,10 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
                 stringToNumeric(data['duel']['matchingCards'][i][0]).toString();
             i += 1;
             if (i < data['duel']['matchingCards'].length) {
-              sumStatus += ' + ';
+              sumStatus += '+';
             }
           }
-          sumStatus += ' = $sum (need $diff)';
+          sumStatus += ' = $sum\n(need $diff)';
           if (sum == diff) {
             sumStatus = 'Nice!';
           }
@@ -1197,7 +1087,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     var holyLetters = [];
     var playerIndex = data['playerIds'].indexOf(widget.userId);
     data['player${playerIndex}Tiles'].forEach((v) {
-      if (data['targetWord'].contains(v)) {
+      if (data['targetWord'].contains(v) || v == ' ') {
         holyLetters.add(v);
       }
     });
@@ -1222,19 +1112,33 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     });
     // iterate over tile map, reducing both maps
     tilesCharCount.forEach((i, v) {
-      while (targetWordCharCount[i] > 0 && tilesCharCount[i] > 0) {
-        targetWordCharCount[i] -= 1;
-        tilesCharCount[i] -= 1;
+      if (i != ' ') {
+        while (targetWordCharCount[i] > 0 && tilesCharCount[i] > 0) {
+          targetWordCharCount[i] -= 1;
+          tilesCharCount[i] -= 1;
+        }
       }
     });
     // if at the end the target word map is empty, allow grab
     // or, if the total remaining is less than ~/3 remaining tiles, allow grab
-    var remainingTargetLetters =
-        targetWordCharCount.values.reduce((sum, element) => sum + element);
-    var remainingTiles =
-        tilesCharCount.values.reduce((sum, element) => sum + element);
-    if (remainingTargetLetters <= 0 ||
-        remainingTargetLetters <= (remainingTiles ~/ 3)) {
+    var remainingTargetLetters = 0;
+    targetWordCharCount.forEach((i, v) {
+      remainingTargetLetters += v;
+    });
+    var remainingTiles = 0;
+    tilesCharCount.forEach((i, v) {
+      if (i != ' ') {
+        remainingTiles += v;
+      }
+    });
+    // if tile map contains grails, reduce remaining target letters by that many grails
+    int numGrails = 0;
+    if (tilesCharCount.containsKey(' ')) {
+      numGrails += 1;
+    }
+    numGrails += remainingTiles ~/ 3;
+    // targetWordCharCount.values.reduce((sum, element) => sum + element);
+    if (remainingTargetLetters <= 0 || remainingTargetLetters <= numGrails) {
       canGrab = true;
     }
 
@@ -1259,6 +1163,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
       decoration: BoxDecoration(
         border: Border.all(color: Theme.of(context).highlightColor),
         borderRadius: BorderRadius.circular(5),
+        color: Theme.of(context).dialogBackgroundColor,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1286,7 +1191,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
                         ]
                       : [
                           Colors.grey[400],
-                          Colors.grey[200],
+                          Colors.grey[300],
                         ],
                 ),
               ),
@@ -1297,7 +1202,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
                 child: Text('Burn!'),
                 onPressed: canBurn
                     ? () {
-                        transmogrify(data);
+                        burnTiles(data);
                       }
                     : null,
                 gradient: LinearGradient(
@@ -1308,7 +1213,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
                         ]
                       : [
                           Colors.grey[400],
-                          Colors.grey[200],
+                          Colors.grey[300],
                         ],
                 ),
               ),
@@ -1317,7 +1222,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
                 height: 25,
                 width: 70,
                 child: Text(
-                  'Others',
+                  'Players',
                   style: TextStyle(
                     color: Colors.black,
                   ),
@@ -1327,7 +1232,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
                   Colors.blue[200],
                 ]),
                 onPressed: () {
-                  showOthersDialog(data);
+                  showPlayersDialog(data);
                 },
               ),
             ],
@@ -1348,6 +1253,8 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
   }
 
   getTiles(playerIndex, data) {
+    List<String> holyLetters = [];
+    int grails = 0;
     List<Widget> holyTiles = [
       SizedBox(
         height: 34,
@@ -1365,17 +1272,10 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
           selected = true;
         }
       }
-      if (data['targetWord'].contains(v)) {
-        holyTiles.add(
-          Tile(
-            value: v,
-            holy: true,
-            selected: false,
-          ),
-        );
-        holyTiles.add(
-          SizedBox(width: 5),
-        );
+      if (v == ' ') {
+        grails += 1;
+      } else if (data['targetWord'].contains(v)) {
+        holyLetters.add(v);
       } else {
         nonHolyTiles.add(
           Tile(
@@ -1385,6 +1285,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
             callback: () {
               toggleTile(v, i);
             },
+            empty: false,
           ),
         );
         nonHolyTiles.add(
@@ -1392,6 +1293,84 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
         );
       }
     });
+
+    // organize holy tiles
+    // create char frequency of holy tiles
+    Map holyCharCount = {' ': grails};
+    holyLetters.forEach((v) {
+      if (holyCharCount.containsKey(v)) {
+        holyCharCount[v] += 1;
+      } else {
+        holyCharCount[v] = 1;
+      }
+    });
+    // fill in target letters, then fill in with any grails
+    data['targetWord'].runes.forEach((v) {
+      bool filled = false;
+      String letter = String.fromCharCode(v);
+      if (holyCharCount.containsKey(letter)) {
+        if (holyCharCount[letter] > 0) {
+          holyTiles.add(
+            Tile(
+              value: letter,
+              holy: true,
+              selected: false,
+              empty: false,
+            ),
+          );
+          holyTiles.add(
+            SizedBox(width: 5),
+          );
+          holyCharCount[letter] -= 1;
+          filled = true;
+        }
+      }
+      if (!filled) {
+        if (holyCharCount[' '] > 0) {
+          holyTiles.add(
+            Tile(
+              value: ' ',
+              holy: true,
+              selected: false,
+              empty: false,
+            ),
+          );
+          holyTiles.add(
+            SizedBox(width: 5),
+          );
+          holyCharCount[' '] -= 1;
+          filled = true;
+        }
+      }
+      if (!filled) {
+        holyTiles.add(
+          Tile(
+            empty: true,
+          ),
+        );
+        holyTiles.add(
+          SizedBox(width: 5),
+        );
+      }
+    });
+    holyTiles.add(SizedBox(width: 20));
+    // dump remaining holy letters
+    holyCharCount.forEach((i, v) {
+      for (int j = 0; j < v; j++) {
+        holyTiles.add(
+          Tile(
+            value: i,
+            holy: true,
+            selected: false,
+            empty: false,
+          ),
+        );
+        holyTiles.add(
+          SizedBox(width: 5),
+        );
+      }
+    });
+
     holyTiles.add(
       SizedBox(
         height: 30,
@@ -1637,6 +1616,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
   }
 
   getCenter(data) {
+    var playerIndex = data['playerIds'].indexOf(widget.userId);
     // check if player is part of duel
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -1647,6 +1627,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
               color: Theme.of(context).highlightColor,
             ),
             borderRadius: BorderRadius.circular(10),
+            color: Theme.of(context).dialogBackgroundColor,
           ),
           padding: EdgeInsets.all(10),
           child: Column(
@@ -1667,6 +1648,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
                   color: Theme.of(context).highlightColor,
                 ),
                 borderRadius: BorderRadius.circular(10),
+                color: Theme.of(context).dialogBackgroundColor,
               ),
               padding: EdgeInsets.all(10),
               child: getRightStatus(data),
@@ -1678,9 +1660,10 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
                   color: Theme.of(context).highlightColor,
                 ),
                 borderRadius: BorderRadius.circular(10),
+                color: Theme.of(context).dialogBackgroundColor,
               ),
               padding: EdgeInsets.all(10),
-              child: getCrowns(data),
+              child: getCrowns(playerIndex, data),
             ),
           ],
         ),
@@ -1688,22 +1671,21 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     );
   }
 
-  getCrowns(data) {
-    var playerIndex = data['playerIds'].indexOf(widget.userId);
+  getCrowns(playerIndex, data) {
     var numCrowns = data['player${playerIndex}Crowns'];
     return Row(
       children: [
         Icon(
           MdiIcons.crown,
-          color: numCrowns > 0 ? Colors.amber : Colors.grey.withAlpha(50),
+          color: numCrowns > 0 ? Colors.amber : Colors.grey.withAlpha(100),
         ),
         Icon(
           MdiIcons.crown,
-          color: numCrowns > 1 ? Colors.amber : Colors.grey.withAlpha(50),
+          color: numCrowns > 1 ? Colors.amber : Colors.grey.withAlpha(100),
         ),
         Icon(
           MdiIcons.crown,
-          color: numCrowns > 2 ? Colors.amber : Colors.grey.withAlpha(50),
+          color: numCrowns > 2 ? Colors.amber : Colors.grey.withAlpha(100),
         ),
       ],
     );
@@ -1728,7 +1710,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            showLog(data),
+            getLog(data, context, 240),
             SizedBox(height: 10),
             getCenter(data),
             SizedBox(height: 10),
@@ -1756,7 +1738,53 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     );
   }
 
-  getTransition(data) {
+  startNextRound(data) async {
+    // set target word to next target word
+    data['targetWord'] = data['nextTargetWord'];
+    // clear selectedTiles, tiles
+    data['playerIds'].asMap().forEach((i, v) {
+      data['player${i}Tiles'] = data['player${i}SelectedTiles'];
+      data['player${i}SelectedTiles'] = [];
+    });
+    // clear board
+    cleanupDuel(data);
+    data['state'] = 'duel';
+  }
+
+  addStartTile(val, data) async {
+    var playerIndex = data['playerIds'].indexOf(widget.userId);
+
+    // add selected tile
+    data['player${playerIndex}SelectedTiles'].add(val);
+
+    // check if all players are done adding tiles, if so completely clear board
+    var totalRemainingTiles = 0;
+    // add all crowns and subtract all tiles
+    for (int i = 0; i < data['playerIds'].length; i++) {
+      totalRemainingTiles += data['player${i}Crowns'];
+      totalRemainingTiles -= data['player${i}SelectedTiles'].length;
+    }
+    print('total remaining = $totalRemainingTiles');
+    if (totalRemainingTiles <= 0) {
+      startNextRound(data);
+    }
+
+    print(data);
+    await Firestore.instance
+        .collection('sessions')
+        .document(widget.sessionId)
+        .setData(data);
+  }
+
+  getRoundEnd(data) {
+    // check if game is over, if so just display crowns for every person
+    bool gameIsOver = false;
+    for (int i = 0; i < data['playerIds'].length; i++) {
+      if (data['player${i}Crowns'] == 3) {
+        gameIsOver = true;
+      }
+    }
+
     Widget tilePicking = Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -1775,15 +1803,63 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
       ],
     );
     var playerIndex = data['playerIds'].indexOf(widget.userId);
-    if (data['player${playerIndex}Crowns'] > 0) {
-      data['targetWord'].runes.forEach((v) {});
+    var remainingTiles = data['player${playerIndex}Crowns'] -
+        data['player${playerIndex}SelectedTiles'].length;
+    List<Widget> possibleTiles = [];
+    data['nextTargetWord'].runes.forEach((v) {
+      possibleTiles.add(
+        Tile(
+          value: String.fromCharCode(v),
+          holy: false,
+          selected: false,
+          callback: () {
+            addStartTile(String.fromCharCode(v), data);
+          },
+          empty: false,
+        ),
+      );
+      possibleTiles.add(
+        SizedBox(width: 4),
+      );
+    });
+    List<Widget> selectedTiles = [];
+    data['player${playerIndex}SelectedTiles'].forEach((v) {
+      selectedTiles.add(
+        Tile(
+          value: v,
+          holy: false,
+          selected: false,
+          empty: false,
+        ),
+      );
+    });
+    String plural = remainingTiles == 1 ? 'tile' : 'tiles';
+    if (data['player${playerIndex}Crowns'] > 0 &&
+        data['player${playerIndex}SelectedTiles'].length <
+            data['player${playerIndex}Crowns']) {
       tilePicking = Column(
         children: [
-          Text('Pick 3 more tiles!'),
+          Text(
+            'Pick $remainingTiles more $plural!',
+            style: TextStyle(
+              fontSize: 20,
+            ),
+          ),
+          SizedBox(height: 5),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: possibleTiles,
+          ),
+          SizedBox(height: 10),
+          Text('Selected tiles:'),
+          SizedBox(height: 5),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: selectedTiles,
+          ),
         ],
       );
     }
-
     List<Widget> everyone = [];
     List playerIds = data['playerIds'];
     playerIds.forEach((v) {
@@ -1798,6 +1874,15 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
           ),
         );
       }
+      // fill grey crowns
+      while (crowns.length < 3) {
+        crowns.add(
+          Icon(
+            MdiIcons.crown,
+            color: Colors.grey,
+          ),
+        );
+      }
       everyone.add(
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -1805,7 +1890,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
             Text(
               playerName,
               style: TextStyle(
-                fontSize: 20,
+                fontSize: gameIsOver ? 30 : 20,
               ),
             ),
             SizedBox(width: 10),
@@ -1813,17 +1898,20 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
           ],
         ),
       );
-      everyone.add(SizedBox(height: 5));
-      everyone.add(
-        getTiles(playerIndex, data),
-      );
+      if (!gameIsOver) {
+        everyone.add(SizedBox(height: 5));
+        everyone.add(
+          getTiles(playerIndex, data),
+        );
+      }
       everyone.add(SizedBox(height: 15));
     });
 
-    return Center(
+    return SingleChildScrollView(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          SizedBox(height: 50),
           Text(
             data['playerNames'][data['crownWinner']],
             style: TextStyle(
@@ -1832,33 +1920,49 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
             ),
           ),
           Text(
-            'wins a crown!',
+            gameIsOver ? 'wins the game!' : 'wins a crown!',
             style: TextStyle(
               fontSize: 30,
             ),
           ),
-          SizedBox(height: 20),
+          SizedBox(height: gameIsOver ? 50 : 20),
           Column(children: everyone),
-          SizedBox(height: 30),
-          Text(
-            'Next word is',
-            style: TextStyle(
-              fontSize: 24,
-            ),
-          ),
-          Text(
-            data['nextTargetWord'].toUpperCase(),
-            style: TextStyle(fontSize: 40, color: Colors.green),
-          ),
-          SizedBox(height: 30),
-          tilePicking,
+          gameIsOver
+              ? Container()
+              : Column(
+                  children: [
+                    SizedBox(height: 30),
+                    Text(
+                      'Next word is',
+                      style: TextStyle(
+                        fontSize: 24,
+                      ),
+                    ),
+                    Text(
+                      data['nextTargetWord'].toUpperCase(),
+                      style: TextStyle(fontSize: 40, color: Colors.green),
+                    ),
+                    SizedBox(height: 30),
+                    tilePicking,
+                  ],
+                ),
+          widget.userId == data['leader']
+              ? Column(
+                  children: <Widget>[
+                    SizedBox(height: 20),
+                    EndGameButton(
+                      sessionId: widget.sessionId,
+                      height: 35,
+                      width: 100,
+                      gameName: 'Three Crowns',
+                    ),
+                  ],
+                )
+              : Container(),
+          SizedBox(height: 40),
         ],
       ),
     );
-  }
-
-  getScoreboard(data) {
-    // show each player's tiles and crowns
   }
 
   @override
@@ -1914,11 +2018,9 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
                 ),
               ],
             ),
-            body: data['state'] == 'complete'
-                ? getScoreboard(data)
-                : data['state'] == 'transition'
-                    ? getTransition(data)
-                    : getGameboard(data),
+            body: data['state'] == 'roundEnd'
+                ? getRoundEnd(data)
+                : getGameboard(data),
           );
         });
   }
@@ -1929,7 +2031,38 @@ class ThreeCrownsScreenHelp extends StatelessWidget {
   Widget build(BuildContext context) {
     return HelpScreen(
       title: 'Three Crowns: Rules',
-      information: ['    oh boy.'],
+      information: [
+        '    Three Crowns is an unnecessarily complicated game, but here are the rules.\n\n    The objective of the game is to collect three crowns, '
+            'which can be achieved in two ways. By far the most common way to collect a crown is to collect sufficient tiles to complete the target word for the round. '
+            'The other (legendary) way is to achieve a "Peasant\'s Uprising", which will be discussed later. ',
+        '    The game is played with a duel that rotates around the table. Two players start dueling by playing a single card from their hand '
+            '(face down), then both reveal, and the winner of the duel receives some prize based on the duel outcome.\n\n    Letter tiles are collected '
+            'in this manner until one of the players can create the target word, which is randomly generated for each round.',
+        'Now, some terms.\n\n - Joust: Each duel starts on the 1st joust. When there is a value tie in the duel, the duel immediately moves to the '
+            'next joust. If the 4th joust is reached, both duelers immediately receive 3 tiles and the duel is compelete. The reward for any duel is multiplied by the '
+            'number of jousts for that duel.\n\n - Holy tile: '
+            'A letter tile whose letter is contained within the target word. Cannot be burned.\n\n - Grail: A blank letter tile that can be a wildcard for any letter. '
+            'Highly coveted. ',
+        ' - Siege: When a One and a face card (J, Q, K) duel. Winner pillages.\n\n - Pillage: Winner can steal a non-holy tile, or receive two random tiles.',
+        '    Some duel rules! In general, the higher value card wins, and the winner of the duel will receive one random tile.\n    If a face card is involved, '
+            'the prize becomes two tiles (8 vs. K, 2 vs. Q, K vs. J, etc.).\n    If a 4 is involved or if the cards are of the same suit, the result is flipped '
+            '(lower value wins). If both occur, higher value wins as usual.\n    Ones are lower than every other value, but defeat face cards with a Siege. In '
+            'a Siege, the One beats the face card unless they are the same suit. The winner of a siege pillages. ',
+        '    Here\'s where things get marginally more interesting.\n\n    If a duel winner wins with a higher value card, the loser has a chance to "match", '
+            'which means they can play any number of cards whose value sum equals the difference between the lower card and the higher card. Face card values are '
+            'J = 10, Q = 11, K = 12.\n    So in an example case where a 4 is defeated by a K, the losing duelist could play a 9, or a 7 plus two 1\'s, etc. \n\n    '
+            'If a match is successful, the matcher gets to "pillage" the original winner. No matching can occur for sieges.',
+        '\n    Finally, if a duelist is "matched", they have a chance to respond to the match and avoid being pillaged. This can be accomplished by playing one or more '
+            'duplicates of the card they already played. To extend the previous example, the original winner of the duel could respond to a match by playing one or more K\'s.'
+            '\n    If the response is one card, it is called a "Peasant\'s Blockage", and the matcher loses the ability to steal tiles and simply receives two random tiles. ',
+        '    Two of a kind results in a "Peasant\'s Reversal", and the pillager becomes the pillagee (the original winner now pillages). Three or more of a kind results in a '
+            '"Peasant\'s Uprising", for which the player receives a crown and the round immediately ends. This is astoundingly rare. '
+            '\n\n    A pillage reward, like a tile reward, is multiplied '
+            'by the number of jousts for that duel. Each reward can be chosen differently (i.e. two jousts, then player A wins a siege. Player A can steal one tile, then '
+            'receive two random tiles).',
+        '    FAQ:\n\n    Why?\n\n    Three Crowns is the unholy result of three bored kids during Thanksgiving on Long Island many years ago.\n  It is entirely made possible '
+            'by wonderful friends who forgive haphazard rule creation, arbitrary and experimental decisions, and random themetic elements.'
+      ],
       buttonColor: Theme.of(context).primaryColor,
     );
   }
@@ -2272,11 +2405,12 @@ class _PillageDialogState extends State<PillageDialog> {
             // get two tiles
             var playerIndex = widget.data['playerIds'].indexOf(widget.userId);
             String winner = playerNameFromIndex(playerIndex, widget.data);
-            widget.data['player${playerIndex}Tiles']
-                .add(generateRandomLetter());
-            widget.data['player${playerIndex}Tiles']
-                .add(generateRandomLetter());
-            widget.data['log'].add('$winner collected two tiles!');
+            String letter1 = generateRandomLetter();
+            String letter2 = generateRandomLetter();
+            widget.data['player${playerIndex}Tiles'].add(letter1);
+            widget.data['player${playerIndex}Tiles'].add(letter2);
+            widget.data['log'].add(
+                '$winner collected two tiles: ${letter1.toUpperCase()} and ${letter2.toUpperCase()}');
             widget.data['duel']['pillagePrize'] -= 1;
             // if player has collected all rewards, move to next duel
             if (widget.data['duel']['pillagePrize'] == 0) {
@@ -2310,11 +2444,26 @@ class Tile extends StatelessWidget {
   final bool holy;
   final Function callback;
   final bool selected;
+  final bool empty;
 
-  Tile({this.value, this.holy, this.callback, this.selected});
+  Tile({this.value, this.holy, this.callback, this.selected, this.empty});
 
   @override
   Widget build(BuildContext context) {
+    if (empty) {
+      return Container(
+        height: 32,
+        width: 32,
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: Colors.grey,
+            width: 1,
+          ),
+          color: Colors.grey,
+          borderRadius: BorderRadius.circular(5),
+        ),
+      );
+    }
     return GestureDetector(
       onTap: () {
         if (callback != null) {

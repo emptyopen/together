@@ -92,6 +92,16 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               SizedBox(width: intervalLength),
               QuickStartButton(
+                gameName: 'Three Crowns',
+                subtitle: 'Rise of the\npeasants!',
+                icon: Icon(
+                  MdiIcons.crown,
+                  color: colorThreeCrowns,
+                  size: 30,
+                ),
+              ),
+              SizedBox(width: intervalLength),
+              QuickStartButton(
                 gameName: 'Abstract',
                 subtitle: 'Connect concepts!',
                 icon: Icon(
@@ -107,16 +117,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: Icon(
                   MdiIcons.phoneSettings,
                   color: colorBananaphone,
-                  size: 30,
-                ),
-              ),
-              SizedBox(width: intervalLength),
-              QuickStartButton(
-                gameName: 'Three Crowns',
-                subtitle: 'Coming soon!',
-                icon: Icon(
-                  MdiIcons.crown,
-                  color: colorThreeCrowns,
                   size: 30,
                 ),
               ),
@@ -474,10 +474,10 @@ class _LobbyDialogState extends State<LobbyDialog> {
                     },
                     items: <String>[
                       'The Hunt',
-                      'Abstract',
-                      'Bananaphone',
                       'Rivers',
                       'Three Crowns',
+                      'Abstract',
+                      'Bananaphone',
                     ].map<DropdownMenuItem<String>>((String value) {
                       return DropdownMenuItem<String>(
                         value: value,
@@ -594,6 +594,7 @@ class QuickStartButton extends StatelessWidget {
                 color: Colors.white,
               ),
             ),
+            SizedBox(height: 3),
             Text(
               subtitle,
               textAlign: TextAlign.center,

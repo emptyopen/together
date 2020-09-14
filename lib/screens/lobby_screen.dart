@@ -497,9 +497,17 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
   setupThreeCrowns(data) async {
     // verify that there are sufficient number of players
-    if (data['playerIds'].length < 3) {
+    if (data['playerIds'].length < 2) {
       setState(() {
-        startError = 'Need at least 3 players';
+        startError = 'Need at least 2 players';
+      });
+      return;
+    }
+
+    // check valid rules
+    if (data['rules']['minWordLength'] > data['rules']['maxWordLength']) {
+      setState(() {
+        startError = 'Impossible word length!';
       });
       return;
     }
@@ -519,6 +527,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
       }
       data['player${i}Tiles'] = [];
       data['player${i}Crowns'] = 0;
+      data['player${i}SelectedTiles'] = [];
     });
 
     // add player names
@@ -781,9 +790,17 @@ class _LobbyScreenState extends State<LobbyScreen> {
         );
         break;
       case 'Three Crowns':
-        return RulesContainer(rules: <Widget>[
-          Text('Maximum word length: ${rules['maxWordLength']}'),
-        ]);
+        return Column(
+          children: [
+            RulesContainer(rules: <Widget>[
+              Text('Minimum word length: ${rules['minWordLength']}'),
+            ]),
+            SizedBox(height: 5),
+            RulesContainer(rules: <Widget>[
+              Text('Maximum word length: ${rules['maxWordLength']}'),
+            ]),
+          ],
+        );
         break;
       case 'Rivers':
         return Column(
@@ -1264,6 +1281,7 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
         rules['numDrawDescribe'] = sessionData['rules']['numDrawDescribe'];
         break;
       case 'Three Crowns':
+        rules['minWordLength'] = sessionData['rules']['minWordLength'];
         rules['maxWordLength'] = sessionData['rules']['maxWordLength'];
         break;
       case 'Rivers':
@@ -1666,11 +1684,39 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
           contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),
           content: Container(
             // decoration: BoxDecoration(border: Border.all()),
-            height:
-                subList2 != null ? 120 + 40 * subList1.length.toDouble() : 100,
+            height: 180,
             width: width * 0.95,
             child: ListView(
               children: <Widget>[
+                SizedBox(height: 20),
+                Text('Minimum word length:'),
+                Container(
+                  width: 80,
+                  child: DropdownButton<int>(
+                    isExpanded: true,
+                    value: rules['minWordLength'],
+                    iconSize: 24,
+                    elevation: 16,
+                    style: TextStyle(color: Theme.of(context).primaryColor),
+                    underline: Container(
+                      height: 2,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    onChanged: (int newValue) {
+                      setState(() {
+                        rules['minWordLength'] = newValue;
+                      });
+                    },
+                    items: <int>[3, 4, 5, 6, 7, 8]
+                        .map<DropdownMenuItem<int>>((int value) {
+                      return DropdownMenuItem<int>(
+                        value: value,
+                        child: Text(value.toString(),
+                            style: TextStyle(fontFamily: 'Balsamiq')),
+                      );
+                    }).toList(),
+                  ),
+                ),
                 SizedBox(height: 20),
                 Text('Maximum word length:'),
                 Container(

@@ -9,6 +9,7 @@ import 'package:together/components/buttons.dart';
 import 'template/help_screen.dart';
 import 'lobby_screen.dart';
 import 'package:together/components/misc.dart';
+import 'package:together/components/log.dart';
 
 class RiversScreen extends StatefulWidget {
   RiversScreen({this.sessionId, this.userId, this.roomCode});
@@ -191,13 +192,21 @@ class _RiversScreenState extends State<RiversScreen> {
 
   endTurn(data) async {
     var missingCards = 0;
+    var playerHandSum = 0;
     data['playerIds'].asMap().forEach((i, v) {
       missingCards += data['rules']['handSize'] - data['player${i}Hand'].length;
+      playerHandSum += data['player${i}Hand'].length;
     });
     if (data['drawPile'].length - missingCards <= 0) {
       data['cardsToPlay'] = 1;
     } else {
       data['cardsToPlay'] = 2;
+    }
+
+    // check if all players are out of hands, if so end game
+    if (playerHandSum == 0) {
+      endGame(data);
+      return;
     }
 
     var currentTurnIndex = data['playerIds'].indexOf(data['turn']);
@@ -206,19 +215,12 @@ class _RiversScreenState extends State<RiversScreen> {
       nextTurnIndex = 0;
     }
     // skip until find player with cards
-    var attempts = 0; // shouldn't need this but just in case
     while (data['player${nextTurnIndex}Hand'].length == 0) {
-      attempts += 1;
-      if (attempts > 150) {
-        break;
-      }
-      nextTurnIndex = currentTurnIndex + 1;
+      nextTurnIndex += 1;
       if (nextTurnIndex == data['playerIds'].length) {
         nextTurnIndex = 0;
       }
-      data['turn'] = data['playerIds'][nextTurnIndex];
     }
-    // update turn
     data['turn'] = data['playerIds'][nextTurnIndex];
 
     // log end of turn
@@ -605,8 +607,6 @@ class _RiversScreenState extends State<RiversScreen> {
           'rivers${data['rules']['handSize']}', data['playerIds'][i]);
     }
 
-    // print('will update data with: $data');
-
     await Firestore.instance
         .collection('sessions')
         .document(widget.sessionId)
@@ -661,126 +661,6 @@ class _RiversScreenState extends State<RiversScreen> {
         .setData(data);
   }
 
-  showLog(data) {
-    var latestLog = data['log'].last;
-    var secondLatestLog = data['log'][data['log'].length - 2];
-    var thirdLatestLog = data['log'][data['log'].length - 3];
-
-    List<Widget> fullLogs = [];
-    data['log'].sublist(3).reversed.forEach((v) {
-      fullLogs.add(
-        Text(
-          v,
-          style: TextStyle(
-            fontSize: v.startsWith('Now') && v.endsWith('turn') ? 14 : 16,
-            color: v.startsWith('Now') && v.endsWith('turn')
-                ? Colors.grey
-                : Theme.of(context).highlightColor,
-          ),
-        ),
-      );
-    });
-
-    return Container(
-      width: 140,
-      height: 70,
-      child: RaisedButton(
-        onPressed: () {
-          showDialog<Null>(
-            context: context,
-            builder: (BuildContext context) {
-              return AlertDialog(
-                title: Text('Logs:'),
-                contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),
-                content: Container(
-                  height: 200,
-                  child: Column(
-                    children: <Widget>[
-                      SizedBox(height: 10),
-                      Container(
-                        height: 190,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                                color: Theme.of(context).highlightColor),
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                          padding: EdgeInsets.all(10),
-                          child: SingleChildScrollView(
-                            child: Column(
-                              children: fullLogs,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                actions: <Widget>[
-                  Container(
-                    child: FlatButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                      child: Text('OK'),
-                    ),
-                  ),
-                ],
-              );
-            },
-          );
-        },
-        shape: RoundedRectangleBorder(
-            side: BorderSide(width: 1, color: Colors.white),
-            borderRadius: BorderRadius.circular(5.0)),
-        padding: const EdgeInsets.all(0.0),
-        child: Container(
-          constraints: BoxConstraints(),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(color: Colors.grey[900]),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              SizedBox(height: 3),
-              Text(
-                '> ' + latestLog + ' <',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.white,
-                ),
-              ),
-              SizedBox(height: 3),
-              Text(
-                secondLatestLog,
-                style: TextStyle(
-                  fontSize: 9,
-                  color: Colors.grey[200],
-                ),
-              ),
-              SizedBox(height: 3),
-              Text(
-                thirdLatestLog,
-                style: TextStyle(
-                  fontSize: 9,
-                  color: Colors.grey[400],
-                ),
-              ),
-              SizedBox(height: 3),
-              Text(
-                '(click to show full logs)',
-                style: TextStyle(
-                  fontSize: 8,
-                  color: Colors.grey[500],
-                ),
-              ),
-              SizedBox(height: 3),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   getGameboard(data) {
     return Stack(
       children: <Widget>[
@@ -812,7 +692,7 @@ class _RiversScreenState extends State<RiversScreen> {
                 Column(children: <Widget>[
                   getStatus(data),
                   SizedBox(height: 10),
-                  showLog(data),
+                  getLog(data, context, 140),
                 ]),
               ],
             ),

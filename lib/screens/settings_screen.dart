@@ -136,23 +136,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   destroyOldGames() async {
     List sessionsToDelete = [];
+    List deletingSessionNames = [];
     await Firestore.instance
         .collection("sessions")
         .getDocuments()
         .then((QuerySnapshot snapshot) {
       snapshot.documents.forEach((f) {
-        var date = new DateTime.fromMicrosecondsSinceEpoch(
-            f.data['dateCreated'].seconds * 1000000);
-        var daysSince = DateTime.now().difference(date);
-        if (!reservedGames.contains(f.data['roomCode']) &&
-            daysSince.compareTo(Duration(days: sessionDeletionDaysThreshold)) >=
-                0) {
-          sessionsToDelete.add(f.reference);
+        if (!f.data.containsKey('dateCreated')) {
+          print('didnt have date created: ${f.data["roomCode"]}');
+        } else {
+          var date = new DateTime.fromMicrosecondsSinceEpoch(
+              f.data['dateCreated'].seconds * 1000000);
+          var daysSince = DateTime.now().difference(date);
+          if (!reservedGames.contains(f.data['roomCode']) &&
+              daysSince.compareTo(
+                      Duration(days: sessionDeletionDaysThreshold)) >=
+                  0) {
+            print('destroying ${f.data["roomCode"]}');
+            sessionsToDelete.add(f.reference);
+          }
         }
       });
     });
     sessionsToDelete.forEach((v) {
-      print('destroying ${v.data['roomCode']}');
       Firestore.instance.runTransaction((Transaction myTransaction) async {
         await myTransaction.delete(v);
       });
