@@ -13,6 +13,11 @@ void main() => runApp(MyApp());
 // add sounds and vibration
 // change button texture when loading during async call
 
+// CHIT CHAT
+// inspired by Asya
+// group text conversation
+// characters are chosen by players and maybe have an agenda
+
 // TODO:
 // 3 crowns: for joust, put previous cards in the background?
 // abstract: logic to ensure at least one group of words is selected
