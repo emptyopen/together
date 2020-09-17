@@ -9,23 +9,14 @@ void main() => runApp(MyApp());
 // abstract: choose lists of words (nouns, adjectives, people, places, etc.)
 
 // next up:
+// rivers: fix DEBUG LOCKED
 // add sounds and vibration
 // change button texture when loading during async call
-// rivers: show num cards in each players hand
 
 // TODO:
+// 3 crowns: for joust, put previous cards in the background?
 // abstract: logic to ensure at least one group of words is selected
-// rivers: fix DEBUG LOCKED
 // rivers: show stacks history
-// add basic functionality to three crowns
-// - play cards in duel
-// - continue duel winner logic
-// - add ability to match
-// - display tiles
-// - display crowns
-// - add ability to gain a tile
-// - add ability to steal a tile
-// - display opponent tiles and crowns
 // abstract games has funky behavior? - green wins then orange hits grey - should be over but timer glitches
 // RUN THROUGH AN ENTIRE BANANAPHONE, many updates. - pretty close to done
 // undo button not working in bananaphone 2nd+ drawings

@@ -75,9 +75,6 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
   }
 
   setWinner(winnerIndex, data) {
-    if (winnerIndex >= data['playerIds'].length) {
-      winnerIndex = 0;
-    }
     data['duel']['winnerIndexes'] = [winnerIndex];
     var name = playerNameFromIndex(winnerIndex, data);
     if (winnerIndex == data['duelerIndex']) {
@@ -112,24 +109,27 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
 
     // if there is a value tie, immediately move to next joust
     if (duelerValue == dueleeValue) {
+      print('joust');
       data['duel']['joust'] += 1;
-      data['log'].add(
-          'Tie of ${data['duel']['duelerCard'][0]}, moving to joust #${data['duel']['joust']}');
-      data['duel']['duelerCard'] = '';
-      data['duel']['dueleeCard'] = '';
-      if (data['duel']['joust'] == 4) {
-        data['log'].add('Three jousts complete! Both players get three tiles.');
+      if (data['duel']['joust'] >= 4) {
+        data['log'].add('Three jousts! Both players get 3 tiles.');
         data['duel']['winnerIndexes'] = [
           data['duel']['duelerIndex'],
-          [data['duel']['dueleeIndex']]
+          data['duel']['dueleeIndex']
         ];
         data['duel']['state'] = 'collection';
         data['duel']['tilePrizes'] = [3, 3];
+      } else {
+        data['log'].add(
+            'Tie of ${data['duel']['duelerCard'][0]}, moving to joust #${data['duel']['joust']}');
+        data['duel']['duelerCard'] = '';
+        data['duel']['dueleeCard'] = '';
       }
     }
     // check if there is a siege ('1' and facevalue)
     else if (letterCardInvolved && oneCardInvolved) {
-      print('seige');
+      print(
+          'siege: dueler $duelerValue duelee $dueleeValue flipped $flipWinners');
       if (flipWinners) {
         // letter card owner wins
         if (dueleeValue == '1') {
@@ -146,6 +146,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
         }
       }
       data['duel']['pillagePrize'] = 1 * data['duel']['joust'];
+      data['duel']['tilePrizes'] = [0];
       data['duel']['state'] = 'collection';
     } else if (flipWinners) {
       print('flip winners');
@@ -517,10 +518,14 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
       String letter = generateRandomLetter();
       data['player${playerIndex}Tiles'].add(letter);
       String winner = playerNameFromIndex(playerIndex, data);
-      data['log'].add('$winner collected a tile: ${letter.toUpperCase()}');
+      data['log'].add('$winner collected a tile: "${letter.toUpperCase()}"');
     }
-    // if player has collected all rewards, move to next duel
-    if (data['duel']['tilePrizes'][winnerIndex] == 0) {
+    // if all players have collected all rewards, move to next duel
+    var remainingTiles = 0;
+    data['duel']['tilePrizes'].forEach((v) {
+      remainingTiles += v;
+    });
+    if (remainingTiles == 0) {
       cleanupDuel(data);
     }
 
@@ -634,6 +639,12 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
       String plural = data['duel']['tilePrizes'][0] <= 1 ? 'tile' : 'tiles';
       String winner = playerNameFromIndex(data['duel']['responderIndex'], data);
       data['log'].add('$winner wins ${data['duel']['tilePrizes'][0]} $plural!');
+      // return matching cards to matcher
+      var matcherIndex = data['duel']['matcherIndex'];
+      data['duel']['matchingCards'].forEach((v) {
+        data['player${matcherIndex}Hand'].add(v);
+      });
+      data['duel']['matchingCards'] = [];
     } else if (data['duel']['state'] == 'peasantsResponse') {
       // responder concedes, matcher wins a pillage
       data['duel']['state'] = 'collection';
@@ -644,8 +655,13 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
       String winner = playerNameFromIndex(data['duel']['matcherIndex'], data);
       data['log']
           .add('$winner pillages ${data['duel']['pillagePrize']} $plural!');
+      // return responding cards to responder
+      var responderIndex = data['duel']['responderIndex'];
+      data['duel']['peasantCards'].forEach((v) {
+        data['player${responderIndex}Hand'].add(v);
+      });
+      data['duel']['peasantCards'] = [];
     }
-    // TODO: need to restore matching/responding cards to their owner
 
     await Firestore.instance
         .collection('sessions')
@@ -701,8 +717,8 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
       }
     }
     var playerName = data['playerNames'][widget.userId];
-    data['log']
-        .add('$playerName burned for $tilesTransmogrified tiles: $logString');
+    data['log'].add(
+        '$playerName burned $totalValue pts for $tilesTransmogrified tiles: $logString');
 
     await Firestore.instance
         .collection('sessions')
@@ -1157,6 +1173,13 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
       canBurn = true;
     }
 
+    var totalValue = 0;
+    selectedTiles.forEach((i, v) {
+      if (v[0]) {
+        totalValue += letterValues[v[1]];
+      }
+    });
+
     return Container(
       height: 100,
       width: 300,
@@ -1199,7 +1222,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
               RaisedGradientButton(
                 height: 25,
                 width: 70,
-                child: Text('Burn!'),
+                child: Text(totalValue < 5 ? 'Burn!' : 'Burn! $totalValue'),
                 onPressed: canBurn
                     ? () {
                         burnTiles(data);
@@ -1389,14 +1412,20 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     }
     return Column(
       children: <Widget>[
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: holyTiles,
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: holyTiles,
+          ),
         ),
         SizedBox(height: 5),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: nonHolyTiles,
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: nonHolyTiles,
+          ),
         ),
       ],
     );
@@ -1710,7 +1739,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            getLog(data, context, 240),
+            getLog(data, context, 260),
             SizedBox(height: 10),
             getCenter(data),
             SizedBox(height: 10),
@@ -1764,12 +1793,10 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
       totalRemainingTiles += data['player${i}Crowns'];
       totalRemainingTiles -= data['player${i}SelectedTiles'].length;
     }
-    print('total remaining = $totalRemainingTiles');
     if (totalRemainingTiles <= 0) {
       startNextRound(data);
     }
 
-    print(data);
     await Firestore.instance
         .collection('sessions')
         .document(widget.sessionId)
@@ -2352,15 +2379,18 @@ class _PillageDialogState extends State<PillageDialog> {
                     height: 2,
                     color: Theme.of(context).highlightColor,
                   ),
-                  onChanged: (int newValue) {
-                    selectedTileIndex = newValue;
+                  onChanged: (int newValue) async {
+                    setState(() {
+                      selectedTileIndex = newValue;
+                    });
                   },
                   items: possibleTileIndices
                       .map<DropdownMenuItem<int>>((int value) {
                     return DropdownMenuItem<int>(
                       value: value,
                       child: Text(
-                        widget.data['player${selectedPlayerIndex}Tiles'][value],
+                        widget.data['player${selectedPlayerIndex}Tiles'][value]
+                            .toUpperCase(),
                         style: TextStyle(
                           fontFamily: 'Balsamiq',
                           fontSize: 18,
@@ -2369,37 +2399,39 @@ class _PillageDialogState extends State<PillageDialog> {
                     );
                   }).toList(),
                 )
-              : Container(),
+              : Text(
+                  'Player has no tiles!',
+                  style: TextStyle(
+                    fontSize: 12,
+                  ),
+                ),
           SizedBox(height: 15),
         ],
       ),
       actions: <Widget>[
-        RaisedGradientButton(
-          onPressed: () {
-            // ensure that tile is selected
-            if (widget.data['player${selectedPlayerIndex}Tiles'].length == 0 ||
-                selectedTileIndex == -1) {
-              print('display message in dialog that tile needs to be selected');
-              return;
-            }
-            stealTiles();
-            Navigator.of(context).pop();
-          },
-          height: 30,
-          width: 100,
-          child: Text(
-            'Steal Tile!',
-            style: TextStyle(
-              color: Colors.black,
-            ),
-          ),
-          gradient: LinearGradient(
-            colors: <Color>[
-              Color.fromARGB(255, 255, 185, 0),
-              Color.fromARGB(255, 255, 213, 0),
-            ],
-          ),
-        ),
+        widget.data['player${selectedPlayerIndex}Tiles'].length == 0 ||
+                selectedTileIndex == -1
+            ? Container()
+            : RaisedGradientButton(
+                onPressed: () {
+                  stealTiles();
+                  Navigator.of(context).pop();
+                },
+                height: 30,
+                width: 100,
+                child: Text(
+                  'Steal Tile!',
+                  style: TextStyle(
+                    color: Colors.black,
+                  ),
+                ),
+                gradient: LinearGradient(
+                  colors: <Color>[
+                    Color.fromARGB(255, 255, 185, 0),
+                    Color.fromARGB(255, 255, 213, 0),
+                  ],
+                ),
+              ),
         RaisedGradientButton(
           onPressed: () async {
             // get two tiles
@@ -2410,7 +2442,7 @@ class _PillageDialogState extends State<PillageDialog> {
             widget.data['player${playerIndex}Tiles'].add(letter1);
             widget.data['player${playerIndex}Tiles'].add(letter2);
             widget.data['log'].add(
-                '$winner collected two tiles: ${letter1.toUpperCase()} and ${letter2.toUpperCase()}');
+                '$winner collected two tiles: "${letter1.toUpperCase()}" and "${letter2.toUpperCase()}"');
             widget.data['duel']['pillagePrize'] -= 1;
             // if player has collected all rewards, move to next duel
             if (widget.data['duel']['pillagePrize'] == 0) {
@@ -2429,8 +2461,8 @@ class _PillageDialogState extends State<PillageDialog> {
           width: 80,
           gradient: LinearGradient(
             colors: <Color>[
-              Colors.green[500],
-              Colors.green[300],
+              Colors.green[600],
+              Colors.green[400],
             ],
           ),
         ),

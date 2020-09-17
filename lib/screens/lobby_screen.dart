@@ -554,7 +554,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
       'state': 'duel',
       'matchingCards': [],
       'peasantCards': [],
-      'tilePrize': 0,
+      'tilePrizes': [],
       'pillagePrize': 0,
       'matcherIndex': 0,
       'responderIndex': 0,
