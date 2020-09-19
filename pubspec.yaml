@@ -1,7 +1,7 @@
 name: together
 description: An app for friends to play games remotely.
 
-version: 1.2.1+27
+version: 1.2.2+28
 
 environment:
   sdk: ">=2.6.0 <3.0.0"

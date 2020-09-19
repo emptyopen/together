@@ -40,25 +40,10 @@ class _EndGameDialogState extends State<EndGameDialog> {
               .document(widget.sessionId)
               .get())
           .data;
-      var newData = {
-        'game': data['game'],
-        'leader': data['leader'],
-        'password': data['password'],
-        'accusation': {},
-        'spyRevealed': '',
-        'playerIds': data['playerIds'],
-        'roomCode': data['roomCode'],
-        'rules': {
-          'locations': data['rules']['locations'],
-          'numSpies': data['rules']['numSpies'],
-        },
-        'startTime': data['startTime'],
-        'state': data['state'],
-      };
       await Firestore.instance
           .collection('sessions')
           .document(widget.sessionId)
-          .setData(newData);
+          .setData(data);
     }
     if (widget.game == 'Abstract') {
       var data = (await Firestore.instance
@@ -78,7 +63,6 @@ class _EndGameDialogState extends State<EndGameDialog> {
               .document(widget.sessionId)
               .get())
           .data;
-      var newData = {};
       data['playerIds'].asMap().forEach((i, val) {
         data.remove('draw1Prompt$i');
         data.remove('describe1Prompt$i');

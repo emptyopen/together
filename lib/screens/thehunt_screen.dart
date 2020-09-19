@@ -6,8 +6,9 @@ import 'package:flutter/services.dart';
 import 'package:together/components/misc.dart';
 import 'package:together/components/layouts.dart';
 import 'package:together/services/services.dart';
-import 'template/help_screen.dart';
+import 'package:together/help_screens/help_screens.dart';
 import 'lobby_screen.dart';
+import 'package:together/components/log.dart';
 
 class TheHuntScreen extends StatefulWidget {
   TheHuntScreen({this.sessionId, this.userId, this.roomCode});
@@ -87,13 +88,14 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
   }
 
   updateTurn() async {
-    Map<String, dynamic> sessionData = (await Firestore.instance
+    Map<String, dynamic> data = (await Firestore.instance
             .collection('sessions')
             .document(widget.sessionId)
             .get())
         .data;
-    var currActivePlayer = sessionData['turn'];
-    var allPlayers = sessionData['playerIds'];
+    data['numQuestions'] += 1;
+    var currActivePlayer = data['turn'];
+    var allPlayers = data['playerIds'];
     var activePlayerIndex = allPlayers.indexOf(currActivePlayer);
     var nextActivePlayer;
     if (activePlayerIndex == allPlayers.length - 1) {
@@ -101,10 +103,14 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
     } else {
       nextActivePlayer = allPlayers[activePlayerIndex + 1];
     }
+    data['turn'] = nextActivePlayer;
+    // update accusation cooldowns
+    data['remainingAccusationsThisTurn'] = data['rules']['accusationsPerTurn'];
+
     await Firestore.instance
         .collection('sessions')
         .document(widget.sessionId)
-        .updateData({'turn': nextActivePlayer});
+        .setData(data);
   }
 
   fakeCallback() {}
@@ -174,7 +180,10 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
                   ? RaisedGradientButton(
                       child: Text(
                         'End my turn',
-                        style: TextStyle(fontSize: 18),
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.white,
+                        ),
                       ),
                       onPressed: () {
                         if (data['accusation']['accuser'] == null) {
@@ -185,7 +194,6 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
                                 Text('Can\'t end turn during an accusation!'),
                             duration: Duration(seconds: 3),
                           ));
-                          print('snackbar for ongoing accusation');
                         }
                       },
                       height: 40,
@@ -225,7 +233,12 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
         decoration: BoxDecoration(
           border: Border.all(color: Theme.of(context).highlightColor),
           borderRadius: BorderRadius.circular(20),
-          color: Theme.of(context).primaryColor,
+          gradient: LinearGradient(
+            colors: <Color>[
+              Theme.of(context).primaryColor,
+              Theme.of(context).accentColor,
+            ],
+          ),
         ),
         padding: EdgeInsets.all(10),
         width: 250,
@@ -311,11 +324,10 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
   }
 
   addVoteToAccusation(data, vote) async {
-    var accusation = (await Firestore.instance
-            .collection('sessions')
-            .document(widget.sessionId)
-            .get())
-        .data['accusation'];
+    data = data.data;
+    String playerName = data['playerNames'][widget.userId];
+    data['log'].add('$playerName votes $vote!');
+    var accusation = data['accusation'];
     accusation[widget.userId] = vote;
     // check if all votes are in (need to add logic for more than one spy)
     bool allPlayersVoted = true;
@@ -355,49 +367,87 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
         };
       }
     }
+    data['accusation'] = accusation;
     await Firestore.instance
         .collection('sessions')
         .document(widget.sessionId)
-        .updateData({'accusation': accusation});
+        .setData(data);
   }
 
   getAccuseOrReveal(data) {
+    var playerIndex = data['playerIds'].indexOf(widget.userId);
+    bool playerIsSpy = data['playerRoles'][widget.userId] == 'spy';
+    bool everyoneHasAskedAQuestion =
+        data['numQuestions'] >= data['playerIds'].length;
+    bool tooManyAccusationsThisTurn =
+        data['remainingAccusationsThisTurn'] == 0 && !playerIsSpy;
+    bool otherPlayersMustAccuseFirst =
+        data['player${playerIndex}AccusationCooldown'] != 0 && !playerIsSpy;
+    bool canAccuse = everyoneHasAskedAQuestion &&
+        !tooManyAccusationsThisTurn &&
+        !otherPlayersMustAccuseFirst;
+    String numPlayersToAccuse =
+        data['player${playerIndex}AccusationCooldown'].toString();
+    if (data['player${playerIndex}AccusationCooldown'] == 1) {
+      numPlayersToAccuse += ' player';
+    } else {
+      numPlayersToAccuse += ' players';
+    }
     return FlatButton(
       splashColor: Color.fromARGB(0, 1, 1, 1),
       highlightColor: Color.fromARGB(0, 1, 1, 1),
-      onPressed: () {
-        if (data['playerRoles'][widget.userId] == 'spy') {
-          showDialog<Null>(
-            context: context,
-            builder: (BuildContext context) {
-              return RevealDialog(data: data, sessionId: widget.sessionId);
-            },
-          );
-        } else {
-          showDialog<Null>(
-            context: context,
-            builder: (BuildContext context) {
-              return AccuseDialog(
-                  data: data,
-                  userId: widget.userId,
-                  sessionId: widget.sessionId);
-            },
-          );
-        }
-      },
+      onPressed: canAccuse
+          ? () {
+              if (data['playerRoles'][widget.userId] == 'spy') {
+                showDialog<Null>(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return RevealDialog(
+                        data: data, sessionId: widget.sessionId);
+                  },
+                );
+              } else {
+                showDialog<Null>(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AccuseDialog(
+                        data: data,
+                        userId: widget.userId,
+                        sessionId: widget.sessionId);
+                  },
+                );
+              }
+            }
+          : null,
       child: Container(
         decoration: BoxDecoration(
           border: Border.all(color: Theme.of(context).highlightColor),
           borderRadius: BorderRadius.circular(20),
-          color: Color.fromARGB(255, 255, 213, 0),
+          gradient: LinearGradient(
+            colors: canAccuse
+                ? [
+                    Colors.purple[700],
+                    Colors.purple[300],
+                  ]
+                : <Color>[
+                    Colors.grey[600],
+                    Colors.grey[500],
+                  ],
+          ),
         ),
         padding: EdgeInsets.all(10),
         width: 160,
         child: Text(
-          'I know!',
+          !everyoneHasAskedAQuestion
+              ? 'Must wait until everyone asks a question!'
+              : tooManyAccusationsThisTurn
+                  ? 'Must wait until next turn to accuse!'
+                  : otherPlayersMustAccuseFirst
+                      ? 'Waiting for $numPlayersToAccuse to accuse first'
+                      : 'I know!',
           style: TextStyle(
-            fontSize: 20,
-            color: Colors.black,
+            fontSize: !everyoneHasAskedAQuestion ? 12 : canAccuse ? 20 : 13,
+            color: Colors.white,
           ),
           textAlign: TextAlign.center,
         ),
@@ -594,11 +644,11 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
                         Text(
                           'Game is over!',
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: 28,
                             color: Colors.white,
                           ),
                         ),
-                        SizedBox(height: 5),
+                        SizedBox(height: 15),
                         Text(
                           '$accuser accused $accused,\n and everyone agreed.',
                           style: TextStyle(color: Colors.white),
@@ -621,6 +671,19 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
                                     color: Color.fromARGB(255, 255, 213, 0)),
                                 textAlign: TextAlign.center,
                               ),
+                        SizedBox(height: 10),
+                        Text(
+                          'Location was:',
+                          style: TextStyle(color: Colors.white),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: 5),
+                        Text(data['location'],
+                            style: TextStyle(
+                              color: Color.fromARGB(255, 255, 213, 0),
+                              fontSize: 20,
+                            ),
+                            textAlign: TextAlign.center)
                       ],
                     ),
         ),
@@ -685,7 +748,6 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
                 ],
               )
             : Container(),
-        SizedBox(height: 20),
       ],
     );
   }
@@ -756,9 +818,12 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
                               ? getTurn(context, data)
                               : Container(),
                           SizedBox(height: 20),
+                          getLog(data, context, 250),
+                          SizedBox(height: 20),
                           getRoleButton(data),
                           SizedBox(height: 20),
                           isSpectator ? Container() : getAccusation(data),
+                          SizedBox(height: 20),
                           !data['accusation'].containsKey('charged')
                               ? LocationBoard(
                                   subList1: subList1,
@@ -806,29 +871,6 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
                 ],
               ));
         });
-  }
-}
-
-class TheHuntScreenHelp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return HelpScreen(
-      title: 'The Hunt: Rules',
-      information: [
-        '    The objectives of the game are simple:\n\n(1) If you ARE NOT a spy, you are a citizen trying to find the spy(ies). \n\n(2) If you ARE a spy, '
-            'you are trying to figure out where the location is.\n\n(3) Spies lose and win, together. Same for citizens.',
-        '    Players take turns asking questions to a player of their choice. The question can be anything, '
-            'and the answer can be anything.\n\n    Just keep in mind that vagueness can be suspicious!',
-        '    At any point, a player can accuse another player of being the spy.\n\n    '
-            'A verdict requires a unanimous vote, less the remaining number of spies.',
-        '    The game ends in two general ways:\n\n(1) A spy can reveal they are the spy at any time (except during an accusation), and attempt to guess the location. '
-            'If they guess correctly, the spies win. If they guess incorrectly, the spies lose.'
-            '\n\n(continued on next page)',
-        '\n\n(2) If a citizen is unanimously accused, the spies win. Otherwise the spy is exiled, and if there are no spies left, the citizens win.'
-            '\n\nThe spies can always guess the location once the game is over, for "honor"!'
-      ],
-      buttonColor: Theme.of(context).primaryColor,
-    );
   }
 }
 
@@ -946,16 +988,38 @@ class _AccuseDialogState extends State<AccuseDialog> {
   String _accusedPlayer = '';
 
   submitAccusation(String accusedId, data) async {
+    data = data.data;
     var accusation = {'accuser': widget.userId, 'accused': accusedId};
     data['playerIds'].forEach((val) {
       if (val != widget.userId && val != accusedId) {
         accusation[val] = '';
       }
     });
+    data['accusation'] = accusation;
+
+    String playerName = data['playerNames'][widget.userId];
+    String accusedName = data['playerNames'][accusedId];
+    data['log'].add('$playerName accuses $accusedName!');
+
+    // decrement all other player's accusation cooldown
+    data['playerIds'].asMap().forEach((i, v) {
+      if (v != widget.userId && data['player${i}AccusationCooldown'] > 0) {
+        data['player${i}AccusationCooldown'] -= 1;
+      }
+    });
+    // set player's accusation cooldown
+    var playerIndex = data['playerIds'].indexOf(widget.userId);
+    data['player${playerIndex}AccusationCooldown'] =
+        data['rules']['accusationCooldown'];
+    // decrement general accusation cooldown
+    if (data['remainingAccusationsThisTurn'] < 0) {
+      data['remainingAccusationsThisTurn'] -= 1;
+    }
+
     await Firestore.instance
         .collection('sessions')
         .document(widget.sessionId)
-        .updateData({'accusation': accusation});
+        .setData(data);
   }
 
   @override

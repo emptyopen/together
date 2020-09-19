@@ -8,7 +8,7 @@ import 'dart:async';
 import 'package:auto_size_text/auto_size_text.dart';
 
 import 'package:together/services/services.dart';
-import 'template/help_screen.dart';
+import 'package:together/help_screens/help_screens.dart';
 import 'lobby_screen.dart';
 import 'package:together/components/misc.dart';
 
@@ -1116,23 +1116,5 @@ class _AbstractScreenState extends State<AbstractScreen> {
                 ],
               ));
         });
-  }
-}
-
-class AbstractScreenHelp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return HelpScreen(
-      title: 'Abstract: Rules',
-      information: [
-        '    The objective of this game is to flip all cards for your team. '
-            'Leaders of teams take turns giving a clue to their team which should tie different words on the board together. '
-            'A clue can be anything that has a Wikipedia page. ',
-        '    The timer is shared for the leader giving the clue and the leader\'s team guessing.',
-        '    If a team wins, teams that didn\'t initially start before the winning team get chance for rebuttal. In '
-            'case of ties, the team that used the least time throughout the game wins.',
-      ],
-      buttonColor: Theme.of(context).primaryColor,
-    );
   }
 }

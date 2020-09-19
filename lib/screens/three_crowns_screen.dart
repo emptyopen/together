@@ -5,7 +5,7 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 
 import 'package:together/services/services.dart';
 import 'package:together/services/three_crowns_services.dart';
-import 'template/help_screen.dart';
+import 'package:together/help_screens/help_screens.dart';
 import 'lobby_screen.dart';
 import 'package:together/components/log.dart';
 
@@ -2050,48 +2050,6 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
                 : getGameboard(data),
           );
         });
-  }
-}
-
-class ThreeCrownsScreenHelp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return HelpScreen(
-      title: 'Three Crowns: Rules',
-      information: [
-        '    Three Crowns is an unnecessarily complicated game, but here are the rules.\n\n    The objective of the game is to collect three crowns, '
-            'which can be achieved in two ways. By far the most common way to collect a crown is to collect sufficient tiles to complete the target word for the round. '
-            'The other (legendary) way is to achieve a "Peasant\'s Uprising", which will be discussed later. ',
-        '    The game is played with a duel that rotates around the table. Two players start dueling by playing a single card from their hand '
-            '(face down), then both reveal, and the winner of the duel receives some prize based on the duel outcome.\n\n    Letter tiles are collected '
-            'in this manner until one of the players can create the target word, which is randomly generated for each round.',
-        'Now, some terms.\n\n - Joust: Each duel starts on the 1st joust. When there is a value tie in the duel, the duel immediately moves to the '
-            'next joust. If the 4th joust is reached, both duelers immediately receive 3 tiles and the duel is compelete. The reward for any duel is multiplied by the '
-            'number of jousts for that duel.\n\n - Holy tile: '
-            'A letter tile whose letter is contained within the target word. Cannot be burned.\n\n - Grail: A blank letter tile that can be a wildcard for any letter. '
-            'Highly coveted. ',
-        ' - Siege: When a One and a face card (J, Q, K) duel. Winner pillages.\n\n - Pillage: Winner can steal a non-holy tile, or receive two random tiles.',
-        '    Some duel rules! In general, the higher value card wins, and the winner of the duel will receive one random tile.\n    If a face card is involved, '
-            'the prize becomes two tiles (8 vs. K, 2 vs. Q, K vs. J, etc.).\n    If a 4 is involved or if the cards are of the same suit, the result is flipped '
-            '(lower value wins). If both occur, higher value wins as usual.\n    Ones are lower than every other value, but defeat face cards with a Siege. In '
-            'a Siege, the One beats the face card unless they are the same suit. The winner of a siege pillages. ',
-        '    Here\'s where things get marginally more interesting.\n\n    If a duel winner wins with a higher value card, the loser has a chance to "match", '
-            'which means they can play any number of cards whose value sum equals the difference between the lower card and the higher card. Face card values are '
-            'J = 10, Q = 11, K = 12.\n    So in an example case where a 4 is defeated by a K, the losing duelist could play a 9, or a 7 plus two 1\'s, etc. \n\n    '
-            'If a match is successful, the matcher gets to "pillage" the original winner. No matching can occur for sieges.',
-        '\n    Finally, if a duelist is "matched", they have a chance to respond to the match and avoid being pillaged. This can be accomplished by playing one or more '
-            'duplicates of the card they already played. To extend the previous example, the original winner of the duel could respond to a match by playing one or more K\'s.'
-            '\n    If the response is one card, it is called a "Peasant\'s Blockage", and the matcher loses the ability to steal tiles and simply receives two random tiles. ',
-        '    Two of a kind results in a "Peasant\'s Reversal", and the pillager becomes the pillagee (the original winner now pillages). Three or more of a kind results in a '
-            '"Peasant\'s Uprising", for which the player receives a crown and the round immediately ends. This is astoundingly rare. '
-            '\n\n    A pillage reward, like a tile reward, is multiplied '
-            'by the number of jousts for that duel. Each reward can be chosen differently (i.e. two jousts, then player A wins a siege. Player A can steal one tile, then '
-            'receive two random tiles).',
-        '    FAQ:\n\n    Why?\n\n    Three Crowns is the unholy result of three bored kids during Thanksgiving on Long Island many years ago.\n  It is entirely made possible '
-            'by wonderful friends who forgive haphazard rule creation, arbitrary and experimental decisions, and random themetic elements.'
-      ],
-      buttonColor: Theme.of(context).primaryColor,
-    );
   }
 }
 

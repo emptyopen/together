@@ -6,7 +6,7 @@ import 'dart:math';
 
 import 'package:together/services/services.dart';
 import 'package:together/components/buttons.dart';
-import 'template/help_screen.dart';
+import 'package:together/help_screens/help_screens.dart';
 import 'lobby_screen.dart';
 import 'package:together/components/misc.dart';
 import 'package:together/components/log.dart';
@@ -875,32 +875,6 @@ class _RiversScreenState extends State<RiversScreen> {
                 : getScoreboard(data),
           );
         });
-  }
-}
-
-class RiversScreenHelp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return HelpScreen(
-      title: 'Rivers: Rules',
-      information: [
-        '    Welcome to Rivers! In this game, we\'re going to work together! Players take turns playing cards, and the '
-            'objective of the game is to play every single card!\n\n    With standard rules, the deck contains cards from 2 to '
-            '99, one of each. While there are cards remaining in the draw pile, player must play at least two cards. Once the '
-            'draw pile runs out of cards, players must play at least one card. ',
-        '    There are four piles to play on: two ascending piles and two descending piles. The rules for playing a card are '
-            'simple: you can only play cards higher than the current card for ascending piles, and cards lower than the current card '
-            'for descending piles.\n\n    The only exception is a card exactly 10 lower on ascending piles, and 10 higher on descending '
-            'piles. For examples, for an ascending pile that is currently at 42, a player could play 43, 44, 45, etc., and the best card '
-            'to play would be a 32. But not 41, 40, 39, etc. ',
-        '    The final major rule is that players cannot specify what numbered cards they have in any way. Players can say things like '
-            '"Don\'t play on this pile", or "I have something really good for the left ascending pile", or "Definitely, definitely don\'t '
-            'play on 35". But nothing that could definitively describe a specific number.\n\n'
-            '    The game ends when all cards are played (amazing job!), or if a player cannot play the required number of cards. The score '
-            'is counted by the remaining unplayed cards in players\' hands and in the draw pile. '
-      ],
-      buttonColor: Theme.of(context).primaryColor,
-    );
   }
 }
 

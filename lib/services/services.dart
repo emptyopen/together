@@ -82,6 +82,9 @@ getDefaultRules(String gameName) {
       return {
         'locations': ['Casino', 'Pirate Ship', 'Coal Mine', 'University'],
         'numSpies': 1,
+        'accusationsPerTurn': 1, // accusations allowed per turn
+        'accusationCooldown':
+            1, // number of other people who accuse before you can again
       };
       break;
     case 'Abstract':

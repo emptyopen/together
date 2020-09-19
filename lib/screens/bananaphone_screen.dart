@@ -9,7 +9,7 @@ import 'dart:collection';
 import 'package:together/models/models.dart';
 import 'package:together/components/misc.dart';
 import 'package:together/services/services.dart';
-import 'template/help_screen.dart';
+import 'package:together/help_screens/help_screens.dart';
 import 'lobby_screen.dart';
 
 class BananaphoneScreen extends StatefulWidget {
@@ -1556,22 +1556,6 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
                               )),
               ));
         });
-  }
-}
-
-class BananaphoneScreenHelp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return HelpScreen(
-      title: 'Bananaphone: Rules',
-      information: [
-        '    All you have to do is follow the prompts!\n    Players are each initially assigned a prompt, and are tasked with drawing it. '
-            'The drawings are "passed" around the "table" and players then describe the drawing. These drawing / describe alternations are repeated a couple times. ',
-        '    Once the round is complete, players vote on their favorite drawings and description, one per round (that isn\'t theirs). Once all the rounds '
-            'are complete, the player with the highest score wins! In case of ties, there are multipled winners.'
-      ],
-      buttonColor: Theme.of(context).primaryColor,
-    );
   }
 }
 

@@ -13,6 +13,7 @@ import '../components/layouts.dart';
 import '../components/misc.dart';
 import '../models/models.dart';
 import '../services/three_crowns_services.dart';
+import 'package:together/help_screens/help_screens.dart';
 import 'package:together/constants/values.dart';
 import 'package:together/services/services.dart';
 import 'package:together/screens/thehunt_screen.dart';
@@ -209,6 +210,16 @@ class _LobbyScreenState extends State<LobbyScreen> {
       return;
     }
 
+    // verify that accusation cooldown is low enough
+    if (data['rules']['accusationCooldown'] >
+        data['playerIds'].length - 1 - data['rules']['numSpies']) {
+      setState(() {
+        startError =
+            'Accusation cooldown must be less than ${data['playerIds'].length - data['numSpies']}';
+      });
+      return;
+    }
+
     // clear error if we are good to start
     setState(() {
       startError = '';
@@ -257,11 +268,20 @@ class _LobbyScreenState extends State<LobbyScreen> {
       i += 1;
     }
 
-    // set accused to noone
+    // set each players individal accusation cooldown to available
+    data['playerIds'].asMap().forEach((i, v) {
+      data['player${i}AccusationCooldown'] = 0;
+    });
+
+    // set accused to noone, and accusation unavailable
     data['accusation'] = {};
+    data['remainingAccusationsThisTurn'] = data['rules']['accusationsPerTurn'];
+    data['numQuestions'] = 0;
 
     // set spyRevealed to noone
     data['spyRevealed'] = '';
+
+    data['log'] = ['', '', ''];
 
     return data;
   }
@@ -694,9 +714,57 @@ class _LobbyScreenState extends State<LobbyScreen> {
           width: 250,
           child: Column(
             children: <Widget>[
-              Text('Number of spies: ${rules['numSpies']}'),
+              RulesContainer(
+                rules: <Widget>[
+                  Text(
+                    'Number of spies:',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                  Text(
+                    rules['numSpies'].toString(),
+                    style: TextStyle(fontSize: 18),
+                  ),
+                ],
+              ),
               SizedBox(height: 5),
-              Text('Possible locations: ${rules['locations']}'),
+              RulesContainer(
+                rules: <Widget>[
+                  Text(
+                    'Possible locations:',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                  Text(
+                    rules['locations'].toString(),
+                    style: TextStyle(fontSize: 12),
+                  ),
+                ],
+              ),
+              SizedBox(height: 5),
+              RulesContainer(
+                rules: <Widget>[
+                  Text(
+                    'Accusations allowed per turn:',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                  Text(
+                    rules['accusationsPerTurn'].toString(),
+                    style: TextStyle(fontSize: 18),
+                  ),
+                ],
+              ),
+              SizedBox(height: 5),
+              RulesContainer(
+                rules: <Widget>[
+                  Text(
+                    'Accusation cooldown:',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                  Text(
+                    rules['accusationCooldown'].toString(),
+                    style: TextStyle(fontSize: 18),
+                  ),
+                ],
+              ),
             ],
           ),
         );
@@ -1025,7 +1093,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
         body: Container(),
       );
     }
-    // TODO: check if this is working
     if ((startTime != null && _now != null) &&
         startTime.difference(_now).inSeconds < 0) {
       return Scaffold(
@@ -1060,6 +1127,38 @@ class _LobbyScreenState extends State<LobbyScreen> {
               title: Text(
                 '$gameName: Lobby',
               ),
+              actions: <Widget>[
+                IconButton(
+                  icon: Icon(Icons.info),
+                  onPressed: () {
+                    HapticFeedback.heavyImpact();
+                    Navigator.of(context).push(
+                      PageRouteBuilder(
+                        opaque: false,
+                        pageBuilder: (BuildContext context, _, __) {
+                          switch (gameName) {
+                            case 'The Hunt':
+                              return TheHuntScreenHelp();
+                              break;
+                            case 'Abstract':
+                              return AbstractScreenHelp();
+                              break;
+                            case 'Bananaphone':
+                              return BananaphoneScreenHelp();
+                              break;
+                            case 'Rivers':
+                              return RiversScreenHelp();
+                              break;
+                            case 'Three Crowns':
+                              return ThreeCrownsScreenHelp();
+                              break;
+                          }
+                        },
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
             body: SingleChildScrollView(
               child: Center(
@@ -1268,6 +1367,10 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
       case 'The Hunt':
         rules['numSpies'] = sessionData['rules']['numSpies'];
         rules['locations'] = sessionData['rules']['locations'];
+        rules['accusationsPerTurn'] =
+            sessionData['rules']['accusationsPerTurn'];
+        rules['accusationCooldown'] =
+            sessionData['rules']['accusationCooldown'];
         break;
       case 'Abstract':
         rules['numTeams'] = sessionData['rules']['numTeams'];
@@ -1373,7 +1476,7 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
           contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),
           content: Container(
             height:
-                subList2 != null ? 120 + 40 * subList1.length.toDouble() : 100,
+                subList2 != null ? 140 + 40 * subList1.length.toDouble() : 100,
             width: width * 0.95,
             child: ListView(
               children: <Widget>[
@@ -1397,6 +1500,65 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
                       });
                     },
                     items: <int>[1, 2, 3, 4, 5]
+                        .map<DropdownMenuItem<int>>((int value) {
+                      return DropdownMenuItem<int>(
+                        value: value,
+                        child: Text(value.toString(),
+                            style: TextStyle(fontFamily: 'Balsamiq')),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                SizedBox(height: 10),
+                Text('Accusations allowed per turn:'),
+                Container(
+                  width: 80,
+                  child: DropdownButton<int>(
+                    isExpanded: true,
+                    value: rules['accusationsPerTurn'],
+                    iconSize: 24,
+                    elevation: 16,
+                    style: TextStyle(color: Theme.of(context).primaryColor),
+                    underline: Container(
+                      height: 2,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    onChanged: (int newValue) {
+                      setState(() {
+                        rules['accusationsPerTurn'] = newValue;
+                      });
+                    },
+                    items:
+                        <int>[1, 2, 3].map<DropdownMenuItem<int>>((int value) {
+                      return DropdownMenuItem<int>(
+                        value: value,
+                        child: Text(value.toString(),
+                            style: TextStyle(fontFamily: 'Balsamiq')),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                SizedBox(height: 10),
+                Text(
+                    'Number of other accusations before one can accuse again:'),
+                Container(
+                  width: 80,
+                  child: DropdownButton<int>(
+                    isExpanded: true,
+                    value: rules['accusationCooldown'],
+                    iconSize: 24,
+                    elevation: 16,
+                    style: TextStyle(color: Theme.of(context).primaryColor),
+                    underline: Container(
+                      height: 2,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    onChanged: (int newValue) {
+                      setState(() {
+                        rules['accusationCooldown'] = newValue;
+                      });
+                    },
+                    items: <int>[0, 1, 2, 3, 4, 5, 6, 7]
                         .map<DropdownMenuItem<int>>((int value) {
                       return DropdownMenuItem<int>(
                         value: value,
