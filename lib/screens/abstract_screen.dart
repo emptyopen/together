@@ -11,6 +11,7 @@ import 'package:together/services/services.dart';
 import 'package:together/help_screens/help_screens.dart';
 import 'lobby_screen.dart';
 import 'package:together/components/misc.dart';
+import 'package:together/components/end_game.dart';
 
 class AbstractScreen extends StatefulWidget {
   AbstractScreen({this.sessionId, this.userId, this.roomCode});

@@ -490,6 +490,16 @@ class _LobbyScreenState extends State<LobbyScreen> {
       data['votes'].add(false);
     });
 
+    // initialize data
+    // TODO: delete this if unneccessary
+    // data['playerIds'].asMap().forEach((i, val) {
+    //     data.remove('draw1Prompt$i');
+    //     data.remove('describe1Prompt$i');
+    //     data.remove('draw2Prompt$i');
+    //     data.remove('describe2Prompt$i');
+    //     data['phase'] = 'draw1';
+    //   });
+
     // set prompts (one per player per round)
     var prompts = [];
     HashSet usedPrompts = HashSet();
@@ -693,12 +703,18 @@ class _LobbyScreenState extends State<LobbyScreen> {
     return Column(
       children: <Widget>[
         Text(
-          'Game is starting in ${startTime.difference(_now).inSeconds}',
+          'Game is starting in',
           style: TextStyle(
-            color: Theme.of(context).primaryColor,
+            color: Theme.of(context).highlightColor,
             fontSize: 24,
           ),
         ),
+        SizedBox(height: 5),
+        Text(startTime.difference(_now).inSeconds.toString(),
+            style: TextStyle(
+              fontSize: 40,
+              color: Theme.of(context).primaryColor,
+            )),
         SizedBox(
           height: 30,
         ),

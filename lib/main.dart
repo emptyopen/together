@@ -6,18 +6,14 @@ import 'screens/root_screen.dart';
 void main() => runApp(MyApp());
 
 // done:
-// abstract: choose lists of words (nouns, adjectives, people, places, etc.)
-// the hunt: add cooldown for accusation (only once per turn)
-// the hunt: add space between i know and scratchboard
-// the hunt: add log
-// the hunt: show spy and location in endgame
+// rivers: fix DEBUG LOCKED!!! THANK GOD
 
 // next up:
+// add teaser for CHIT CHAT
+// add first time help indicators!!! (for help icon button, etc.)
 // bananaphone: FIX VOTING TRANSITION!!!!!
-// rivers: fix DEBUG LOCKED
-// add all rules to lobby!!!!
+// undo button not working in bananaphone 2nd+ drawings
 // add sounds and vibration
-// grey screen when exiting the hunt sometimes?
 
 // CHIT CHAT
 // inspired by Asya
@@ -25,15 +21,12 @@ void main() => runApp(MyApp());
 // characters are chosen by players and maybe have an agenda
 
 // TODO:
-// remove endgame complications, everything should set from lobby ANYWAYS
 // the hunt: add timer to voting!!
 // change button texture when loading during async call
 // 3 crowns: for joust, put previous cards in the background?
 // abstract: logic to ensure at least one group of words is selected
 // rivers: show stacks history
 // abstract games has funky behavior? - green wins then orange hits grey - should be over but timer glitches
-// RUN THROUGH AN ENTIRE BANANAPHONE, many updates. - pretty close to done
-// undo button not working in bananaphone 2nd+ drawings
 // make all buttons disappear when they are clicked (especially when they cause an effect - there are double effects happening)
 // fine grained control of teams in lobby for abstract
 // add scores button to view scores in bananaphone

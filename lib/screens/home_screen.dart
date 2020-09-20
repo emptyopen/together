@@ -63,6 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
     Color colorBananaphone = Colors.blue;
     Color colorThreeCrowns = Colors.amber;
     Color colorRivers = Colors.lightBlue;
+    Color colorChitChat = Colors.pink;
     double intervalLength = 25.0;
     return Container(
       child: Column(
@@ -117,6 +118,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: Icon(
                   MdiIcons.phoneSettings,
                   color: colorBananaphone,
+                  size: 30,
+                ),
+              ),
+              SizedBox(width: intervalLength),
+              QuickStartButton(
+                gameName: 'Chit Chat',
+                subtitle: 'Coming soon!',
+                icon: Icon(
+                  MdiIcons.chatProcessingOutline,
+                  color: colorChitChat,
                   size: 30,
                 ),
               ),

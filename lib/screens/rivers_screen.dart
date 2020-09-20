@@ -10,6 +10,7 @@ import 'package:together/help_screens/help_screens.dart';
 import 'lobby_screen.dart';
 import 'package:together/components/misc.dart';
 import 'package:together/components/log.dart';
+import 'package:together/components/end_game.dart';
 
 class RiversScreen extends StatefulWidget {
   RiversScreen({this.sessionId, this.userId, this.roomCode});
@@ -40,6 +41,11 @@ class _RiversScreenState extends State<RiversScreen> {
       // navigate to main menu
       Navigator.of(context).pop();
     } else if (data['state'] == 'lobby') {
+      // I DON'T KNOW WHY WE NEED THIS BUT OTHERWISE WE GET DEBUG LOCKED ISSUES
+      await Firestore.instance
+          .collection('sessions')
+          .document(widget.sessionId)
+          .setData(data);
       // navigate to lobby
       Navigator.of(context).pop();
       slideTransition(
@@ -824,12 +830,13 @@ class _RiversScreenState extends State<RiversScreen> {
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return Scaffold(
-                appBar: AppBar(
-                  title: Text(
-                    'Rivers',
-                  ),
+              appBar: AppBar(
+                title: Text(
+                  'Rivers',
                 ),
-                body: Container());
+              ),
+              body: Container(),
+            );
           }
           // all data for all components
           DocumentSnapshot snapshotData = snapshot.data;
@@ -845,7 +852,6 @@ class _RiversScreenState extends State<RiversScreen> {
             );
           }
           checkIfExit(data);
-          // check if current player's turn
           checkIfVibrate(data);
           return Scaffold(
             key: _scaffoldKey,

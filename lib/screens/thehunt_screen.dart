@@ -9,6 +9,7 @@ import 'package:together/services/services.dart';
 import 'package:together/help_screens/help_screens.dart';
 import 'lobby_screen.dart';
 import 'package:together/components/log.dart';
+import 'package:together/components/end_game.dart';
 
 class TheHuntScreen extends StatefulWidget {
   TheHuntScreen({this.sessionId, this.userId, this.roomCode});
@@ -42,12 +43,11 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
       // navigate to main menu
       Navigator.of(context).pop();
     } else if (data['state'] == 'lobby') {
-      // reset first player
-      String firstPlayer = data['playerIds'][0];
+      // I DON'T KNOW WHY WE NEED THIS BUT OTHERWISE WE GET DEBUG LOCKED ISSUES
       await Firestore.instance
           .collection('sessions')
           .document(widget.sessionId)
-          .updateData({'turn': firstPlayer});
+          .setData(data);
       // navigate to lobby
       Navigator.of(context).pop();
       slideTransition(

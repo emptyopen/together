@@ -8,6 +8,7 @@ import 'package:together/services/three_crowns_services.dart';
 import 'package:together/help_screens/help_screens.dart';
 import 'lobby_screen.dart';
 import 'package:together/components/log.dart';
+import 'package:together/components/end_game.dart';
 
 class ThreeCrownsScreen extends StatefulWidget {
   ThreeCrownsScreen({this.sessionId, this.userId, this.roomCode});
@@ -27,17 +28,14 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
   checkIfExit(data) async {
     // run async func to check if game is over, or back to lobby or deleted (main menu)
     if (data == null) {
-      print('game was deleted');
-
       // navigate to main menu
       Navigator.of(context).pop();
     } else if (data['state'] == 'lobby') {
-      print('moving to lobby');
-      // reset first team to green
+      // I DON'T KNOW WHY WE NEED THIS BUT OTHERWISE WE GET DEBUG LOCKED ISSUES
       await Firestore.instance
           .collection('sessions')
           .document(widget.sessionId)
-          .updateData({'turn': 'green'});
+          .setData(data);
 
       // navigate to lobby
       Navigator.of(context).pop();
@@ -2002,24 +2000,26 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return Scaffold(
-                appBar: AppBar(
-                  title: Text(
-                    'Three Crowns',
-                  ),
+              appBar: AppBar(
+                title: Text(
+                  'Three Crowns',
                 ),
-                body: Container());
+              ),
+              body: Container(),
+            );
           }
           // all data for all components
           DocumentSnapshot snapshotData = snapshot.data;
           var data = snapshotData.data;
           if (data == null) {
             return Scaffold(
-                appBar: AppBar(
-                  title: Text(
-                    'Three Crowns',
-                  ),
+              appBar: AppBar(
+                title: Text(
+                  'Three Crowns',
                 ),
-                body: Container());
+              ),
+              body: Container(),
+            );
           }
           checkIfExit(data);
           return Scaffold(
