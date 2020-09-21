@@ -6,24 +6,23 @@ import 'screens/root_screen.dart';
 void main() => runApp(MyApp());
 
 // done:
-// rivers: fix DEBUG LOCKED!!! THANK GOD
+// add first time help indicator for help
+// add first time help for account info
 
 // next up:
-// add teaser for CHIT CHAT
-// add first time help indicators!!! (for help icon button, etc.)
-// bananaphone: FIX VOTING TRANSITION!!!!!
+// 3 crowns: for joust, put previous cards in the background?
+// add vibrations to Three Crowns (becomes turn, matcher, responder, tiles change)
 // undo button not working in bananaphone 2nd+ drawings
 // add sounds and vibration
 
 // CHIT CHAT
 // inspired by Asya
 // group text conversation
-// characters are chosen by players and maybe have an agenda
+// characters are chosen by players and either: have some kind of agenda
 
 // TODO:
 // the hunt: add timer to voting!!
 // change button texture when loading during async call
-// 3 crowns: for joust, put previous cards in the background?
 // abstract: logic to ensure at least one group of words is selected
 // rivers: show stacks history
 // abstract games has funky behavior? - green wins then orange hits grey - should be over but timer glitches

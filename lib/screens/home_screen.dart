@@ -10,6 +10,7 @@ import '../services/authentication.dart';
 
 import 'package:together/components/buttons.dart';
 import 'package:together/components/marquee.dart';
+import 'package:together/components/info_box.dart';
 
 import 'settings_screen.dart';
 import 'achievements_screen.dart';
@@ -190,139 +191,162 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  // counter balance for REJOIN
-                  Container(),
-                  // SHOW ALL GAMES
-                  Text(
-                    'Quick Start',
-                    style: TextStyle(
-                      fontSize: 20,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  Text(
-                    '* no password',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  Marquee(
-                    child: getGamesMarquee(context),
-                    animationDuration: Duration(seconds: 13),
-                    backDuration: Duration(seconds: 13),
-                    pauseDuration: Duration(seconds: 3),
-                    directionMarguee: DirectionMarguee.TwoDirection,
-                  ),
-                  SizedBox(height: 40),
-                  // CREATE
-                  RaisedGradientButton(
-                    child: Text(
-                      'Create a game',
-                      style: TextStyle(
-                        fontSize: 20,
-                        color: Colors.white,
+            body: Stack(
+              children: [
+                Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      // counter balance for REJOIN
+                      Container(),
+                      // SHOW ALL GAMES
+                      Text(
+                        'Quick Start',
+                        style: TextStyle(
+                          fontSize: 20,
+                          color: Colors.grey,
+                        ),
                       ),
-                    ),
-                    height: 60,
-                    width: 200,
-                    gradient: LinearGradient(
-                      colors: <Color>[
-                        Theme.of(context).primaryColor,
-                        Theme.of(context).accentColor,
-                      ],
-                    ),
-                    onPressed: () {
-                      showDialog<Null>(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return LobbyDialog(isJoin: false);
-                        },
-                      );
-                    },
-                  ),
-                  SizedBox(
-                    height: 40,
-                  ),
-                  RaisedGradientButton(
-                    child: Text(
-                      'Join a game',
-                      style: TextStyle(
-                        fontSize: 20,
-                        color: Colors.white,
+                      Text(
+                        '* no password',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey,
+                        ),
                       ),
-                    ),
-                    height: 60,
-                    width: 200,
-                    gradient: LinearGradient(
-                      colors: <Color>[
-                        Theme.of(context).primaryColor,
-                        Theme.of(context).accentColor,
-                      ],
-                    ),
-                    onPressed: () {
-                      showDialog<Null>(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return LobbyDialog(isJoin: true);
-                        },
-                      );
-                    },
-                  ),
-                  // if player has existing game, allow rejoin
-                  StreamBuilder(
-                      stream: Firestore.instance
-                          .collection('sessions')
-                          .document(userData['currentGame'])
-                          .snapshots(),
-                      builder: (context, sessionSnapshot) {
-                        if (sessionSnapshot.hasData &&
-                            sessionSnapshot.data.data == null) {
-                          return Container();
-                        }
-                        return Column(
-                          children: <Widget>[
-                            SizedBox(
-                              height: 40,
-                            ),
-                            RaisedGradientButton(
-                              child: Text(
-                                'Rejoin game',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  color: Colors.black,
-                                ),
-                              ),
-                              height: 60,
-                              width: 200,
-                              gradient: LinearGradient(
-                                colors: <Color>[
-                                  Color.fromARGB(255, 255, 185, 0),
-                                  Color.fromARGB(255, 255, 213, 0),
-                                ],
-                              ),
-                              onPressed: () {
-                                slideTransition(
-                                  context,
-                                  LobbyScreen(
-                                    roomCode:
-                                        sessionSnapshot.data.data['roomCode'],
-                                  ),
-                                );
-                              },
-                            ),
+                      SizedBox(height: 10),
+                      Marquee(
+                        child: getGamesMarquee(context),
+                        animationDuration: Duration(seconds: 13),
+                        backDuration: Duration(seconds: 13),
+                        pauseDuration: Duration(seconds: 3),
+                        directionMarguee: DirectionMarguee.TwoDirection,
+                      ),
+                      SizedBox(height: 40),
+                      // CREATE
+                      RaisedGradientButton(
+                        child: Text(
+                          'Create a game',
+                          style: TextStyle(
+                            fontSize: 20,
+                            color: Colors.white,
+                          ),
+                        ),
+                        height: 60,
+                        width: 200,
+                        gradient: LinearGradient(
+                          colors: <Color>[
+                            Theme.of(context).primaryColor,
+                            Theme.of(context).accentColor,
                           ],
-                        );
-                      }),
-                  // offset for game list
-                  SizedBox(height: 50),
-                ],
-              ),
+                        ),
+                        onPressed: () {
+                          showDialog<Null>(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return LobbyDialog(isJoin: false);
+                            },
+                          );
+                        },
+                      ),
+                      SizedBox(
+                        height: 40,
+                      ),
+                      RaisedGradientButton(
+                        child: Text(
+                          'Join a game',
+                          style: TextStyle(
+                            fontSize: 20,
+                            color: Colors.white,
+                          ),
+                        ),
+                        height: 60,
+                        width: 200,
+                        gradient: LinearGradient(
+                          colors: <Color>[
+                            Theme.of(context).primaryColor,
+                            Theme.of(context).accentColor,
+                          ],
+                        ),
+                        onPressed: () {
+                          showDialog<Null>(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return LobbyDialog(isJoin: true);
+                            },
+                          );
+                        },
+                      ),
+                      // if player has existing game, allow rejoin
+                      StreamBuilder(
+                          stream: Firestore.instance
+                              .collection('sessions')
+                              .document(userData['currentGame'])
+                              .snapshots(),
+                          builder: (context, sessionSnapshot) {
+                            if (sessionSnapshot.hasData &&
+                                sessionSnapshot.data.data == null) {
+                              return Container();
+                            }
+                            return Column(
+                              children: <Widget>[
+                                SizedBox(
+                                  height: 40,
+                                ),
+                                RaisedGradientButton(
+                                  child: Text(
+                                    'Rejoin game',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                  height: 60,
+                                  width: 200,
+                                  gradient: LinearGradient(
+                                    colors: <Color>[
+                                      Color.fromARGB(255, 255, 185, 0),
+                                      Color.fromARGB(255, 255, 213, 0),
+                                    ],
+                                  ),
+                                  onPressed: () {
+                                    slideTransition(
+                                      context,
+                                      LobbyScreen(
+                                        roomCode: sessionSnapshot
+                                            .data.data['roomCode'],
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                            );
+                          }),
+                      // offset for game list
+                      SizedBox(height: 50),
+                    ],
+                  ),
+                ),
+                Positioned(
+                  top: 4,
+                  right: 2,
+                  child: InfoBox(
+                    text: 'Change your name here!',
+                    infoKey: 'accountSection',
+                    userId: widget.userId,
+                  ),
+                ),
+                Positioned(
+                  top: 4,
+                  right: 50,
+                  child: InfoBox(
+                    text: 'See your achievements here!',
+                    infoKey: 'achievementsSection',
+                    userId: widget.userId,
+                    dependentInfoKeys: ['accountSection'],
+                  ),
+                ),
+              ],
             ),
           );
         });

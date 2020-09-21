@@ -120,6 +120,11 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
       } else {
         data['log'].add(
             'Tie of ${data['duel']['duelerCard'][0]}, moving to joust #${data['duel']['joust']}');
+        int joustNumber = data['duel']['joust'];
+        data['duel']['oldJoustCards']['joust${joustNumber - 1}Dueler'] =
+            data['duel']['duelerCard'];
+        data['duel']['oldJoustCards']['joust${joustNumber - 1}Duelee'] =
+            data['duel']['dueleeCard'];
         data['duel']['duelerCard'] = '';
         data['duel']['dueleeCard'] = '';
       }
@@ -374,6 +379,52 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     var oppositeCardValue = !playerIsDueler(data)
         ? data['duel']['duelerCard']
         : data['duel']['dueleeCard'];
+    Widget joust1PlayerCard = Container();
+    Widget joust1OppositeCard = Container();
+    Widget joust2PlayerCard = Container();
+    Widget joust2OppositeCard = Container();
+    if (data['duel']['oldJoustCards'].containsKey('joust1Dueler')) {
+      if (playerIsDueler(data)) {
+        joust1PlayerCard = Card(
+          value: data['duel']['oldJoustCards']['joust1Dueler'],
+          size: 'small',
+        );
+        joust1OppositeCard = Card(
+          value: data['duel']['oldJoustCards']['joust1Duelee'],
+          size: 'small',
+        );
+      } else {
+        joust1PlayerCard = Card(
+          value: data['duel']['oldJoustCards']['joust1Duelee'],
+          size: 'small',
+        );
+        joust1OppositeCard = Card(
+          value: data['duel']['oldJoustCards']['joust1Dueler'],
+          size: 'small',
+        );
+      }
+    }
+    if (data['duel']['oldJoustCards'].containsKey('joust2Dueler')) {
+      if (playerIsDueler(data)) {
+        joust2PlayerCard = Card(
+          value: data['duel']['oldJoustCards']['joust2Dueler'],
+          size: 'small',
+        );
+        joust2OppositeCard = Card(
+          value: data['duel']['oldJoustCards']['joust2Duelee'],
+          size: 'small',
+        );
+      } else {
+        joust2PlayerCard = Card(
+          value: data['duel']['oldJoustCards']['joust2Duelee'],
+          size: 'small',
+        );
+        joust2OppositeCard = Card(
+          value: data['duel']['oldJoustCards']['joust2Dueler'],
+          size: 'small',
+        );
+      }
+    }
     if (playerNotInDuel) {
       playerCardValue = data['duel']['dueleeCard'];
       oppositeCardValue = data['duel']['duelerCard'];
@@ -495,13 +546,72 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
       }
     }
     return Container(
-      width: 150,
-      child: Column(
+      width: 160,
+      child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          oppositeCard,
-          SizedBox(height: 5),
-          playerCard,
+        children: [
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              data['duel']['oldJoustCards'].containsKey('joust1Dueler')
+                  ? Text(
+                      'Joust 1',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.grey,
+                      ),
+                    )
+                  : Container(),
+              SizedBox(height: 5),
+              Opacity(
+                opacity: 0.3,
+                child: joust1OppositeCard,
+              ),
+              SizedBox(height: 5),
+              Opacity(
+                opacity: 0.3,
+                child: joust1PlayerCard,
+              ),
+            ],
+          ),
+          SizedBox(
+            width: 10,
+          ),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              oppositeCard,
+              SizedBox(height: 5),
+              playerCard,
+            ],
+          ),
+          SizedBox(
+            width: 10,
+          ),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              data['duel']['oldJoustCards'].containsKey('joust2Dueler')
+                  ? Text(
+                      'Joust 2',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.grey,
+                      ),
+                    )
+                  : Container(),
+              SizedBox(height: 5),
+              Opacity(
+                opacity: 0.3,
+                child: joust2OppositeCard,
+              ),
+              SizedBox(height: 5),
+              Opacity(
+                opacity: 0.3,
+                child: joust2PlayerCard,
+              ),
+            ],
+          ),
         ],
       ),
     );

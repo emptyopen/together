@@ -11,6 +11,7 @@ import 'package:flutter/services.dart';
 import '../components/buttons.dart';
 import '../components/layouts.dart';
 import '../components/misc.dart';
+import 'package:together/components/info_box.dart';
 import '../models/models.dart';
 import '../services/three_crowns_services.dart';
 import 'package:together/help_screens/help_screens.dart';
@@ -584,6 +585,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
       'state': 'duel',
       'matchingCards': [],
       'peasantCards': [],
+      'oldJoustCards': {},
       'tilePrizes': [],
       'pillagePrize': 0,
       'matcherIndex': 0,
@@ -1176,159 +1178,172 @@ class _LobbyScreenState extends State<LobbyScreen> {
                 ),
               ],
             ),
-            body: SingleChildScrollView(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    SizedBox(height: 40),
-                    _getCountdown(context, data),
-                    Text(
-                      'Room Code:',
-                      style: TextStyle(
-                        fontSize: 24,
-                      ),
-                    ),
-                    PageBreak(
-                      width: 100,
-                    ),
-                    Text(
-                      widget.roomCode,
-                      style: TextStyle(
-                        fontSize: 34,
-                        color: Theme.of(context).primaryColor,
-                      ),
-                    ),
-                    SizedBox(
-                      height: 30,
-                    ),
-                    Text(
-                      'Players:',
-                      style: TextStyle(
-                        fontSize: 24,
-                      ),
-                    ),
-                    PageBreak(width: 50),
-                    _getPlayers(data),
-                    userId == data['leader'] &&
-                            !isStarting &&
-                            ['The Hunt', 'Bananaphone'].contains(gameName)
-                        ? Column(
-                            children: <Widget>[
-                              RaisedGradientButton(
-                                child: Text(
-                                  'Shuffle Players',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 18,
-                                  ),
-                                ),
-                                onPressed: () => shufflePlayers(data),
-                                height: 40,
-                                width: 170,
-                                gradient: LinearGradient(
-                                  colors: <Color>[
-                                    Theme.of(context).primaryColor,
-                                    Theme.of(context).accentColor,
-                                  ],
-                                ),
-                              ),
-                              SizedBox(height: 30),
-                            ],
-                          )
-                        : Container(),
-                    Text(
-                      'Spectators:',
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    PageBreak(width: 50, color: Colors.grey),
-                    _getSpectators(data),
-                    SizedBox(height: 10),
-                    userId != data['leader']
-                        ? _getSwitchSpectatorButton(data)
-                        : Container(),
-                    SizedBox(height: 20),
-                    Text('Rules:', style: TextStyle(fontSize: 20)),
-                    PageBreak(
-                      width: 50,
-                    ),
-                    getRules(context, data),
-                    userId == data['leader'] && !isStarting
-                        ? Column(
-                            children: <Widget>[
-                              SizedBox(height: 10),
-                              RaisedGradientButton(
-                                child: Text(
-                                  'Edit Rules',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 18,
-                                  ),
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    startError = '';
-                                  });
-                                  showDialog<Null>(
-                                    context: context,
-                                    builder: (BuildContext context) {
-                                      return EditRulesDialog(
-                                        game: gameName,
-                                        sessionId: sessionId,
-                                      );
-                                    },
-                                  );
-                                },
-                                height: 40,
-                                width: 130,
-                                gradient: LinearGradient(
-                                  colors: <Color>[
-                                    Theme.of(context).primaryColor,
-                                    Theme.of(context).accentColor,
-                                  ],
-                                ),
-                              ),
-                              SizedBox(height: 40),
-                              RaisedGradientButton(
-                                child: Text(
-                                  'Start Game',
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                                onPressed: () => startGame(data),
-                                height: 50,
-                                width: 160,
-                                gradient: LinearGradient(
-                                  colors: <Color>[
-                                    Color.fromARGB(255, 255, 185, 0),
-                                    Color.fromARGB(255, 255, 213, 0),
-                                  ],
-                                ),
-                              ),
-                              SizedBox(height: 10),
-                              startError == ''
-                                  ? Container()
-                                  : Text(
-                                      startError,
+            body: Stack(
+              children: [
+                SingleChildScrollView(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        SizedBox(height: 50),
+                        _getCountdown(context, data),
+                        Text(
+                          'Room Code:',
+                          style: TextStyle(
+                            fontSize: 24,
+                          ),
+                        ),
+                        PageBreak(
+                          width: 100,
+                        ),
+                        Text(
+                          widget.roomCode,
+                          style: TextStyle(
+                            fontSize: 34,
+                            color: Theme.of(context).primaryColor,
+                          ),
+                        ),
+                        SizedBox(
+                          height: 30,
+                        ),
+                        Text(
+                          'Players:',
+                          style: TextStyle(
+                            fontSize: 24,
+                          ),
+                        ),
+                        PageBreak(width: 50),
+                        _getPlayers(data),
+                        userId == data['leader'] &&
+                                !isStarting &&
+                                ['The Hunt', 'Bananaphone'].contains(gameName)
+                            ? Column(
+                                children: <Widget>[
+                                  RaisedGradientButton(
+                                    child: Text(
+                                      'Shuffle Players',
                                       style: TextStyle(
-                                        color: Colors.red,
+                                        color: Colors.white,
+                                        fontSize: 18,
                                       ),
                                     ),
-                              SizedBox(
-                                height: 30,
+                                    onPressed: () => shufflePlayers(data),
+                                    height: 40,
+                                    width: 170,
+                                    gradient: LinearGradient(
+                                      colors: <Color>[
+                                        Theme.of(context).primaryColor,
+                                        Theme.of(context).accentColor,
+                                      ],
+                                    ),
+                                  ),
+                                  SizedBox(height: 30),
+                                ],
                               )
-                            ],
-                          )
-                        : Container(),
-                    SizedBox(height: 60),
-                  ],
+                            : Container(),
+                        Text(
+                          'Spectators:',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        PageBreak(width: 50, color: Colors.grey),
+                        _getSpectators(data),
+                        SizedBox(height: 10),
+                        userId != data['leader']
+                            ? _getSwitchSpectatorButton(data)
+                            : Container(),
+                        SizedBox(height: 20),
+                        Text('Rules:', style: TextStyle(fontSize: 20)),
+                        PageBreak(
+                          width: 50,
+                        ),
+                        getRules(context, data),
+                        userId == data['leader'] && !isStarting
+                            ? Column(
+                                children: <Widget>[
+                                  SizedBox(height: 10),
+                                  RaisedGradientButton(
+                                    child: Text(
+                                      'Edit Rules',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                      ),
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        startError = '';
+                                      });
+                                      showDialog<Null>(
+                                        context: context,
+                                        builder: (BuildContext context) {
+                                          return EditRulesDialog(
+                                            game: gameName,
+                                            sessionId: sessionId,
+                                          );
+                                        },
+                                      );
+                                    },
+                                    height: 40,
+                                    width: 130,
+                                    gradient: LinearGradient(
+                                      colors: <Color>[
+                                        Theme.of(context).primaryColor,
+                                        Theme.of(context).accentColor,
+                                      ],
+                                    ),
+                                  ),
+                                  SizedBox(height: 40),
+                                  RaisedGradientButton(
+                                    child: Text(
+                                      'Start Game',
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                    onPressed: () => startGame(data),
+                                    height: 50,
+                                    width: 160,
+                                    gradient: LinearGradient(
+                                      colors: <Color>[
+                                        Color.fromARGB(255, 255, 185, 0),
+                                        Color.fromARGB(255, 255, 213, 0),
+                                      ],
+                                    ),
+                                  ),
+                                  SizedBox(height: 10),
+                                  startError == ''
+                                      ? Container()
+                                      : Text(
+                                          startError,
+                                          style: TextStyle(
+                                            color: Colors.red,
+                                          ),
+                                        ),
+                                  SizedBox(
+                                    height: 30,
+                                  )
+                                ],
+                              )
+                            : Container(),
+                        SizedBox(height: 60),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: InfoBox(
+                    text: 'Find game rules here!',
+                    infoKey: 'gameRules',
+                    userId: userId,
+                  ),
+                ),
+              ],
             ),
           );
         });

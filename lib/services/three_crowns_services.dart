@@ -196,6 +196,7 @@ cleanupDuel(data) async {
   data['duel']['duelerCard'] = '';
   data['duel']['matchingCards'] = [];
   data['duel']['peasantCards'] = [];
+  data['duel']['oldJoustCards'] = {};
   data['duel']['joust'] = 1;
   data['duel']['tilePrize'] = 0;
   data['duel']['pillagePrize'] = 0;

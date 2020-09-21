@@ -71,7 +71,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
       await Firestore.instance
           .collection('sessions')
           .document(widget.sessionId)
-          .setData(data);
+          .setData(data.data);
       // navigate to lobby
       Navigator.of(context).pop();
       slideTransition(
@@ -463,70 +463,45 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
     var stringPointsList = jsonEncode(jsonPointsList);
 
     if (data['phase'] == 'draw1') {
-      await Firestore.instance
-          .collection('sessions')
-          .document(widget.sessionId)
-          .updateData({'draw1Prompt$promptIndex': stringPointsList});
+      data['draw1Prompt$promptIndex'] = stringPointsList;
     } else if (data['phase'] == 'draw2') {
-      await Firestore.instance
-          .collection('sessions')
-          .document(widget.sessionId)
-          .updateData({'draw2Prompt$promptIndex': stringPointsList});
+      data['draw2Prompt$promptIndex'] = stringPointsList;
     } else {
       // it's draw3
-      await Firestore.instance
-          .collection('sessions')
-          .document(widget.sessionId)
-          .updateData({'draw3Prompt$promptIndex': stringPointsList});
+      data['draw3Prompt$promptIndex'] = stringPointsList;
     }
 
     // for every player, after submitting check if all drawings are done
-    var newData = (await Firestore.instance
-            .collection('sessions')
-            .document(widget.sessionId)
-            .get())
-        .data;
     if (data['phase'] == 'draw1') {
       bool allPlayersHaveDrawn = true;
       data['playerIds'].asMap().forEach((i, _) {
-        if (!newData.containsKey('draw1Prompt$i')) {
+        if (!data.containsKey('draw1Prompt$i')) {
           allPlayersHaveDrawn = false;
         }
       });
       if (allPlayersHaveDrawn) {
-        // update phase to describe1
-        print('will update phase to describe1');
-        await Firestore.instance
-            .collection('sessions')
-            .document(widget.sessionId)
-            .updateData({'phase': 'describe1'});
+        data['phase'] = 'describe1';
       }
     } else if (data['phase'] == 'draw2') {
       bool allPlayersHaveDrawn = true;
       data['playerIds'].asMap().forEach((i, _) {
-        if (!newData.containsKey('draw2Prompt$i')) {
+        if (!data.containsKey('draw2Prompt$i')) {
           allPlayersHaveDrawn = false;
         }
       });
       if (allPlayersHaveDrawn) {
-        await Firestore.instance
-            .collection('sessions')
-            .document(widget.sessionId)
-            .updateData({'phase': 'describe2'});
+        data['phase'] = 'describe2';
       }
     } else {
       // draw3
       bool allPlayersHaveDrawn = true;
       data['playerIds'].asMap().forEach((i, _) {
-        if (!newData.containsKey('draw3Prompt$i')) {
+        if (!data.containsKey('draw3Prompt$i')) {
           allPlayersHaveDrawn = false;
         }
       });
       if (allPlayersHaveDrawn) {
-        await Firestore.instance
-            .collection('sessions')
-            .document(widget.sessionId)
-            .updateData({'phase': 'describe3'});
+        data['phase'] = 'describe3';
       }
     }
 
@@ -534,6 +509,11 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
       pointsList.clear();
       // TODO: should probably also reset painting tools?
     });
+
+    await Firestore.instance
+        .collection('sessions')
+        .document(widget.sessionId)
+        .setData(data);
   }
 
   getDrawing(data) {
@@ -850,80 +830,47 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
 
     // send pointsList to Firestore sessions collection
     if (data['phase'] == 'describe1') {
-      await Firestore.instance
-          .collection('sessions')
-          .document(widget.sessionId)
-          .updateData(
-              {'describe1Prompt$promptIndex': descriptionController.text});
+      data['describe1Prompt$promptIndex'] = descriptionController.text;
     } else if (data['phase'] == 'describe2') {
-      await Firestore.instance
-          .collection('sessions')
-          .document(widget.sessionId)
-          .updateData(
-              {'describe2Prompt$promptIndex': descriptionController.text});
+      data['describe2Prompt$promptIndex'] = descriptionController.text;
     } else if (data['phase'] == 'describe3') {
-      await Firestore.instance
-          .collection('sessions')
-          .document(widget.sessionId)
-          .updateData(
-              {'describe3Prompt$promptIndex': descriptionController.text});
+      data['describe3Prompt$promptIndex'] = descriptionController.text;
     }
 
     // for every player, after submitting check if all drawings are done
-    var newData = (await Firestore.instance
-            .collection('sessions')
-            .document(widget.sessionId)
-            .get())
-        .data;
     if (data['phase'] == 'describe1') {
       bool allPlayersHaveDescribed = true;
       data['playerIds'].asMap().forEach((i, _) {
-        if (!newData.containsKey('describe1Prompt$i')) {
+        if (!data.containsKey('describe1Prompt$i')) {
           allPlayersHaveDescribed = false;
         }
       });
       if (allPlayersHaveDescribed) {
-        print('will update phase to draw2');
-        await Firestore.instance
-            .collection('sessions')
-            .document(widget.sessionId)
-            .updateData({'phase': 'draw2'});
+        data['phase'] = 'draw2';
       }
     } else if (data['phase'] == 'describe2') {
-      bool allPlayersHaveDescribed = true;
-      data['playerIds'].asMap().forEach((i, _) {
-        if (!newData.containsKey('describe2Prompt$i')) {
-          allPlayersHaveDescribed = false;
+      if (data['rules']['numDrawDescribe'] == 2) {
+        bool allPlayersHaveDescribed = true;
+        data['playerIds'].asMap().forEach((i, _) {
+          if (!data.containsKey('describe2Prompt$i')) {
+            allPlayersHaveDescribed = false;
+          }
+        });
+        if (allPlayersHaveDescribed) {
+          data['phase'] = 'vote';
         }
-      });
-      if (allPlayersHaveDescribed) {
-        if (data['rules']['numDrawDescribe'] == 2) {
-          print('will update phase to vote');
-          await Firestore.instance
-              .collection('sessions')
-              .document(widget.sessionId)
-              .updateData({'phase': 'vote'});
-        } else {
-          print('will update phase to draw3');
-          await Firestore.instance
-              .collection('sessions')
-              .document(widget.sessionId)
-              .updateData({'phase': 'draw3'});
-        }
+      } else {
+        data['phase'] = 'draw3';
       }
     } else if (data['phase'] == 'describe3') {
       bool allPlayersHaveDescribed = true;
       data['playerIds'].asMap().forEach((i, _) {
-        if (!newData.containsKey('describe3Prompt$i')) {
+        if (!data.containsKey('describe3Prompt$i')) {
           allPlayersHaveDescribed = false;
         }
       });
       if (allPlayersHaveDescribed) {
-        print('will update phase to vote');
-        await Firestore.instance
-            .collection('sessions')
-            .document(widget.sessionId)
-            .updateData({'phase': 'vote'});
+        data['phase'] = 'vote';
       }
     }
 
@@ -932,6 +879,11 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
       // clear drawing
       pointsList.clear();
     });
+
+    await Firestore.instance
+        .collection('sessions')
+        .document(widget.sessionId)
+        .setData(data);
   }
 
   indexUpdateCallback(String phase, int promptIndex, data) {
@@ -1225,23 +1177,16 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
           getSubmitterIndex(data['describe3'], votes['describe3'], data);
       scores[describe3Vote] += 1;
     }
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .updateData({'scores': scores});
+    data['scores'] = scores;
 
     // update voted status
     var playerIndex = data['playerIds'].indexOf(widget.userId);
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .updateData({'votes'[playerIndex]: true});
+    data['votes'][playerIndex] = true;
 
     // check if all votes are in
     var sum = scores.reduce((a, b) => a + b);
     var expectedSum = data['playerIds'].length *
         (data['rules']['numDrawDescribe'] == 2 ? 4 : 6);
-    print('$sum $expectedSum');
     if (sum >= expectedSum * data['round']) {
       // if so, check if there is another round
       // new round = increment round and reset all submissions
