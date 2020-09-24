@@ -8,9 +8,9 @@ void main() => runApp(MyApp());
 // done:
 // add first time help indicator for help
 // add first time help for account info
+// 3 crowns: for joust, put previous cards in the background?
 
 // next up:
-// 3 crowns: for joust, put previous cards in the background?
 // add vibrations to Three Crowns (becomes turn, matcher, responder, tiles change)
 // undo button not working in bananaphone 2nd+ drawings
 // add sounds and vibration

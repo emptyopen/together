@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:together/components/buttons.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:flutter/services.dart';
 
 import 'package:together/services/services.dart';
 import 'package:together/services/three_crowns_services.dart';
@@ -24,6 +25,9 @@ class ThreeCrownsScreen extends StatefulWidget {
 class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   Map selectedTiles = {};
+  var currDuelerIndex = 0;
+  var currDueleeIndex = 1;
+  var currDuelPhase = 'duel';
 
   checkIfExit(data) async {
     // run async func to check if game is over, or back to lobby or deleted (main menu)
@@ -48,6 +52,27 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     }
   }
 
+  checkIfVibrate(data) {
+    // turn
+    var playerIndex = data['playerIds'].indexOf(widget.userId);
+    if (currDuelerIndex != data['duel']['duelerIndex']) {
+      currDuelerIndex = data['duel']['duelerIndex'];
+      currDueleeIndex = data['duel']['dueleeIndex'];
+      if ([currDuelerIndex, currDueleeIndex].contains(playerIndex)) {
+        HapticFeedback.vibrate();
+        HapticFeedback.vibrate();
+      } else {
+        HapticFeedback.vibrate();
+      }
+    }
+
+    // phase
+    if (currDuelPhase != data['duel']['phase']) {
+      currDuelPhase = data['duel']['phase'];
+      HapticFeedback.vibrate();
+    }
+  }
+
   returnCard(data) async {
     // check if both cards are played, if so show snackbar (duel already started!)
     if (data['duel']['duelerCard'] != '' && data['duel']['dueleeCard'] != '') {
@@ -55,7 +80,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
         content: Text('Duel has already started!'),
         duration: Duration(seconds: 3),
       ));
-      // return;
+      return;
     }
     var playerIndex = data['playerIds'].indexOf(widget.userId);
     if (playerIndex == data['duel']['duelerIndex']) {
@@ -66,6 +91,9 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
       data['player${playerIndex}Hand'].add(data['duel']['dueleeCard']);
       data['duel']['dueleeCard'] = '';
     }
+
+    HapticFeedback.heavyImpact();
+
     await Firestore.instance
         .collection('sessions')
         .document(widget.sessionId)
@@ -283,6 +311,8 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
       return;
     }
     data['player${playerIndex}Hand'].removeAt(i);
+
+    HapticFeedback.heavyImpact();
 
     await Firestore.instance
         .collection('sessions')
@@ -787,6 +817,8 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     // go to screen where crown-owners pick their letter
     data['state'] = 'roundEnd';
 
+    HapticFeedback.heavyImpact();
+
     await Firestore.instance
         .collection('sessions')
         .document(widget.sessionId)
@@ -828,6 +860,8 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     data['log'].add(
         '$playerName burned $totalValue pts for $tilesTransmogrified tiles: $logString');
 
+    HapticFeedback.heavyImpact();
+
     await Firestore.instance
         .collection('sessions')
         .document(widget.sessionId)
@@ -835,6 +869,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
   }
 
   showPlayersDialog(data) {
+    HapticFeedback.heavyImpact();
     List<Widget> players = [
       SizedBox(
         height: 25,
@@ -1374,6 +1409,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
   }
 
   toggleTile(val, i) async {
+    HapticFeedback.heavyImpact();
     setState(() {
       if (selectedTiles.containsKey(i)) {
         selectedTiles[i] = [!selectedTiles[i][0], val];
@@ -2132,6 +2168,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
             );
           }
           checkIfExit(data);
+          checkIfVibrate(data);
           return Scaffold(
             key: _scaffoldKey,
             appBar: AppBar(
@@ -2142,7 +2179,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
                 IconButton(
                   icon: Icon(Icons.info),
                   onPressed: () {
-                    // HapticFeedback.heavyImpact();
+                    HapticFeedback.heavyImpact();
                     Navigator.of(context).push(
                       PageRouteBuilder(
                         opaque: false,
