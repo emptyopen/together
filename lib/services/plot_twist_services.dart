@@ -1,6 +1,6 @@
 var storyBeginnings = {
   'The Elevator':
-      'The elevator grinds to a halt somewhere between the 26th and 27th floors of the Empire State building. ',
+      'A sputtering noise is quickly followed by a gutteral screech, and the elevator grinds to a halt.',
   'The Mountain Lodge':
       'The hodgepodge group of hikers get stranded by a rogue blizzard. Shuffling in one by one out of the raging snowstorm, '
           'they begin to introduce themselves.',
@@ -32,8 +32,33 @@ var exampleCharacters = {
         'Just completed her first year of college, undecided major. Very friendly party girl.',
   },
   'mike': {
-    'name': 'Mike Sugimoto',
+    'name': 'Mike Chan',
     'age': 34,
-    'description': 'Biggest passion in life is '
-  }
+    'description': 'Biggest passion in life is skateboarding, despite his age.'
+  },
+  'penelope': {
+    'name': 'Penelope Cruz',
+    'age': 24,
+    'description':
+        'A collegiate volleyball champion - and unrivaled in the ability to get wasted on a Friday evening.',
+  },
+  'angela': {
+    'name': 'Angela Murkinson',
+    'age': 31,
+    'description': 'A spy from an unknown European country.',
+  },
+  'jim': {
+    'name': 'Jim Jackson',
+    'background':
+        'A local bus driver, driving buses as a front for trading in international arms.',
+  },
+  'dexter': {
+    'name': 'Dexter Bax',
+    'background': 'A forensic scientist working a local case.',
+  },
+  'kiko': {
+    'name': 'Kiko Hanayama',
+    'background':
+        'The relentless peace advocate. Stops at nothing to have everyone get along.'
+  },
 };

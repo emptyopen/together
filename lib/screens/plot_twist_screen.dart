@@ -7,6 +7,7 @@ import 'package:together/help_screens/help_screens.dart';
 import 'lobby_screen.dart';
 import 'package:together/components/end_game.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import '../services/plot_twist_services.dart';
 
 class PlotTwistScreen extends StatefulWidget {
   PlotTwistScreen({this.sessionId, this.userId, this.roomCode});
@@ -74,80 +75,85 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
   }
 
   getPlayerColor(player, data) {
-    return Colors.green;
+    if (data['narrators'].contains(player)) {
+      return Colors.grey[900];
+    }
+    var colorString = data['playerColors'][player];
+    switch (colorString) {
+      case 'green':
+        return Colors.green.withAlpha(180);
+        break;
+      case 'blue':
+        return Colors.blue.withAlpha(180);
+        break;
+      case 'purple':
+        return Colors.purple.withAlpha(180);
+        break;
+      case 'orange':
+        return Colors.orange.withAlpha(180);
+        break;
+      case 'lime':
+        return Colors.lime.withAlpha(180);
+        break;
+      case 'pink':
+        return Colors.pink.withAlpha(180);
+        break;
+      case 'red':
+        return Colors.red.withAlpha(180);
+        break;
+      case 'brown':
+        return Colors.brown.withAlpha(180);
+        break;
+      case 'cyan':
+        return Colors.cyan.withAlpha(180);
+        break;
+      case 'teal':
+        return Colors.teal.withAlpha(180);
+        break;
+    }
+    return Colors.green[700];
   }
 
   getChatBoxes(data) {
     List<Widget> chatboxes = [];
-    data['texts'].forEach((v) {
+    String lastPlayer = 'narrator';
+    data['texts'].reversed.forEach((v) {
       String alignment = 'left';
+      bool isRepeated = lastPlayer == v['playerId'];
       bool isNarrator = false;
-      if (isNarrator) {
-        // is narrator
+      if (data['narrators'].contains(v['playerId'])) {
         alignment = 'center';
-      }
-      if (true) {
-        // is self
+        isNarrator = true;
+      } else if (widget.userId == v['playerId']) {
         alignment = 'right';
       }
       chatboxes.add(
         Chatbox(
           text: v['text'],
           timestamp: v['timestamp'].toString(),
-          person: v['playerId'],
+          person: data['playerNames'][v['playerId']],
           alignment: alignment,
           backgroundColor: getPlayerColor(v['playerId'], data),
           fontColor: Colors.white,
-          suppressName: isNarrator,
+          suppressName: isRepeated,
+          isNarrator: isNarrator,
         ),
       );
+      lastPlayer = v['playerId'];
     });
-    chatboxes.add(Chatbox(
-      text: 'This is me',
-      person: 'Matt',
-      timestamp: '10:14:30',
-      alignment: 'right',
-      backgroundColor: Colors.green,
-      fontColor: Colors.white,
-    ));
-    chatboxes.add(Chatbox(
-      text: 'Definitely a stranger',
-      person: 'John',
-      timestamp: '10:13:12',
-      alignment: 'left',
-      backgroundColor: Colors.blue,
-      fontColor: Colors.white,
-    ));
-    chatboxes.add(Chatbox(
-      text: 'This is a stranger',
-      person: 'John',
-      timestamp: '10:13:12',
-      alignment: 'left',
-      backgroundColor: Colors.blue,
-      fontColor: Colors.white,
-      suppressName: true,
-    ));
-    chatboxes.add(Chatbox(
-      text: 'This is another stranger',
-      person: 'Lex',
-      timestamp: '10:11:41',
-      alignment: 'left',
-      backgroundColor: Colors.purple,
-      fontColor: Colors.white,
-    ));
-    chatboxes.add(Chatbox(
-      text: 'This is the narrator',
-      person: 'narrator',
-      timestamp: '10:11:58',
-      alignment: 'center',
-      backgroundColor: Colors.grey,
-      fontColor: Colors.white,
-      suppressName: true,
-    ));
-    return SingleChildScrollView(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: chatboxes,
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(
+          color: Colors.grey,
+        ),
+      ),
+      padding: EdgeInsets.all(10),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: chatboxes,
+        ),
       ),
     );
   }
@@ -155,12 +161,28 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
   sendMessage(data) async {
     // TODO: add some kind of retry logic for clashes
 
-    print('will send ${_controller.text}');
+    if (_controller.text == '') {
+      return;
+    }
+
     var message = {
       'playerId': widget.userId,
       'text': _controller.text,
-      'timestamp': 
+      'timestamp': DateTime.now(),
     };
+
+    data['texts'].add(message);
+
+    _controller.text = '';
+
+    FocusScope.of(context).unfocus();
+
+    await Firestore.instance
+        .collection('sessions')
+        .document(widget.sessionId)
+        .setData(data);
+
+    HapticFeedback.vibrate();
   }
 
   getInputBox(data) {
@@ -245,10 +267,12 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
             ),
           ),
           SizedBox(height: 10),
+          getInputBox(data),
+          SizedBox(height: 10),
           Container(
             width: screenWidth * 0.8,
             height: screenHeight * 0.55,
-            padding: EdgeInsets.all(20),
+            padding: EdgeInsets.all(10),
             decoration: BoxDecoration(
               border: Border.all(
                 color: Theme.of(context).highlightColor,
@@ -257,8 +281,6 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
             ),
             child: getChatBoxes(data),
           ),
-          SizedBox(height: 10),
-          getInputBox(data),
           SizedBox(height: 20),
           widget.userId == data['leader']
               ? EndGameButton(
@@ -267,12 +289,7 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
                   height: 30,
                   width: 100,
                 )
-              : Text(
-                  '(Glorious leader can take you back to the lobby)',
-                  style: TextStyle(
-                    fontSize: 12,
-                  ),
-                ),
+              : Container(),
         ],
       ),
     );
@@ -317,6 +334,7 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
           checkIfVibrate(data);
           return Scaffold(
             key: _scaffoldKey,
+            resizeToAvoidBottomInset: false,
             appBar: AppBar(
               title: Text(
                 'Plot Twist',
@@ -354,6 +372,7 @@ class Chatbox extends StatelessWidget {
   final Color backgroundColor;
   final Color fontColor;
   final bool suppressName;
+  final bool isNarrator;
 
   Chatbox({
     this.text,
@@ -363,6 +382,7 @@ class Chatbox extends StatelessWidget {
     this.backgroundColor,
     this.fontColor,
     this.suppressName = false,
+    this.isNarrator = false,
   });
 
   @override
@@ -371,7 +391,18 @@ class Chatbox extends StatelessWidget {
       padding: const EdgeInsets.all(3),
       child: Column(
         children: [
-          suppressName
+          isNarrator ? SizedBox(height: 10) : Container(),
+          isNarrator
+              ? Text(
+                  'Narrator',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.grey,
+                  ),
+                )
+              : Container(),
+          isNarrator ? SizedBox(height: 5) : Container(),
+          suppressName || isNarrator
               ? Container()
               : Row(
                   children: [
@@ -381,7 +412,7 @@ class Chatbox extends StatelessWidget {
                     Text(
                       '$person',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 10,
                         color: Colors.white.withAlpha(200),
                       ),
                     ),
@@ -390,14 +421,18 @@ class Chatbox extends StatelessWidget {
                         : Container(),
                   ],
                 ),
-          suppressName ? Container() : SizedBox(height: 2),
+          suppressName || isNarrator ? Container() : SizedBox(height: 2),
           Row(
             children: [
               ['center', 'right'].contains(alignment) ? Spacer() : Container(),
               Container(
                 padding: EdgeInsets.fromLTRB(15, 10, 15, 10),
+                constraints: BoxConstraints(maxWidth: 200),
                 decoration: BoxDecoration(
-                  border: Border.all(),
+                  border: Border.all(
+                    color: Colors.grey,
+                    width: 1,
+                  ),
                   borderRadius: BorderRadius.circular(5),
                   color: backgroundColor,
                 ),
@@ -405,7 +440,7 @@ class Chatbox extends StatelessWidget {
                   text,
                   style: TextStyle(
                     color: fontColor,
-                    fontSize: 16,
+                    fontSize: 12,
                   ),
                 ),
               ),

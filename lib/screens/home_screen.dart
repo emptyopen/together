@@ -94,6 +94,16 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               SizedBox(width: intervalLength),
               QuickStartButton(
+                gameName: 'Plot Twist',
+                subtitle: 'Chit & chat!',
+                icon: Icon(
+                  MdiIcons.chatProcessingOutline,
+                  color: colorPlotTwist,
+                  size: 30,
+                ),
+              ),
+              SizedBox(width: intervalLength),
+              QuickStartButton(
                 gameName: 'Three Crowns',
                 subtitle: 'Rise of the\npeasants!',
                 icon: Icon(
@@ -119,16 +129,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: Icon(
                   MdiIcons.phoneSettings,
                   color: colorBananaphone,
-                  size: 30,
-                ),
-              ),
-              SizedBox(width: intervalLength),
-              QuickStartButton(
-                gameName: 'Plot Twist',
-                subtitle: 'Coming soon!',
-                icon: Icon(
-                  MdiIcons.chatProcessingOutline,
-                  color: colorPlotTwist,
                   size: 30,
                 ),
               ),
@@ -191,6 +191,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
+            resizeToAvoidBottomInset: false,
             body: Stack(
               children: [
                 Center(

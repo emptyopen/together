@@ -14,6 +14,7 @@ import '../components/misc.dart';
 import 'package:together/components/info_box.dart';
 import '../models/models.dart';
 import '../services/three_crowns_services.dart';
+import '../services/plot_twist_services.dart';
 import 'package:together/help_screens/help_screens.dart';
 import 'package:together/constants/values.dart';
 import 'package:together/services/services.dart';
@@ -672,6 +673,13 @@ class _LobbyScreenState extends State<LobbyScreen> {
       return;
     }
 
+    if (data['playerIds'].length - data['narrators'].length > 10) {
+      setState(() {
+        startError = 'Max players is ${10 + data['narrators'].length}.';
+      });
+      return;
+    }
+
     // clear error if we are good to start
     setState(() {
       startError = '';
@@ -688,8 +696,33 @@ class _LobbyScreenState extends State<LobbyScreen> {
           .data['name'];
     }
 
+    // add player colors randomly
+    var possibleColors = [
+      'green',
+      'blue',
+      'pink',
+      'orange',
+      'purple',
+      'lime',
+      'red',
+      'brown',
+      'cyan',
+      'teal',
+    ];
+    possibleColors.shuffle();
+    var playerColors = {};
+    data['playerIds'].asMap().forEach((i, v) {
+      playerColors[v] = possibleColors[i];
+    });
+
     // initialize conversation
-    data['texts'] = [];
+    data['texts'] = [
+      {
+        'playerId': data['narrators'][0],
+        'text': storyBeginnings[data['rules']['location']],
+        'timestamp': DateTime.now(),
+      }
+    ];
 
     // determine narrators randomly
     playerIds.shuffle();
@@ -1338,7 +1371,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
                         PageBreak(width: 50, color: Colors.grey),
                         _getSpectators(data),
                         SizedBox(height: 10),
-                        userId != data['leader']
+                        userId != data['leader'] ||
+                                data['spectatorIds'].contains(data['leader'])
                             ? _getSwitchSpectatorButton(data)
                             : Container(),
                         SizedBox(height: 20),

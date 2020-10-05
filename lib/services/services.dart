@@ -181,8 +181,6 @@ createGame(BuildContext context, String game, String password, bool pop) async {
     case 'Rivers':
       sessionContents['turn'] = userId;
       break;
-    case 'Plot Twist':
-      break;
   }
   var result =
       await Firestore.instance.collection('sessions').add(sessionContents);

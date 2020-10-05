@@ -9,17 +9,17 @@ void main() => runApp(MyApp());
 
 // next up:
 // undo button not working in bananaphone 2nd+ drawings
-// add sounds and vibration
-
 // PLOT TWIST: (formerly Chit Chat and Hear Me Out):
-// inspired by Asya
-// group text conversation, total free form
-// initially everyone creates a character, and the characters get randomly assigned (including yourself)
-// players decide when the story is over with a toggle button
-// when the story is over, if anyone has correctly identified who is who, they "win"
-// need to decide rules of when the narrator can speak (alternate multiple narrators?)
+// - add character selection / creation
+// - add button to match players to characters
+// - add button to vote to end
+// - add capability for narrator to cast poll, and for players to vote
+// - add final scoreboard screen with "winners" who guessed correctly
+// - alternate ability for narrators to update the story
+// - add choices of locations in lobby
 
 // TODO:
+// add sounds and vibration
 // the hunt: add timer to voting!!
 // change button texture when loading during async call
 // abstract: logic to ensure at least one group of words is selected
