@@ -22,6 +22,7 @@ import 'package:together/screens/abstract_screen.dart';
 import 'package:together/screens/bananaphone_screen.dart';
 import 'package:together/screens/three_crowns_screen.dart';
 import 'package:together/screens/rivers_screen.dart';
+import 'package:together/screens/plot_twist_screen.dart';
 
 class LobbyScreen extends StatefulWidget {
   LobbyScreen({Key key, this.roomCode}) : super(key: key);
@@ -133,6 +134,16 @@ class _LobbyScreenState extends State<LobbyScreen> {
               slideTransition(
                 context,
                 RiversScreen(
+                  sessionId: sessionId,
+                  userId: userId,
+                  roomCode: widget.roomCode,
+                ),
+              );
+              break;
+            case 'Plot Twist':
+              slideTransition(
+                context,
+                PlotTwistScreen(
                   sessionId: sessionId,
                   userId: userId,
                   roomCode: widget.roomCode,
@@ -651,6 +662,45 @@ class _LobbyScreenState extends State<LobbyScreen> {
     return data;
   }
 
+  setupPlotTwist(data) async {
+    // verify that there are sufficient number of players
+    if (data['playerIds'].length < data['rules']['numNarrators'] + 2) {
+      setState(() {
+        startError =
+            'Need at least ${data['rules']['numNarrators'] + 2} players for ${data['rules']['numNarrators']} narrators.';
+      });
+      return;
+    }
+
+    // clear error if we are good to start
+    setState(() {
+      startError = '';
+    });
+
+    // add player names
+    var playerIds = data['playerIds'];
+    data['playerNames'] = {};
+    for (int i = 0; i < playerIds.length; i++) {
+      data['playerNames'][playerIds[i]] = (await Firestore.instance
+              .collection('users')
+              .document(playerIds[i])
+              .get())
+          .data['name'];
+    }
+
+    // initialize conversation
+    data['texts'] = [];
+
+    // determine narrators randomly
+    playerIds.shuffle();
+    data['narrators'] = [];
+    for (int i = 0; i < data['rules']['numNarrators']; i++) {
+      data['narrators'].add(playerIds[i]);
+    }
+
+    return data;
+  }
+
   startGame(data) async {
     // initialize final values/rules for games
     switch (gameName) {
@@ -677,6 +727,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
       case 'Rivers':
         print('Setting up Rivers game...');
         data = await setupRivers(data);
+        break;
+
+      case 'Plot Twist':
+        print('Setting up Plot Twist game...');
+        data = await setupPlotTwist(data);
         break;
     }
 
@@ -910,6 +965,35 @@ class _LobbyScreenState extends State<LobbyScreen> {
                 ),
                 Text(
                   rules['handSize'].toString(),
+                  style: TextStyle(fontSize: 18),
+                ),
+              ],
+            ),
+          ],
+        );
+        break;
+      case 'Plot Twist':
+        return Column(
+          children: <Widget>[
+            RulesContainer(rules: <Widget>[
+              Text(
+                'Location:',
+                style: TextStyle(fontSize: 14),
+              ),
+              Text(
+                rules['location'],
+                style: TextStyle(fontSize: 18),
+              ),
+            ]),
+            SizedBox(height: 5),
+            RulesContainer(
+              rules: <Widget>[
+                Text(
+                  'Number of narrators:',
+                  style: TextStyle(fontSize: 14),
+                ),
+                Text(
+                  rules['numNarrators'].toString(),
                   style: TextStyle(fontSize: 18),
                 ),
               ],
@@ -1170,6 +1254,9 @@ class _LobbyScreenState extends State<LobbyScreen> {
                             case 'Three Crowns':
                               return ThreeCrownsScreenHelp();
                               break;
+                            case 'Plot Twist':
+                              return PlotTwistScreenHelp();
+                              break;
                           }
                         },
                       ),
@@ -1421,6 +1508,10 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
       case 'Rivers':
         rules['cardRange'] = sessionData['rules']['cardRange'];
         rules['handSize'] = sessionData['rules']['handSize'];
+        break;
+      case 'Plot Twist':
+        rules['location'] = sessionData['rules']['location'];
+        rules['numNarrators'] = sessionData['rules']['numNarrators'];
         break;
     }
     if (widget.game == 'The Hunt') {
@@ -2020,6 +2111,95 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
                     },
                     items:
                         <int>[5, 6, 7].map<DropdownMenuItem<int>>((int value) {
+                      return DropdownMenuItem<int>(
+                        value: value,
+                        child: Text(value.toString(),
+                            style: TextStyle(fontFamily: 'Balsamiq')),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            Container(
+              child: FlatButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('Cancel'),
+              ),
+            ),
+            FlatButton(
+              onPressed: () {
+                updateRules();
+              },
+              child: Text('Update'),
+            )
+          ],
+        );
+        break;
+      case 'Plot Twist':
+        return AlertDialog(
+          title: Text('Edit game rules:'),
+          contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),
+          content: Container(
+            // decoration: BoxDecoration(border: Border.all()),
+            height: 170,
+            width: width * 0.95,
+            child: ListView(
+              children: <Widget>[
+                SizedBox(height: 20),
+                Text('Location:'),
+                Container(
+                  width: 80,
+                  child: DropdownButton<String>(
+                    isExpanded: true,
+                    value: rules['location'],
+                    iconSize: 24,
+                    elevation: 16,
+                    style: TextStyle(color: Theme.of(context).primaryColor),
+                    underline: Container(
+                      height: 2,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    onChanged: (String newValue) {
+                      setState(() {
+                        rules['location'] = newValue;
+                      });
+                    },
+                    items: <String>['The Elevator', 'Not the elevator']
+                        .map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value.toString(),
+                            style: TextStyle(fontFamily: 'Balsamiq')),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                SizedBox(height: 20),
+                Text('Number of narrators:'),
+                Container(
+                  width: 80,
+                  child: DropdownButton<int>(
+                    isExpanded: true,
+                    value: rules['handSize'],
+                    iconSize: 24,
+                    elevation: 16,
+                    style: TextStyle(color: Theme.of(context).primaryColor),
+                    underline: Container(
+                      height: 2,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    onChanged: (int newValue) {
+                      setState(() {
+                        rules['handSize'] = newValue;
+                      });
+                    },
+                    items: <int>[1, 2, 3, 4]
+                        .map<DropdownMenuItem<int>>((int value) {
                       return DropdownMenuItem<int>(
                         value: value,
                         child: Text(value.toString(),

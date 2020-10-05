@@ -112,6 +112,13 @@ getDefaultRules(String gameName) {
         'cardRange': 100,
         'handSize': 7,
       };
+      break;
+    case 'Plot Twist':
+      return {
+        'location': 'The Elevator',
+        'numNarrators': 1,
+      };
+      break;
   }
 }
 
@@ -173,6 +180,8 @@ createGame(BuildContext context, String game, String password, bool pop) async {
       break;
     case 'Rivers':
       sessionContents['turn'] = userId;
+      break;
+    case 'Plot Twist':
       break;
   }
   var result =

@@ -227,7 +227,6 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
             SizedBox(height: 5),
             widget.userId == data['leader']
                 ? EndGameButton(
-                    gameName: 'Bananaphone',
                     sessionId: widget.sessionId,
                     fontSize: 14,
                     height: 30,
@@ -1404,7 +1403,6 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
         SizedBox(height: 20),
         widget.userId == data['leader']
             ? EndGameButton(
-                gameName: 'Bananaphone',
                 sessionId: widget.sessionId,
                 fontSize: 20,
                 height: 40,

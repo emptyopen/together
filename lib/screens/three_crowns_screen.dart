@@ -1900,7 +1900,6 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
                         sessionId: widget.sessionId,
                         height: 35,
                         width: 100,
-                        gameName: 'Three Crowns',
                       ),
                     ],
                   )
@@ -2125,7 +2124,6 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
                       sessionId: widget.sessionId,
                       height: 35,
                       width: 100,
-                      gameName: 'Three Crowns',
                     ),
                   ],
                 )

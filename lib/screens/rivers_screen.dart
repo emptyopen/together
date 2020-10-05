@@ -706,7 +706,6 @@ class _RiversScreenState extends State<RiversScreen> {
             isSpectator ? Container() : getHand(data),
             widget.userId == data['leader']
                 ? EndGameButton(
-                    gameName: 'Rivers',
                     sessionId: widget.sessionId,
                     fontSize: 14,
                     height: 30,
@@ -803,7 +802,6 @@ class _RiversScreenState extends State<RiversScreen> {
           SizedBox(height: 50),
           widget.userId == data['leader']
               ? EndGameButton(
-                  gameName: 'Rivers',
                   sessionId: widget.sessionId,
                   fontSize: 14,
                   height: 30,

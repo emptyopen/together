@@ -852,7 +852,6 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
                           SizedBox(height: 30),
                           widget.userId == data['leader']
                               ? EndGameButton(
-                                  gameName: 'The Hunt',
                                   sessionId: widget.sessionId,
                                   fontSize: 18,
                                   height: 40,

@@ -5,17 +5,12 @@ import 'package:together/components/buttons.dart';
 
 class EndGameButton extends StatelessWidget {
   final String sessionId;
-  final String gameName;
   final double fontSize;
   final double height;
   final double width;
 
   EndGameButton(
-      {this.sessionId,
-      this.gameName,
-      this.fontSize = 14,
-      this.height = 30,
-      this.width = 100});
+      {this.sessionId, this.fontSize = 14, this.height = 30, this.width = 100});
   @override
   Widget build(BuildContext context) {
     return RaisedGradientButton(
@@ -31,7 +26,6 @@ class EndGameButton extends StatelessWidget {
           context: context,
           builder: (BuildContext context) {
             return EndGameDialog(
-              game: gameName,
               sessionId: sessionId,
             );
           },
@@ -50,9 +44,8 @@ class EndGameButton extends StatelessWidget {
 }
 
 class EndGameDialog extends StatefulWidget {
-  EndGameDialog({this.game, this.sessionId});
+  EndGameDialog({this.sessionId});
 
-  final String game;
   final String sessionId;
 
   @override

@@ -6,19 +6,18 @@ import 'screens/root_screen.dart';
 void main() => runApp(MyApp());
 
 // done:
-// add first time help indicator for help
-// add first time help for account info
-// 3 crowns: for joust, put previous cards in the background?
 
 // next up:
-// add vibrations to Three Crowns (becomes turn, matcher, responder, tiles change)
 // undo button not working in bananaphone 2nd+ drawings
 // add sounds and vibration
 
-// CHIT CHAT
+// PLOT TWIST: (formerly Chit Chat and Hear Me Out):
 // inspired by Asya
-// group text conversation
-// characters are chosen by players and either: have some kind of agenda
+// group text conversation, total free form
+// initially everyone creates a character, and the characters get randomly assigned (including yourself)
+// players decide when the story is over with a toggle button
+// when the story is over, if anyone has correctly identified who is who, they "win"
+// need to decide rules of when the narrator can speak (alternate multiple narrators?)
 
 // TODO:
 // the hunt: add timer to voting!!

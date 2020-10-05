@@ -129,6 +129,28 @@ class ThreeCrownsScreenHelp extends StatelessWidget {
   }
 }
 
+class PlotTwistScreenHelp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return HelpScreen(
+      title: 'Plot Twist: Rules',
+      information: [
+        '    Welcome to Plot Twist! If you\'re looking for a game with basically no rules and total freedom for creative expression, this is it.'
+            '\n\n    The objective of the game is not so much to win as it is to have fun and come up with a story. Essentially, all of the players '
+            'will take part in a group chat conversation. You will choose or make up a character, and act as that character in the chat room.',
+        '    Narrators will be randomly chosen - they control what actually happens in the story. The narrators can ask the players for consensus '
+            'on determining a choice by polling the group, or can simply provide informational context.\n    If there is more than one narrator, '
+            'they take turns deciding what new direction the story will take.',
+        '    Players can guess who is playing which characters in the "Game" menu, and if at the end of the game their choices are completely '
+            'accurate, they can be one of the "winners".\n'
+            '    The game is over when there is a general consensus that it is over (each player can indicate their consent with the end of the game '
+            'in the "Game" menu.',
+      ],
+      buttonColor: Theme.of(context).primaryColor,
+    );
+  }
+}
+
 class HelpScreen extends StatefulWidget {
   final String title;
   final List<String> information;

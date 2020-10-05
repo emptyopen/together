@@ -785,7 +785,6 @@ class _AbstractScreenState extends State<AbstractScreen> {
             : Container(),
         widget.userId == data['leader']
             ? EndGameButton(
-                gameName: 'Abstract',
                 sessionId: widget.sessionId,
                 fontSize: 16,
                 height: 35,
