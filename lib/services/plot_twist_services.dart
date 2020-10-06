@@ -7,6 +7,7 @@ var storyBeginnings = {
 };
 
 var exampleCharacters = {
+  // need at least 10 * 2 ?
   'charlie': {
     'name': 'Charlie Watson',
     'age': 28,
@@ -49,16 +50,65 @@ var exampleCharacters = {
   },
   'jim': {
     'name': 'Jim Jackson',
-    'background':
+    'age': 53,
+    'description':
         'A local bus driver, driving buses as a front for trading in international arms.',
   },
   'dexter': {
     'name': 'Dexter Bax',
-    'background': 'A forensic scientist working a local case.',
+    'age': 33,
+    'description': 'A forensic scientist working a local case.',
   },
   'kiko': {
     'name': 'Kiko Hanayama',
-    'background':
-        'The relentless peace advocate. Stops at nothing to have everyone get along.'
+    'age': 26,
+    'description':
+        'The relentless peace advocate. Stops at nothing to have everyone get along.',
   },
+  'marcus': {
+    'name': 'Marcus Kempler',
+    'age': 42,
+    'description':
+        'Part-time barista with some digital photography on the side. Won\'t shut up about the future of automation.',
+  },
+  // '': {
+  //   'name': '',
+  //   'age': ,
+  //   'description':,
+  // },
+  // '': {
+  //   'name': '',
+  //   'age': ,
+  //   'description':,
+  // },
+  // '': {
+  //   'name': '',
+  //   'age': ,
+  //   'description':,
+  // },
+  // '': {
+  //   'name': '',
+  //   'age': ,
+  //   'description':,
+  // },
+  // '': {
+  //   'name': '',
+  //   'age': ,
+  //   'description':,
+  // },
+  // '': {
+  //   'name': '',
+  //   'age': ,
+  //   'description':,
+  // },
+  // '': {
+  //   'name': '',
+  //   'age': ,
+  //   'description':,
+  // },
+  // '': {
+  //   'name': '',
+  //   'age': ,
+  //   'description':,
+  // },
 };

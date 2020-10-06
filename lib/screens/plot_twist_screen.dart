@@ -8,6 +8,7 @@ import 'lobby_screen.dart';
 import 'package:together/components/end_game.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../services/plot_twist_services.dart';
+import 'package:together/components/buttons.dart';
 
 class PlotTwistScreen extends StatefulWidget {
   PlotTwistScreen({this.sessionId, this.userId, this.roomCode});
@@ -23,18 +24,29 @@ class PlotTwistScreen extends StatefulWidget {
 class _PlotTwistScreenState extends State<PlotTwistScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   bool isSpectator = false;
-  TextEditingController _controller;
+  TextEditingController messageController;
+  TextEditingController createCharacterNameController;
+  TextEditingController createCharacterAgeController;
+  TextEditingController createCharacterDescriptionController;
+  List<bool> collapseSampleCharacter = [false, false];
+  String characterSelection;
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController();
+    messageController = TextEditingController();
+    createCharacterNameController = TextEditingController();
+    createCharacterAgeController = TextEditingController();
+    createCharacterDescriptionController = TextEditingController();
     setUpGame();
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    messageController.dispose();
+    createCharacterNameController = TextEditingController();
+    createCharacterAgeController = TextEditingController();
+    createCharacterDescriptionController = TextEditingController();
     super.dispose();
   }
 
@@ -158,33 +170,6 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
     );
   }
 
-  sendMessage(data) async {
-    // TODO: add some kind of retry logic for clashes
-
-    if (_controller.text == '') {
-      return;
-    }
-
-    var message = {
-      'playerId': widget.userId,
-      'text': _controller.text,
-      'timestamp': DateTime.now(),
-    };
-
-    data['texts'].add(message);
-
-    _controller.text = '';
-
-    FocusScope.of(context).unfocus();
-
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
-
-    HapticFeedback.vibrate();
-  }
-
   getInputBox(data) {
     var screenWidth = MediaQuery.of(context).size.width;
     return Container(
@@ -211,6 +196,7 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
             padding: EdgeInsets.fromLTRB(10, 2, 10, 2),
             child: TextField(
               maxLines: null,
+              textAlign: TextAlign.center,
               decoration: InputDecoration(
                 border: InputBorder.none,
                 focusedBorder: InputBorder.none,
@@ -219,35 +205,300 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
                 disabledBorder: InputBorder.none,
                 hintText: 'type here',
               ),
-              controller: _controller,
+              controller: messageController,
             ),
           ),
           SizedBox(width: 10),
-          GestureDetector(
-            child: Container(
-              width: 50,
-              height: 70,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15),
-                gradient: LinearGradient(colors: [
-                  Colors.blue[800],
-                  Colors.lightBlue,
-                ]),
-                border: Border.all(
-                  color: Theme.of(context).highlightColor,
+        ],
+      ),
+    );
+  }
+
+  sendMessage(data) async {
+    // TODO: add some kind of retry logic for clashes
+
+    if (messageController.text == '') {
+      return;
+    }
+
+    var message = {
+      'playerId': widget.userId,
+      'text': messageController.text,
+      'timestamp': DateTime.now(),
+    };
+
+    data['texts'].add(message);
+
+    messageController.text = '';
+
+    FocusScope.of(context).unfocus();
+
+    await Firestore.instance
+        .collection('sessions')
+        .document(widget.sessionId)
+        .setData(data);
+
+    HapticFeedback.vibrate();
+  }
+
+  getSampleCharacters(data) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        getSampleCharacterTile(0, data),
+        SizedBox(width: 10),
+        getSampleCharacterTile(1, data),
+      ],
+    );
+  }
+
+  getSampleCharacterTile(index, data) {
+    var sampleCharacterNames = data['sampleCharacters'][widget.userId];
+    var sampleCharacter = exampleCharacters[sampleCharacterNames[index]];
+
+    bool highlighted = characterSelection == 'sample$index';
+
+    return GestureDetector(
+      onTap: () async {
+        if (collapseSampleCharacter[index] == false) {
+          collapseSampleCharacter[index] = !collapseSampleCharacter[index];
+        } else if (characterSelection != 'sample$index') {
+          characterSelection = 'sample$index';
+        } else {
+          characterSelection = null;
+        }
+        setState(() {});
+        HapticFeedback.vibrate();
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(
+            color: highlighted ? Colors.blue : Theme.of(context).highlightColor,
+            width: highlighted ? 3 : 1,
+          ),
+        ),
+        padding: EdgeInsets.all(highlighted ? 3 : 5),
+        child: Container(
+          width: 150,
+          child: Column(
+            children: [
+              Text(
+                'Name: ',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey,
                 ),
               ),
+              Text(
+                sampleCharacter['name'],
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 18,
+                ),
+              ),
+              collapseSampleCharacter[index]
+                  ? Column(
+                      children: [
+                        SizedBox(height: 5),
+                        Text(
+                          'Age: ',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        Text(
+                          sampleCharacter['age'].toString(),
+                          style: TextStyle(
+                            fontSize: 16,
+                          ),
+                        ),
+                        SizedBox(height: 5),
+                        Text(
+                          'Description: ',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        Text(
+                          sampleCharacter['description'],
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    )
+                  : Container(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  getCreateCharacter(data) {
+    return GestureDetector(
+      onTap: () {
+        print(
+          'hey',
+        );
+
+        setState(() {});
+      },
+      child: Container(
+        constraints: BoxConstraints(maxWidth: 240),
+        padding: EdgeInsets.all(5),
+        decoration: BoxDecoration(
+          border: Border.all(color: Theme.of(context).highlightColor),
+          borderRadius: BorderRadius.circular(5),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('Name:'),
+            Container(
+              height: 30,
+              width: 200,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey),
+                borderRadius: BorderRadius.circular(5),
+              ),
               child: Center(
-                child: Icon(
-                  MdiIcons.send,
-                  size: 30,
+                child: TextField(
+                  maxLines: 1,
+                  textAlign: TextAlign.center,
+                  decoration: InputDecoration(
+                    border: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    errorBorder: InputBorder.none,
+                    disabledBorder: InputBorder.none,
+                    hintText: 'type here',
+                  ),
+                  style: TextStyle(
+                    fontSize: 14,
+                  ),
+                  controller: createCharacterNameController,
                 ),
               ),
             ),
-            onTap: () {
-              sendMessage(data);
-            },
+            Text('Age:'),
+            Container(
+              height: 30,
+              width: 50,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey),
+                borderRadius: BorderRadius.circular(5),
+              ),
+              child: Center(
+                child: TextFormField(
+                  maxLines: 1,
+                  textAlign: TextAlign.center,
+                  decoration: InputDecoration(
+                    border: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    errorBorder: InputBorder.none,
+                    disabledBorder: InputBorder.none,
+                    hintText: 'XX',
+                  ),
+                  style: TextStyle(
+                    fontSize: 14,
+                  ),
+                  controller: createCharacterAgeController,
+                ),
+              ),
+            ),
+            Text('Description:'),
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey),
+                borderRadius: BorderRadius.circular(5),
+              ),
+              child: TextField(
+                maxLines: null,
+                textAlign: TextAlign.center,
+                decoration: InputDecoration(
+                  border: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  errorBorder: InputBorder.none,
+                  disabledBorder: InputBorder.none,
+                  hintText: 'type here',
+                ),
+                controller: createCharacterDescriptionController,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  getCharacterSelection(data) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            'Character Selection',
+            style: TextStyle(
+              fontSize: 30,
+            ),
           ),
+          Text('Create or pick your character!'),
+          SizedBox(height: 20),
+          Text(
+            'Create',
+            style: TextStyle(fontSize: 24),
+          ),
+          SizedBox(height: 5),
+          getCreateCharacter(data),
+          SizedBox(height: 20),
+          Text(
+            'Pick',
+            style: TextStyle(fontSize: 24),
+          ),
+          SizedBox(height: 5),
+          getSampleCharacters(data),
+          SizedBox(height: 20),
+          RaisedGradientButton(
+            child: Text(
+              'Confirm',
+              style: TextStyle(
+                fontSize: 24,
+              ),
+            ),
+            height: 50,
+            width: 120,
+            gradient: LinearGradient(
+                colors: characterSelection != null
+                    ? [
+                        Colors.blue,
+                        Colors.lightBlue,
+                      ]
+                    : [
+                        Colors.grey,
+                        Colors.grey,
+                      ]),
+            onPressed: characterSelection != null
+                ? () {
+                    print('wow');
+                  }
+                : null,
+          ),
+          SizedBox(height: 20),
+          widget.userId == data['leader']
+              ? EndGameButton(
+                  sessionId: widget.sessionId,
+                  fontSize: 14,
+                  height: 30,
+                  width: 100,
+                )
+              : Container(),
         ],
       ),
     );
@@ -296,7 +547,11 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
   }
 
   getScoreboard(data) {
-    return Text('Scoreboard');
+    return Column(
+      children: [
+        Text('Scoreboard'),
+      ],
+    );
   }
 
   @override
@@ -356,9 +611,11 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
                 ),
               ],
             ),
-            body: data['state'] == 'started'
-                ? getGameboard(data)
-                : getScoreboard(data),
+            body: data['internalState'] == 'characterSelection'
+                ? getCharacterSelection(data)
+                : data['internalState']
+                    ? getGameboard(data)
+                    : getScoreboard(data),
           );
         });
   }

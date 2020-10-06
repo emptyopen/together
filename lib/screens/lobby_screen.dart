@@ -731,6 +731,21 @@ class _LobbyScreenState extends State<LobbyScreen> {
       data['narrators'].add(playerIds[i]);
     }
 
+    // randomly choose two characters for each player to choose from
+    var exampleCharacterNames = exampleCharacters.keys.toList();
+    exampleCharacterNames.shuffle();
+    var characterCount = 0;
+    data['sampleCharacters'] = {};
+    data['playerIds'].forEach((v) {
+      data['sampleCharacters'][v] = [
+        exampleCharacterNames[characterCount],
+        exampleCharacterNames[characterCount + 1],
+      ];
+      characterCount += 2;
+    });
+
+    data['internalState'] = 'characterSelection';
+
     return data;
   }
 
