@@ -10,13 +10,13 @@ void main() => runApp(MyApp());
 // next up:
 // undo button not working in bananaphone 2nd+ drawings
 // PLOT TWIST: (formerly Chit Chat and Hear Me Out):
-// - add character selection / creation
 // - add button to match players to characters
 // - add button to vote to end
 // - add capability for narrator to cast poll, and for players to vote
 // - add final scoreboard screen with "winners" who guessed correctly
-// - alternate ability for narrators to update the story
+// - alternate ability for narrators to update the story - in general add "narrator silence" so narrators can only say something every X chats
 // - add choices of locations in lobby
+// - add ability to delete chats?
 
 // TODO:
 // add sounds and vibration

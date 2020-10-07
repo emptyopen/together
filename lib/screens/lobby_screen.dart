@@ -714,6 +714,14 @@ class _LobbyScreenState extends State<LobbyScreen> {
     data['playerIds'].asMap().forEach((i, v) {
       playerColors[v] = possibleColors[i];
     });
+    data['playerColors'] = playerColors;
+
+    // determine narrators randomly
+    playerIds.shuffle();
+    data['narrators'] = [];
+    for (int i = 0; i < data['rules']['numNarrators']; i++) {
+      data['narrators'].add(playerIds[i]);
+    }
 
     // initialize conversation
     data['texts'] = [
@@ -723,13 +731,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
         'timestamp': DateTime.now(),
       }
     ];
-
-    // determine narrators randomly
-    playerIds.shuffle();
-    data['narrators'] = [];
-    for (int i = 0; i < data['rules']['numNarrators']; i++) {
-      data['narrators'].add(playerIds[i]);
-    }
 
     // randomly choose two characters for each player to choose from
     var exampleCharacterNames = exampleCharacters.keys.toList();
@@ -744,6 +745,20 @@ class _LobbyScreenState extends State<LobbyScreen> {
       characterCount += 2;
     });
 
+    // initialize matching guesses for each player
+    data['matchingGuesses'] = {};
+    for (int i = 0; i < data['playerIds'].length; i++) {
+      data['matchingGuesses'][data['playerIds'][i]] = {};
+      // for every other player, create an empty guess
+      List otherPlayers = List.from(data['playerIds']);
+      otherPlayers.remove(data['playerIds'][i]);
+      print('doing $otherPlayers and ${data['playerIds']}');
+      otherPlayers.forEach((w) {
+        data['matchingGuesses'][data['playerIds'][i]][w] = null;
+      });
+    }
+
+    data['characters'] = {};
     data['internalState'] = 'characterSelection';
 
     return data;
@@ -2218,7 +2233,8 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
                         rules['location'] = newValue;
                       });
                     },
-                    items: <String>['The Elevator', 'Not the elevator']
+                    items: storyBeginnings.keys
+                        .toList()
                         .map<DropdownMenuItem<String>>((String value) {
                       return DropdownMenuItem<String>(
                         value: value,
@@ -2234,7 +2250,7 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
                   width: 80,
                   child: DropdownButton<int>(
                     isExpanded: true,
-                    value: rules['handSize'],
+                    value: rules['numNarrators'],
                     iconSize: 24,
                     elevation: 16,
                     style: TextStyle(color: Theme.of(context).primaryColor),
@@ -2244,7 +2260,7 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
                     ),
                     onChanged: (int newValue) {
                       setState(() {
-                        rules['handSize'] = newValue;
+                        rules['numNarrators'] = newValue;
                       });
                     },
                     items: <int>[1, 2, 3, 4]

@@ -1,9 +1,15 @@
+import 'package:flutter/material.dart';
+
 var storyBeginnings = {
   'The Elevator':
       'A sputtering noise is quickly followed by a gutteral screech, and the elevator grinds to a halt.',
   'The Mountain Lodge':
       'The hodgepodge group of hikers get stranded by a rogue blizzard. Shuffling in one by one out of the raging snowstorm, '
           'they begin to introduce themselves.',
+  'The Traffic Jam':
+      'It\'s another regular day in LA traffic, with nothing foreshadowing the events to come. '
+          'Autonomous driving is not yet widespread, but those that have them are bored out of their minds. '
+          '\n\nSeveral commuters have downloaded an app to communicate with strangers while in traffic, and they begin to filter into a random lobby.',
 };
 
 var exampleCharacters = {
@@ -71,26 +77,30 @@ var exampleCharacters = {
     'description':
         'Part-time barista with some digital photography on the side. Won\'t shut up about the future of automation.',
   },
-  // '': {
-  //   'name': '',
-  //   'age': ,
-  //   'description':,
-  // },
-  // '': {
-  //   'name': '',
-  //   'age': ,
-  //   'description':,
-  // },
-  // '': {
-  //   'name': '',
-  //   'age': ,
-  //   'description':,
-  // },
-  // '': {
-  //   'name': '',
-  //   'age': ,
-  //   'description':,
-  // },
+  'percy': {
+    'name': 'Percy Wilkins',
+    'age': '47',
+    'description':
+        'A fourth generation butler serving the Tannor family. Gracious, and sometime a little mischievous.',
+  },
+  'zamari': {
+    'name': 'Zamari Richards',
+    'age': 28,
+    'description':
+        'Avid swimmer who likes to code apps on the side. Forgives, but doesn\'t forget.',
+  },
+  'francesca': {
+    'name': 'Francesca Townsend',
+    'age': 61,
+    'description':
+        'Moved to the US from Britain twenty years ago, and loves gardening. Dislikes drama.',
+  },
+  'devon': {
+    'name': 'Devon Waters',
+    'age': 19,
+    'description':
+        'Loves videogames, and dreams about what he would do in a zombie apocalpyse on a daily basis. Talks loudly.',
+  },
   // '': {
   //   'name': '',
   //   'age': ,
@@ -112,3 +122,43 @@ var exampleCharacters = {
   //   'description':,
   // },
 };
+
+getPlayerColor(player, data) {
+  if (data['narrators'].contains(player)) {
+    return Colors.grey[900];
+  }
+  var colorString = data['playerColors'][player];
+  switch (colorString) {
+    case 'green':
+      return Colors.green.withAlpha(180);
+      break;
+    case 'blue':
+      return Colors.blue.withAlpha(180);
+      break;
+    case 'purple':
+      return Colors.purple.withAlpha(180);
+      break;
+    case 'orange':
+      return Colors.orange.withAlpha(180);
+      break;
+    case 'lime':
+      return Colors.lime.withAlpha(180);
+      break;
+    case 'pink':
+      return Colors.pink.withAlpha(180);
+      break;
+    case 'red':
+      return Colors.red.withAlpha(180);
+      break;
+    case 'brown':
+      return Colors.brown.withAlpha(180);
+      break;
+    case 'cyan':
+      return Colors.cyan.withAlpha(180);
+      break;
+    case 'teal':
+      return Colors.teal.withAlpha(180);
+      break;
+  }
+  return Colors.green[700];
+}

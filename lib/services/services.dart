@@ -34,6 +34,12 @@ slideTransition(BuildContext context, Widget route) {
   );
 }
 
+closeKeyboardIfOpen(context) {
+  if (MediaQuery.of(context).viewInsets.bottom != 0) {
+    FocusScope.of(context).unfocus();
+  }
+}
+
 checkUserInGame({String userId, String sessionId = ''}) async {
   // check if player has currentGame (that is not this game). if so, remove player from currentGame
   var userData =
