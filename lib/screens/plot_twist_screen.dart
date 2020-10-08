@@ -103,7 +103,7 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
         Chatbox(
           text: v['text'],
           timestamp: v['timestamp'].toString(),
-          person: data['playerNames'][v['playerId']],
+          person: data['characters'][v['playerId']]['name'],
           alignment: alignment,
           backgroundColor: getPlayerColor(v['playerId'], data),
           fontColor: Colors.white,
@@ -717,6 +717,7 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
                       return CharactersDialog(
                         data: data,
                         sessionId: widget.sessionId,
+                        userId: widget.userId,
                       );
                     },
                   );
@@ -863,7 +864,7 @@ class Chatbox extends StatelessWidget {
                         ? Spacer()
                         : Container(),
                     Text(
-                      '$person',
+                      person,
                       style: TextStyle(
                         fontSize: 10,
                         color: Theme.of(context).highlightColor.withAlpha(200),
@@ -907,17 +908,23 @@ class Chatbox extends StatelessWidget {
 }
 
 class CharactersDialog extends StatefulWidget {
-  CharactersDialog({this.data, this.sessionId});
+  CharactersDialog({this.data, this.sessionId, this.userId});
 
   final data;
   final String sessionId;
+  final String userId;
 
   @override
   _CharactersDialogState createState() => _CharactersDialogState();
 }
 
 class _CharactersDialogState extends State<CharactersDialog> {
+  int selectedCharacterIndex;
+  int selectedPlayerIndex;
+
   getCharacterTiles() {
+    List otherPlayers = List.from(widget.data['playerIds']);
+    otherPlayers.remove(widget.userId);
     return Container(
       height: 90.0 * (widget.data['playerIds'].length ~/ 3),
       width: 100,
@@ -929,28 +936,42 @@ class _CharactersDialogState extends State<CharactersDialog> {
       ),
       child: GridView.count(
         crossAxisCount: 3,
-        children: List.generate(widget.data['playerIds'].length, (index) {
-          return Center(
-            child: Container(
-              height: 75,
-              width: 75,
-              padding: EdgeInsets.all(5),
-              decoration: BoxDecoration(
-                color: getPlayerColor(
-                    widget.data['playerIds'][index], widget.data),
-                border: Border.all(
-                  color: Theme.of(context).highlightColor,
+        children: List.generate(otherPlayers.length, (index) {
+          return GestureDetector(
+            onTap: () {
+              if (selectedCharacterIndex != index) {
+                selectedCharacterIndex = index;
+              } else {
+                selectedCharacterIndex = null;
+              }
+
+              // check if character and player is selected, if so set player color (and clear the color elsewhere)
+              setState(() {});
+            },
+            child: Center(
+              child: Container(
+                height: 75,
+                width: 75,
+                padding:
+                    EdgeInsets.all(selectedCharacterIndex == index ? 6 : 8),
+                decoration: BoxDecoration(
+                  color: getPlayerColor(otherPlayers[index], widget.data),
+                  border: Border.all(
+                    width: selectedCharacterIndex == index ? 3 : 1,
+                    color: selectedCharacterIndex == index
+                        ? Colors.blue
+                        : Theme.of(context).highlightColor,
+                  ),
+                  borderRadius: BorderRadius.circular(5),
                 ),
-                borderRadius: BorderRadius.circular(5),
-              ),
-              child: Center(
-                child: Text(
-                  widget.data['characters'][widget.data['playerIds'][index]]
-                      ['name'],
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.white,
+                child: Center(
+                  child: Text(
+                    widget.data['characters'][otherPlayers[index]]['name'],
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
@@ -962,6 +983,8 @@ class _CharactersDialogState extends State<CharactersDialog> {
   }
 
   getPlayerTiles() {
+    List otherPlayers = List.from(widget.data['playerIds']);
+    otherPlayers.remove(widget.userId);
     return Container(
       height: 90.0 * (widget.data['playerIds'].length ~/ 3),
       width: 100,
@@ -973,25 +996,81 @@ class _CharactersDialogState extends State<CharactersDialog> {
       ),
       child: GridView.count(
         crossAxisCount: 3,
-        children: List.generate(widget.data['playerIds'].length, (index) {
-          return Center(
-            child: Container(
-              height: 75,
-              width: 75,
-              padding: EdgeInsets.all(5),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: Theme.of(context).highlightColor,
+        children: List.generate(otherPlayers.length, (index) {
+          Color color = Colors.grey;
+          if (widget.data['matchingGuesses'][widget.userId]
+                  [otherPlayers[index]] !=
+              null) {
+            color = stringToColor(widget.data['matchingGuesses'][widget.userId]
+                [otherPlayers[index]]);
+          }
+          return GestureDetector(
+            onTap: () async {
+              if (selectedPlayerIndex != index) {
+                selectedPlayerIndex = index;
+              } else {
+                selectedPlayerIndex = null;
+              }
+
+              // check if character and player is selected, if so set player color (and clear the color elsewhere)
+              if (selectedCharacterIndex != null &&
+                  selectedPlayerIndex != null) {
+                print('updating color');
+                widget.data['matchingGuesses'][widget.userId]
+                        [otherPlayers[selectedPlayerIndex]] =
+                    widget.data['playerColors']
+                        [otherPlayers[selectedCharacterIndex]];
+                // iterate over other colors and set same colors to grey
+                widget.data['playerIds'].forEach((v) {
+                  // not selected player, and colors match
+                  print(v);
+                  print(
+                      'not same player: ${v != otherPlayers[selectedPlayerIndex]}');
+                  print(
+                      'guessed color: ${widget.data['matchingGuesses'][widget.userId][otherPlayers[selectedPlayerIndex]]}');
+                  print(
+                      'new color: ${widget.data['playerColors'][otherPlayers[selectedCharacterIndex]]}');
+                  if (v != otherPlayers[selectedCharacterIndex] &&
+                      widget.data['matchingGuesses'][widget.userId]
+                              [otherPlayers[selectedPlayerIndex]] ==
+                          widget.data['playerColors']
+                              [otherPlayers[selectedCharacterIndex]]) {
+                    widget.data['matchingGuesses'][widget.userId]
+                        [otherPlayers[selectedPlayerIndex]] = null;
+                  }
+                });
+                selectedCharacterIndex = null;
+                selectedPlayerIndex = null;
+              }
+              setState(() {});
+              await Firestore.instance
+                  .collection('sessions')
+                  .document(widget.sessionId)
+                  .setData(widget.data);
+            },
+            child: Center(
+              child: Container(
+                height: 75,
+                width: 75,
+                padding: EdgeInsets.all(selectedPlayerIndex == index ? 6 : 8),
+                decoration: BoxDecoration(
+                  color: color,
+                  border: Border.all(
+                    width: selectedPlayerIndex == index ? 3 : 1,
+                    color: selectedPlayerIndex == index
+                        ? Colors.blue
+                        : Theme.of(context).highlightColor,
+                  ),
+                  borderRadius: BorderRadius.circular(5),
                 ),
-                borderRadius: BorderRadius.circular(5),
-              ),
-              child: Center(
-                child: Text(
-                  widget.data['playerNames'][widget.data['playerIds'][index]],
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white,
+                child: Center(
+                  child: Text(
+                    widget.data['playerNames'][otherPlayers[index]],
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
@@ -1009,11 +1088,11 @@ class _CharactersDialogState extends State<CharactersDialog> {
       title: Text('Match players to characters!'),
       contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),
       content: Container(
-        height: 130 + 180.0 * (widget.data['playerIds'].length ~/ 3),
+        height: 160 + 180.0 * (widget.data['playerIds'].length ~/ 3),
         width: width * 0.95,
         child: ListView(
           children: <Widget>[
-            SizedBox(height: 40),
+            SizedBox(height: 20),
             Text(
               'Characters:',
               style: TextStyle(
@@ -1031,7 +1110,7 @@ class _CharactersDialogState extends State<CharactersDialog> {
             ),
             SizedBox(height: 5),
             getPlayerTiles(),
-            SizedBox(height: 30),
+            SizedBox(height: 20),
             Text(
               '(Click a character and then a player to match colors)',
               textAlign: TextAlign.center,
