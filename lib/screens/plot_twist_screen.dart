@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 
 import 'package:together/services/services.dart';
 import 'package:together/help_screens/help_screens.dart';
@@ -87,6 +88,8 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
   }
 
   getChatBoxes(data) {
+    var screenWidth = MediaQuery.of(context).size.width;
+    var screenHeight = MediaQuery.of(context).size.height;
     List<Widget> chatboxes = [];
     String lastPlayer = 'narrator';
     data['texts'].reversed.forEach((v) {
@@ -114,20 +117,31 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
       lastPlayer = v['playerId'];
     });
     return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(
-          color: Colors.grey,
+        width: screenWidth * 0.8,
+        height: screenHeight * 0.55,
+        padding: EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: Theme.of(context).highlightColor,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          color: Theme.of(context).dialogBackgroundColor,
         ),
-      ),
-      padding: EdgeInsets.all(10),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: chatboxes,
-        ),
-      ),
-    );
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(
+              color: Colors.grey,
+            ),
+          ),
+          padding: EdgeInsets.all(10),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: chatboxes,
+            ),
+          ),
+        ));
   }
 
   getInputBox(data) {
@@ -141,6 +155,7 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
           color: Theme.of(context).highlightColor,
         ),
         borderRadius: BorderRadius.circular(20),
+        color: Theme.of(context).dialogBackgroundColor,
       ),
       child: Row(
         children: [
@@ -481,6 +496,39 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
   }
 
   getCharacterSelection(data) {
+    // if narrator, show waiting screen with narrator
+    if (data['narrators'].contains(widget.userId)) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'You are a narrator!',
+              style: TextStyle(
+                fontSize: 30,
+              ),
+            ),
+            SizedBox(height: 30),
+            Text(
+              'Waiting on the others\nto pick characters...',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 18,
+              ),
+            ),
+            SizedBox(height: 20),
+            widget.userId == data['leader']
+                ? EndGameButton(
+                    sessionId: widget.sessionId,
+                    fontSize: 14,
+                    height: 30,
+                    width: 100,
+                  )
+                : Container(),
+          ],
+        ),
+      );
+    }
     // if already selected, show waiting screen with selected character
     if (data['characters'].containsKey(widget.userId)) {
       return Center(
@@ -640,9 +688,16 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
     );
   }
 
+  toggleReadyToEnd(data) async {
+    data['readyToEnd'][widget.userId] = !data['readyToEnd'][widget.userId];
+
+    await Firestore.instance
+        .collection('sessions')
+        .document(widget.sessionId)
+        .setData(data);
+  }
+
   getGameboard(data) {
-    var screenWidth = MediaQuery.of(context).size.width;
-    var screenHeight = MediaQuery.of(context).size.height;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -650,24 +705,13 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
           Text(
             data['rules']['location'],
             style: TextStyle(
-              fontSize: 30,
+              fontSize: 24,
             ),
           ),
           SizedBox(height: 10),
           getInputBox(data),
           SizedBox(height: 10),
-          Container(
-            width: screenWidth * 0.8,
-            height: screenHeight * 0.55,
-            padding: EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: Theme.of(context).highlightColor,
-              ),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: getChatBoxes(data),
-          ),
+          getChatBoxes(data),
           SizedBox(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -682,7 +726,7 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
                   ),
                 ),
                 height: 50,
-                width: 120,
+                width: 110,
                 onPressed: () {
                   showDialog<Null>(
                     context: context,
@@ -699,7 +743,7 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
                   Colors.blueAccent,
                 ]),
               ),
-              SizedBox(width: 30),
+              SizedBox(width: 20),
               RaisedGradientButton(
                 child: Text(
                   'Matching',
@@ -709,7 +753,7 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
                   ),
                 ),
                 height: 50,
-                width: 120,
+                width: 100,
                 onPressed: () {
                   showDialog<Null>(
                     context: context,
@@ -722,10 +766,30 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
                     },
                   );
                 },
-                gradient: LinearGradient(colors: [
-                  Colors.pink,
-                  Colors.pinkAccent,
-                ]),
+                gradient: LinearGradient(
+                  colors: [Colors.pink, Colors.pinkAccent],
+                ),
+              ),
+              SizedBox(width: 20),
+              RaisedGradientButton(
+                child: Text(
+                  'Ready\nto end',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white,
+                  ),
+                ),
+                height: 50,
+                width: 80,
+                onPressed: () {
+                  toggleReadyToEnd(data);
+                },
+                gradient: LinearGradient(
+                  colors: data['readyToEnd'][widget.userId]
+                      ? [Colors.purple, Colors.purpleAccent]
+                      : [Colors.grey, Colors.grey],
+                ),
               ),
             ],
           ),
@@ -922,6 +986,28 @@ class _CharactersDialogState extends State<CharactersDialog> {
   int selectedCharacterIndex;
   int selectedPlayerIndex;
 
+  matchColors(otherPlayers) {
+    if (selectedCharacterIndex != null && selectedPlayerIndex != null) {
+      print('updating color');
+      widget.data['matchingGuesses'][widget.userId]
+              [otherPlayers[selectedPlayerIndex]] =
+          widget.data['playerColors'][otherPlayers[selectedCharacterIndex]];
+      // iterate over other colors and set same colors to grey
+      widget.data['playerIds'].forEach((v) {
+        // not selected player, and colors match
+        if (v != otherPlayers[selectedPlayerIndex] &&
+            widget.data['matchingGuesses'][widget.userId][v] ==
+                widget.data['playerColors']
+                    [otherPlayers[selectedCharacterIndex]]) {
+          print('found: $v');
+          widget.data['matchingGuesses'][widget.userId][v] = null;
+        }
+      });
+      selectedCharacterIndex = null;
+      selectedPlayerIndex = null;
+    }
+  }
+
   getCharacterTiles() {
     List otherPlayers = List.from(widget.data['playerIds']);
     otherPlayers.remove(widget.userId);
@@ -938,7 +1024,7 @@ class _CharactersDialogState extends State<CharactersDialog> {
         crossAxisCount: 3,
         children: List.generate(otherPlayers.length, (index) {
           return GestureDetector(
-            onTap: () {
+            onTap: () async {
               if (selectedCharacterIndex != index) {
                 selectedCharacterIndex = index;
               } else {
@@ -946,7 +1032,14 @@ class _CharactersDialogState extends State<CharactersDialog> {
               }
 
               // check if character and player is selected, if so set player color (and clear the color elsewhere)
+              matchColors(otherPlayers);
+
               setState(() {});
+
+              await Firestore.instance
+                  .collection('sessions')
+                  .document(widget.sessionId)
+                  .setData(widget.data);
             },
             child: Center(
               child: Container(
@@ -965,11 +1058,13 @@ class _CharactersDialogState extends State<CharactersDialog> {
                   borderRadius: BorderRadius.circular(5),
                 ),
                 child: Center(
-                  child: Text(
+                  child: AutoSizeText(
                     widget.data['characters'][otherPlayers[index]]['name'],
+                    maxLines: 2,
                     textAlign: TextAlign.center,
+                    minFontSize: 5,
+                    maxFontSize: 13,
                     style: TextStyle(
-                      fontSize: 13,
                       color: Colors.white,
                     ),
                   ),
@@ -1013,36 +1108,10 @@ class _CharactersDialogState extends State<CharactersDialog> {
               }
 
               // check if character and player is selected, if so set player color (and clear the color elsewhere)
-              if (selectedCharacterIndex != null &&
-                  selectedPlayerIndex != null) {
-                print('updating color');
-                widget.data['matchingGuesses'][widget.userId]
-                        [otherPlayers[selectedPlayerIndex]] =
-                    widget.data['playerColors']
-                        [otherPlayers[selectedCharacterIndex]];
-                // iterate over other colors and set same colors to grey
-                widget.data['playerIds'].forEach((v) {
-                  // not selected player, and colors match
-                  print(v);
-                  print(
-                      'not same player: ${v != otherPlayers[selectedPlayerIndex]}');
-                  print(
-                      'guessed color: ${widget.data['matchingGuesses'][widget.userId][otherPlayers[selectedPlayerIndex]]}');
-                  print(
-                      'new color: ${widget.data['playerColors'][otherPlayers[selectedCharacterIndex]]}');
-                  if (v != otherPlayers[selectedCharacterIndex] &&
-                      widget.data['matchingGuesses'][widget.userId]
-                              [otherPlayers[selectedPlayerIndex]] ==
-                          widget.data['playerColors']
-                              [otherPlayers[selectedCharacterIndex]]) {
-                    widget.data['matchingGuesses'][widget.userId]
-                        [otherPlayers[selectedPlayerIndex]] = null;
-                  }
-                });
-                selectedCharacterIndex = null;
-                selectedPlayerIndex = null;
-              }
+              matchColors(otherPlayers);
+
               setState(() {});
+
               await Firestore.instance
                   .collection('sessions')
                   .document(widget.sessionId)
@@ -1158,79 +1227,91 @@ class _CharacterDescriptionsDialogState
         border: Border.all(color: Theme.of(context).highlightColor),
         borderRadius: BorderRadius.circular(5),
       ),
-      padding: EdgeInsets.all(5),
-      child: Column(
-        children: [
-          Text(
-            'Name:',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey,
-            ),
-          ),
-          Text(
-            widget.data['characters'][player]['name'],
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 20,
-            ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                height: 5,
-                width: 50,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(30),
-                  color: getPlayerColor(player, widget.data),
-                ),
-              ),
-              SizedBox(width: 30),
-              Column(
-                children: [
-                  Text(
-                    'Age:',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                    ),
+      padding: EdgeInsets.fromLTRB(15, 10, 15, 10),
+      child: widget.data['narrators'].contains(player)
+          ? Column(
+              children: [
+                Text(
+                  'Narrator',
+                  style: TextStyle(
+                    fontSize: 20,
                   ),
-                  Text(
-                    "${widget.data['characters'][player]['age']}",
-                    style: TextStyle(
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(width: 30),
-              Container(
-                height: 5,
-                width: 50,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(30),
-                  color: getPlayerColor(player, widget.data),
                 ),
-              ),
-            ],
-          ),
-          Text(
-            'Description:',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey,
+                Row(),
+              ],
+            )
+          : Column(
+              children: [
+                Text(
+                  'Name:',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                  ),
+                ),
+                Text(
+                  widget.data['characters'][player]['name'],
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 20,
+                  ),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      height: 5,
+                      width: 50,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(30),
+                        color: getPlayerColor(player, widget.data),
+                      ),
+                    ),
+                    SizedBox(width: 30),
+                    Column(
+                      children: [
+                        Text(
+                          'Age:',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        Text(
+                          "${widget.data['characters'][player]['age']}",
+                          style: TextStyle(
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(width: 30),
+                    Container(
+                      height: 5,
+                      width: 50,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(30),
+                        color: getPlayerColor(player, widget.data),
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  'Description:',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                  ),
+                ),
+                Text(
+                  widget.data['characters'][player]['description'],
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                  ),
+                ),
+              ],
             ),
-          ),
-          Text(
-            widget.data['characters'][player]['description'],
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-            ),
-          ),
-        ],
-      ),
     );
   }
 

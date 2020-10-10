@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 
 var storyBeginnings = {
   'The Elevator':
-      '    A sputtering noise is quickly followed by a gutteral screech, and the elevator grinds to a halt.',
+      'A sputtering noise is quickly followed by a gutteral screech, and the elevator grinds to a halt.',
   'The Mountain Lodge':
-      '    The hodgepodge group of hikers get stranded by a rogue blizzard. Shuffling in one by one out of the raging snowstorm, '
+      'The hodgepodge group of hikers get stranded by a rogue blizzard. Shuffling in one by one out of the raging snowstorm, '
           'they begin to introduce themselves.',
   'The Traffic Jam':
-      '    It\'s another regular day in LA traffic, with nothing foreshadowing the events to come. '
+      'It\'s another regular day in LA traffic, with nothing foreshadowing the events to come. '
           'Autonomous cars are not yet widespread, but those that have them are bored out of their minds. '
           '\n\nSeveral commuters have downloaded an app to communicate with strangers while in traffic, and they begin to filter into a random lobby.',
 };
@@ -124,9 +124,6 @@ var exampleCharacters = {
 };
 
 getPlayerColor(player, data) {
-  if (data['narrators'].contains(player)) {
-    return Colors.grey[900];
-  }
   var colorString = data['playerColors'][player];
   return stringToColor(colorString);
 }
@@ -162,6 +159,9 @@ stringToColor(colorString) {
       break;
     case 'teal':
       return Colors.teal.withAlpha(180);
+      break;
+    case 'black':
+      return Colors.black.withAlpha(180);
       break;
   }
   return Colors.green[700];

@@ -10,7 +10,6 @@ void main() => runApp(MyApp());
 // next up:
 // undo button not working in bananaphone 2nd+ drawings
 // PLOT TWIST: (formerly Chit Chat and Hear Me Out):
-// - add button to match players to characters
 // - add ability to click a chat to see the character description
 // - add button to vote to end
 // - add capability for narrator to cast poll, and for players to vote

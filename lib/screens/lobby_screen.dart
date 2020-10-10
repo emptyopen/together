@@ -696,6 +696,20 @@ class _LobbyScreenState extends State<LobbyScreen> {
           .data['name'];
     }
 
+    data['characters'] = {};
+
+    // determine narrators randomly
+    playerIds.shuffle();
+    data['narrators'] = [];
+    for (int i = 0; i < data['rules']['numNarrators']; i++) {
+      data['narrators'].add(playerIds[i]);
+      data['characters'][playerIds[i]] = {
+        'name': 'Narrator',
+        'age': 99,
+        'description': 'A narrator',
+      };
+    }
+
     // add player colors randomly
     var possibleColors = [
       'green',
@@ -712,16 +726,14 @@ class _LobbyScreenState extends State<LobbyScreen> {
     possibleColors.shuffle();
     var playerColors = {};
     data['playerIds'].asMap().forEach((i, v) {
-      playerColors[v] = possibleColors[i];
+      if (data['narrators'].contains(v)) {
+        // narrators are black
+        playerColors[v] = 'black';
+      } else {
+        playerColors[v] = possibleColors[i];
+      }
     });
     data['playerColors'] = playerColors;
-
-    // determine narrators randomly
-    playerIds.shuffle();
-    data['narrators'] = [];
-    for (int i = 0; i < data['rules']['numNarrators']; i++) {
-      data['narrators'].add(playerIds[i]);
-    }
 
     // initialize conversation
     data['texts'] = [
@@ -745,6 +757,12 @@ class _LobbyScreenState extends State<LobbyScreen> {
       characterCount += 2;
     });
 
+    // add read to end game options for each player
+    data['readyToEnd'] = {};
+    data['playerIds'].forEach((v) {
+      data['readyToEnd'][v] = false;
+    });
+
     // initialize matching guesses for each player
     data['matchingGuesses'] = {};
     for (int i = 0; i < data['playerIds'].length; i++) {
@@ -757,8 +775,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
         data['matchingGuesses'][data['playerIds'][i]][w] = null;
       });
     }
-
-    data['characters'] = {};
     data['internalState'] = 'characterSelection';
 
     return data;
