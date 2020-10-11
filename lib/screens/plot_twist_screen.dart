@@ -771,26 +771,33 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
                 ),
               ),
               SizedBox(width: 20),
-              RaisedGradientButton(
-                child: Text(
-                  'Ready\nto end',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white,
-                  ),
-                ),
-                height: 50,
-                width: 80,
-                onPressed: () {
-                  toggleReadyToEnd(data);
-                },
-                gradient: LinearGradient(
-                  colors: data['readyToEnd'][widget.userId]
-                      ? [Colors.purple, Colors.purpleAccent]
-                      : [Colors.grey, Colors.grey],
-                ),
-              ),
+              data['narrators'].contains(widget.userId)
+                  ? RaisedGradientButton(
+                      child: Text(
+                        'Ready\nto end',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white,
+                        ),
+                      ),
+                      height: 50,
+                      width: 80,
+                      onPressed: () {
+                        toggleReadyToEnd(data);
+                      },
+                      gradient: LinearGradient(
+                        colors: data['readyToEnd'][widget.userId]
+                            ? [Colors.purple, Colors.purpleAccent]
+                            : [Colors.grey, Colors.grey],
+                      ),
+                    )
+                  : RaisedGradientButton(
+                      child: Text('Game Status'),
+                      onPressed: () {
+                        print('will show dialog');
+                      },
+                    ),
             ],
           ),
           SizedBox(height: 20),
