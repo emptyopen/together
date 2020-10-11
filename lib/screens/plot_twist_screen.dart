@@ -1381,3 +1381,68 @@ class _CharacterDescriptionsDialogState
     );
   }
 }
+
+class GameStateDialog extends StatefulWidget {
+  GameStateDialog({this.data});
+
+  final data;
+
+  @override
+  _GameStateDialogState createState() => _GameStateDialogState();
+}
+
+class _GameStateDialogState extends State<GameStateDialog> {
+  getPlayerVotes() {
+    List<Widget> votes = [];
+
+    var players = [];
+    widget.data['playerIds'].forEach((v) {
+      if (!widget.data['narrators'].contains(v)) {
+        players.add(v);
+      }
+    });
+    players.forEach((v) {
+      votes.add(
+        Text(
+          '${widget.data['playerNames'][v]} votes ${widget.data['readyToEnd'][v] ? 'YES' : 'NO'}',
+          style: TextStyle(
+            color: widget.data['readyToEnd'][v] ? Colors.green : Colors.red,
+          ),
+        ),
+      );
+    });
+    return Column(children: votes);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    var width = MediaQuery.of(context).size.width;
+    return AlertDialog(
+      title: Text('Players voting to end:'),
+      contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),
+      content: Container(
+        height: 130 + 180.0 * (widget.data['playerIds'].length ~/ 3),
+        width: width * 0.95,
+        child: ListView(
+          children: <Widget>[
+            SizedBox(height: 40),
+            getPlayerVotes(),
+          ],
+        ),
+      ),
+      actions: <Widget>[
+        Container(
+          child: FlatButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: Text(
+              'OK',
+              style: TextStyle(fontSize: 16),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
