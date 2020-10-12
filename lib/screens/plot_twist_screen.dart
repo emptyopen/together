@@ -31,6 +31,9 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
   TextEditingController createCharacterDescriptionController;
   List<bool> collapseSampleCharacter = [false, false];
   String characterSelection;
+  // vibrate states
+  bool allDone = false;
+  int chatLength = 0;
 
   @override
   void initState() {
@@ -73,7 +76,29 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
     }
   }
 
-  checkIfVibrate(data) {}
+  checkIfVibrate(data) {
+    bool isNewVibrateData = false;
+
+    bool newAllDone = true;
+    data['readyToEnd'].forEach((i, v) {
+      if (v) {
+        newAllDone = false;
+      }
+    });
+    if (newAllDone != allDone && data['narrators'].contains(widget.userId)) {
+      allDone = newAllDone;
+      isNewVibrateData = true;
+    }
+
+    if (chatLength != data['texts'].length) {
+      chatLength = data['texts'].length;
+      isNewVibrateData = true;
+    }
+
+    if (isNewVibrateData) {
+      HapticFeedback.vibrate();
+    }
+  }
 
   setUpGame() async {
     // get session info for locations
@@ -118,7 +143,7 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
     });
     return Container(
         width: screenWidth * 0.8,
-        height: screenHeight * 0.55,
+        height: screenHeight * 0.5,
         padding: EdgeInsets.all(10),
         decoration: BoxDecoration(
           border: Border.all(
@@ -698,118 +723,147 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
   }
 
   getGameboard(data) {
+    bool allReadyToEnd = true;
+    data['readyToEnd'].forEach((i, v) {
+      if (v) {
+        allReadyToEnd = false;
+      }
+    });
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            data['rules']['location'],
-            style: TextStyle(
-              fontSize: 24,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              data['rules']['location'],
+              style: TextStyle(
+                fontSize: 24,
+              ),
             ),
-          ),
-          SizedBox(height: 10),
-          getInputBox(data),
-          SizedBox(height: 10),
-          getChatBoxes(data),
-          SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              RaisedGradientButton(
-                child: Text(
-                  'Character\nDescriptions',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white,
-                  ),
-                ),
-                height: 50,
-                width: 110,
-                onPressed: () {
-                  showDialog<Null>(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return CharacterDescriptionsDialog(
-                        userId: widget.userId,
-                        data: data,
-                      );
-                    },
-                  );
-                },
-                gradient: LinearGradient(colors: [
-                  Colors.blue,
-                  Colors.blueAccent,
-                ]),
-              ),
-              SizedBox(width: 20),
-              RaisedGradientButton(
-                child: Text(
-                  'Matching',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.white,
-                  ),
-                ),
-                height: 50,
-                width: 100,
-                onPressed: () {
-                  showDialog<Null>(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return CharactersDialog(
-                        data: data,
-                        sessionId: widget.sessionId,
-                        userId: widget.userId,
-                      );
-                    },
-                  );
-                },
-                gradient: LinearGradient(
-                  colors: [Colors.pink, Colors.pinkAccent],
-                ),
-              ),
-              SizedBox(width: 20),
-              data['narrators'].contains(widget.userId)
-                  ? RaisedGradientButton(
-                      child: Text(
-                        'Ready\nto end',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.white,
-                        ),
-                      ),
-                      height: 50,
-                      width: 80,
-                      onPressed: () {
-                        toggleReadyToEnd(data);
-                      },
-                      gradient: LinearGradient(
-                        colors: data['readyToEnd'][widget.userId]
-                            ? [Colors.purple, Colors.purpleAccent]
-                            : [Colors.grey, Colors.grey],
-                      ),
-                    )
-                  : RaisedGradientButton(
-                      child: Text('Game Status'),
-                      onPressed: () {
-                        print('will show dialog');
-                      },
+            SizedBox(height: 10),
+            getInputBox(data),
+            SizedBox(height: 10),
+            getChatBoxes(data),
+            SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                RaisedGradientButton(
+                  child: Text(
+                    'Character\nDescriptions',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white,
                     ),
-            ],
-          ),
-          SizedBox(height: 20),
-          widget.userId == data['leader']
-              ? EndGameButton(
-                  sessionId: widget.sessionId,
-                  fontSize: 14,
-                  height: 30,
+                  ),
+                  height: 50,
+                  width: 110,
+                  onPressed: () {
+                    showDialog<Null>(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return CharacterDescriptionsDialog(
+                          userId: widget.userId,
+                          data: data,
+                        );
+                      },
+                    );
+                  },
+                  gradient: LinearGradient(colors: [
+                    Colors.blue,
+                    Colors.blueAccent,
+                  ]),
+                ),
+                SizedBox(width: 20),
+                RaisedGradientButton(
+                  child: Text(
+                    'Matching',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.white,
+                    ),
+                  ),
+                  height: 50,
                   width: 100,
-                )
-              : Container(),
-        ],
+                  onPressed: () {
+                    showDialog<Null>(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return CharactersDialog(
+                          data: data,
+                          sessionId: widget.sessionId,
+                          userId: widget.userId,
+                        );
+                      },
+                    );
+                  },
+                  gradient: LinearGradient(
+                    colors: [Colors.pink, Colors.pinkAccent],
+                  ),
+                ),
+                SizedBox(width: 20),
+                !data['narrators'].contains(widget.userId)
+                    ? RaisedGradientButton(
+                        child: Text(
+                          'Ready\nto end',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.white,
+                          ),
+                        ),
+                        height: 50,
+                        width: 80,
+                        onPressed: () {
+                          toggleReadyToEnd(data);
+                        },
+                        gradient: LinearGradient(
+                          colors: data['readyToEnd'][widget.userId]
+                              ? [Colors.purple, Colors.purpleAccent]
+                              : [Colors.grey, Colors.grey],
+                        ),
+                      )
+                    : RaisedGradientButton(
+                        child: Text(
+                          'Game Status',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.white,
+                          ),
+                        ),
+                        gradient: LinearGradient(
+                          colors: allReadyToEnd
+                              ? [Colors.purple, Colors.purple[300]]
+                              : [Colors.green, Colors.green[300]],
+                        ),
+                        height: 50,
+                        width: 80,
+                        onPressed: () {
+                          showDialog<Null>(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return GameStateDialog(
+                                data: data,
+                              );
+                            },
+                          );
+                        },
+                      ),
+              ],
+            ),
+            SizedBox(height: 20),
+            widget.userId == data['leader']
+                ? EndGameButton(
+                    sessionId: widget.sessionId,
+                    fontSize: 14,
+                    height: 30,
+                    width: 100,
+                  )
+                : Container(),
+          ],
+        ),
       ),
     );
   }

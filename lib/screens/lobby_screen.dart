@@ -760,7 +760,9 @@ class _LobbyScreenState extends State<LobbyScreen> {
     // add read to end game options for each player
     data['readyToEnd'] = {};
     data['playerIds'].forEach((v) {
-      data['readyToEnd'][v] = false;
+      if (data['narrators'].contains(v)) {
+        data['readyToEnd'][v] = false;
+      }
     });
 
     // initialize matching guesses for each player
