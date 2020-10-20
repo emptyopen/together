@@ -8,13 +8,30 @@ void main() => runApp(MyApp());
 // done:
 
 // next up:
+// three round charades - SHOW & TELL
+// lots of settings:
+// - word collection - min/max number of words, time limit on collection
+// - user inputted words or generated random words
+// - round time limits (definition, gesture, one word)
+// random teams initially with captain on each team (responsible for confirming guesses of other team)
+// phase = 'wordCollection': enter words/phrases
+// phase = 'definition': teams take turns to burn through as many words as possible
+// phase = 'gesture': teams take turns using gestures
+// phase = 'oneWord': teams take turns using one word
+// when guessing, presenter has option to 'skip' or 'got it!', team leaders see a list of guessed words and can veto
+// add everything to a log
+// timer and log are available to everyone
+// phase = 'scoreboard': how many clues everyone got, which team wins
+// update lobby to allow team switching?
+
 // PLOT TWIST: (formerly Chit Chat and Hear Me Out):
 // - add ability to click a chat to see the character description
 // - narrator can see everyone's vote to end
 // - add final scoreboard screen with "winners" who guessed correctly
 
 // TODO:
-// undo button not working in bananaphone 2nd+ drawings
+// show arrow for scrollable!!
+// check if working: undo button not working in bananaphone 2nd+ drawings
 // plot twist: capability for narrator to cast poll, and for players to vote
 // plot twist: add "narrator silence" so narrators can only say something every X chats
 // plot twist: add ability to delete chats?

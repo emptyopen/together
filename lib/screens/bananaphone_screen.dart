@@ -456,6 +456,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
   }
 
   submitDrawing(data) async {
+    data = data.data;
     // send pointsList to Firestore sessions collection
     var promptIndex = getPromptIndex(data);
     var jsonPointsList = listPointsToJson(pointsList); // to string
@@ -825,6 +826,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
   }
 
   submitDescription(data) async {
+    data = data.data;
     var promptIndex = getPromptIndex(data);
 
     // send pointsList to Firestore sessions collection
@@ -883,6 +885,12 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
         .collection('sessions')
         .document(widget.sessionId)
         .setData(data);
+
+    setState(() {
+      descriptionController.text = '';
+      // clear drawing
+      pointsList.clear();
+    });
   }
 
   indexUpdateCallback(String phase, int promptIndex, data) {
@@ -1181,6 +1189,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
     // update voted status
     var playerIndex = data['playerIds'].indexOf(widget.userId);
     data['votes'][playerIndex] = true;
+    print('hi');
 
     // check if all votes are in
     var sum = scores.reduce((a, b) => a + b);
@@ -1206,12 +1215,12 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
         // end game = final scoreboard
         data['phase'] = 'scoreboard';
       }
-
-      await Firestore.instance
-          .collection('sessions')
-          .document(widget.sessionId)
-          .setData(data);
     }
+
+    await Firestore.instance
+        .collection('sessions')
+        .document(widget.sessionId)
+        .setData(data);
 
     setState(() {
       pointsList.clear();

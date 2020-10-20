@@ -151,6 +151,19 @@ class PlotTwistScreenHelp extends StatelessWidget {
   }
 }
 
+class ShowAndTellScreenHelp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return HelpScreen(
+      title: 'Plot Twist: Rules',
+      information: [
+        '    Welcome to Show & Tell!',
+      ],
+      buttonColor: Theme.of(context).primaryColor,
+    );
+  }
+}
+
 class HelpScreen extends StatefulWidget {
   final String title;
   final List<String> information;

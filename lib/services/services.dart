@@ -125,6 +125,15 @@ getDefaultRules(String gameName) {
         'numNarrators': 1,
       };
       break;
+    case 'Show & Tell':
+      return {
+        'numTeams': 2,
+        'playerWords': true,
+        'collectionWordLimit': 20,
+        'collectionTimeLimit': 300,
+        'roundTimeLimit': 60,
+      };
+      break;
   }
 }
 

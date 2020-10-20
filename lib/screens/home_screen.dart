@@ -65,6 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
     Color colorThreeCrowns = Colors.amber;
     Color colorRivers = Colors.lightBlue;
     Color colorPlotTwist = Colors.pink;
+    Color colorShowAndTell = Colors.indigoAccent;
     double intervalLength = 25.0;
     return Container(
       child: Column(
@@ -99,6 +100,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: Icon(
                   MdiIcons.chatProcessingOutline,
                   color: colorPlotTwist,
+                  size: 30,
+                ),
+              ),
+              SizedBox(width: intervalLength),
+              QuickStartButton(
+                gameName: 'Show & Tell',
+                subtitle: 'Three round\ncharades!',
+                icon: Icon(
+                  MdiIcons.dramaMasks,
+                  color: colorShowAndTell,
                   size: 30,
                 ),
               ),
@@ -470,6 +481,14 @@ class _LobbyDialogState extends State<LobbyDialog> {
         color = Colors.amber;
         icon = Icon(MdiIcons.crown, color: color);
         break;
+      case 'Plot Twist':
+        color = Colors.pink;
+        icon = Icon(MdiIcons.chatProcessingOutline, color: color);
+        break;
+      case 'Show & Tell':
+        color = Colors.indigoAccent;
+        icon = Icon(MdiIcons.dramaMasks, color: color);
+        break;
     }
     return Row(
       children: <Widget>[
@@ -630,7 +649,7 @@ class QuickStartButton extends StatelessWidget {
                 color: Colors.white,
               ),
             ),
-            SizedBox(height: 3),
+            SizedBox(height: 1),
             Text(
               subtitle,
               textAlign: TextAlign.center,

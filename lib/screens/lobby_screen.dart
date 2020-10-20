@@ -24,6 +24,7 @@ import 'package:together/screens/bananaphone_screen.dart';
 import 'package:together/screens/three_crowns_screen.dart';
 import 'package:together/screens/rivers_screen.dart';
 import 'package:together/screens/plot_twist_screen.dart';
+import 'package:together/screens/show_and_tell_screen.dart';
 
 class LobbyScreen extends StatefulWidget {
   LobbyScreen({Key key, this.roomCode}) : super(key: key);
@@ -145,6 +146,16 @@ class _LobbyScreenState extends State<LobbyScreen> {
               slideTransition(
                 context,
                 PlotTwistScreen(
+                  sessionId: sessionId,
+                  userId: userId,
+                  roomCode: widget.roomCode,
+                ),
+              );
+              break;
+            case 'Show & Tell':
+              slideTransition(
+                context,
+                ShowAndTellScreen(
                   sessionId: sessionId,
                   userId: userId,
                   roomCode: widget.roomCode,
@@ -664,6 +675,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
   }
 
   setupPlotTwist(data) async {
+    var playerIds = data['playerIds'];
     // verify that there are sufficient number of players
     if (data['playerIds'].length < data['rules']['numNarrators'] + 2) {
       setState(() {
@@ -671,6 +683,20 @@ class _LobbyScreenState extends State<LobbyScreen> {
             'Need at least ${data['rules']['numNarrators'] + 2} players for ${data['rules']['numNarrators']} narrators.';
       });
       return;
+    }
+
+    data['characters'] = {};
+
+    // determine narrators randomly
+    playerIds.shuffle();
+    data['narrators'] = [];
+    for (int i = 0; i < data['rules']['numNarrators']; i++) {
+      data['narrators'].add(playerIds[i]);
+      data['characters'][playerIds[i]] = {
+        'name': 'Narrator',
+        'age': 99,
+        'description': 'A narrator',
+      };
     }
 
     if (data['playerIds'].length - data['narrators'].length > 10) {
@@ -686,7 +712,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
     });
 
     // add player names
-    var playerIds = data['playerIds'];
     data['playerNames'] = {};
     for (int i = 0; i < playerIds.length; i++) {
       data['playerNames'][playerIds[i]] = (await Firestore.instance
@@ -694,20 +719,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
               .document(playerIds[i])
               .get())
           .data['name'];
-    }
-
-    data['characters'] = {};
-
-    // determine narrators randomly
-    playerIds.shuffle();
-    data['narrators'] = [];
-    for (int i = 0; i < data['rules']['numNarrators']; i++) {
-      data['narrators'].add(playerIds[i]);
-      data['characters'][playerIds[i]] = {
-        'name': 'Narrator',
-        'age': 99,
-        'description': 'A narrator',
-      };
     }
 
     // add player colors randomly
@@ -760,7 +771,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
     // add read to end game options for each player
     data['readyToEnd'] = {};
     data['playerIds'].forEach((v) {
-      if (data['narrators'].contains(v)) {
+      if (!data['narrators'].contains(v)) {
         data['readyToEnd'][v] = false;
       }
     });
@@ -782,37 +793,116 @@ class _LobbyScreenState extends State<LobbyScreen> {
     return data;
   }
 
+  setupShowAndTell(data) async {
+    // verify that there are sufficient number of players
+    if (data['playerIds'].length < 2 * data['rules']['numTeams']) {
+      setState(() {
+        startError = 'Need at least ${2 * data['rules']['numTeams']} players';
+      });
+      return;
+    }
+
+    // clear error if we are good to start
+    setState(() {
+      startError = '';
+    });
+
+    var playerIds = List.from(data['playerIds']);
+
+    // add player names
+    data['playerNames'] = {};
+    for (int i = 0; i < playerIds.length; i++) {
+      data['playerNames'][playerIds[i]] = (await Firestore.instance
+              .collection('users')
+              .document(playerIds[i])
+              .get())
+          .data['name'];
+    }
+
+    // separate into two teams - captains of each team will be first player in each array
+    var teams = {};
+    for (int i = 0; i < data['rules']['numTeams']; i++) {
+      teams['team$i'] = [];
+    }
+    playerIds.shuffle();
+    while (playerIds.length > 0) {
+      for (int i = 0; i < data['rules']['numTeams']; i++) {
+        if (playerIds.length <= 0) {
+          break;
+        }
+        teams['team$i'].add(playerIds.last);
+        playerIds.removeLast();
+      }
+    }
+
+    // initialize words (generate if not user input)
+    data['words'] = [];
+    data['expirationTime'] = DateTime.now()
+        .add(Duration(seconds: data['rules']['collectionTimeLimit']));
+    data['internalState'] = 'wordSelection';
+    if (!data['rules']['playerWords']) {
+      // random words
+      while (data['words'].length < data['rules']['collectionWordLimit']) {
+        data['words'].add('randomWord');
+      }
+      data['internalState'] = 'definitionRound';
+    }
+
+    // set piles equal to word list
+    data['describePile'] = List.from(data['words']);
+    data['describePile'].shuffle();
+    data['gesturePile'] = List.from(data['words']);
+    data['gesturePile'].shuffle();
+    data['oneWordPile'] = List.from(data['words']);
+    data['oneWordPile'].shuffle();
+
+    data['scores'] = [];
+    for (int i = 0; i < data['rules']['numTeams']; i++) {
+      data['scores'].add(0);
+    }
+
+    // initialize turns
+    data['turn'] = {
+      'teamTurn': 0,
+    };
+    for (int i = 0; i < data['rules']['numTeams']; i++) {
+      data['turn']['team${i}Turn'] = 0;
+    }
+
+    data['log'] = ['', '', ''];
+
+    return data;
+  }
+
   startGame(data) async {
     // initialize final values/rules for games
     switch (gameName) {
       case 'The Hunt':
-        print('Setting up The Hunt game...');
         data = await setupTheHunt(data);
         break;
 
       case 'Abstract':
-        print('Setting up Abstract game...');
         data = await setupAbstract(data);
         break;
 
       case 'Bananaphone':
-        print('Setting up Bananaphone game...');
         data = await setupBananaphone(data);
         break;
 
       case 'Three Crowns':
-        print('Setting up Three Crowns game...');
         data = await setupThreeCrowns(data);
         break;
 
       case 'Rivers':
-        print('Setting up Rivers game...');
         data = await setupRivers(data);
         break;
 
       case 'Plot Twist':
-        print('Setting up Plot Twist game...');
         data = await setupPlotTwist(data);
+        break;
+
+      case 'Show & Tell':
+        data = await setupShowAndTell(data);
         break;
     }
 
@@ -1082,76 +1172,148 @@ class _LobbyScreenState extends State<LobbyScreen> {
           ],
         );
         break;
+      case 'Show & Tell':
+        return Column(
+          children: <Widget>[
+            RulesContainer(rules: <Widget>[
+              Text(
+                'Number of Teams:',
+                style: TextStyle(fontSize: 14),
+              ),
+              Text(
+                rules['numTeams'].toString(),
+                style: TextStyle(fontSize: 18),
+              ),
+            ]),
+            SizedBox(height: 5),
+            RulesContainer(rules: <Widget>[
+              Text(
+                'Round Time Limit:',
+                style: TextStyle(fontSize: 14),
+              ),
+              Text(
+                rules['roundTimeLimit'].toString(),
+                style: TextStyle(fontSize: 18),
+              ),
+            ]),
+            SizedBox(height: 5),
+            RulesContainer(
+              rules: <Widget>[
+                Text(
+                  'Number of Words:',
+                  style: TextStyle(fontSize: 14),
+                ),
+                Text(
+                  rules['collectionWordLimit'].toString(),
+                  style: TextStyle(fontSize: 18),
+                ),
+              ],
+            ),
+            SizedBox(height: 5),
+            RulesContainer(rules: <Widget>[
+              Text(
+                'Player/Random Words:',
+                style: TextStyle(fontSize: 14),
+              ),
+              Text(
+                rules['playerWords'] ? 'Player' : 'Random',
+                style: TextStyle(fontSize: 18),
+              ),
+            ]),
+            SizedBox(height: 5),
+            RulesContainer(
+              rules: <Widget>[
+                Text(
+                  'Word Collection Time Limit:',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: rules['playerWords']
+                        ? Theme.of(context).highlightColor
+                        : Colors.grey,
+                  ),
+                ),
+                Text(
+                  rules['collectionTimeLimit'].toString(),
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: rules['playerWords']
+                        ? Theme.of(context).highlightColor
+                        : Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+        break;
       default:
         return Text('Unknown game');
     }
   }
 
   Widget _getPlayers(data) {
-    // if start date exists and we are past it, move to game screen (with session id)
     var playerIds = data['playerIds'];
-    return Container(
-      height: 35.0 * playerIds.length,
-      child: ListView.builder(
-          itemCount: playerIds.length,
-          itemBuilder: (context, index) {
-            return FutureBuilder(
-                future: Firestore.instance
-                    .collection('users')
-                    .document(playerIds[index])
-                    .get(),
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData) {
-                    return Container();
-                  }
-                  return Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          Text(
-                            snapshot.data['name'],
-                            style: TextStyle(
-                              fontSize: 20,
-                              color: userId == playerIds[index]
-                                  ? Theme.of(context).primaryColor
-                                  : Theme.of(context).highlightColor,
-                            ),
+    return ListView.builder(
+        physics: NeverScrollableScrollPhysics(),
+        shrinkWrap: true,
+        itemCount: playerIds.length,
+        itemBuilder: (context, index) {
+          return FutureBuilder(
+              future: Firestore.instance
+                  .collection('users')
+                  .document(playerIds[index])
+                  .get(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return Container();
+                }
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        Text(
+                          snapshot.data['name'],
+                          style: TextStyle(
+                            fontSize: 20,
+                            color: userId == playerIds[index]
+                                ? Theme.of(context).primaryColor
+                                : Theme.of(context).highlightColor,
                           ),
-                          Text(
-                            playerIds[index] == data['leader']
-                                ? ' (glorious leader) '
-                                : '',
-                            style: TextStyle(fontSize: 14),
-                          ),
-                          userId == data['leader'] &&
-                                  playerIds[index] == data['leader']
-                              ? SizedBox(height: 30)
-                              : Container(),
-                          userId == data['leader'] &&
-                                  playerIds[index] != data['leader']
-                              ? Row(
-                                  children: <Widget>[
-                                    SizedBox(width: 20),
-                                    GestureDetector(
-                                      child: Icon(
-                                        MdiIcons.accountRemove,
-                                        size: 20,
-                                        color: Colors.redAccent,
-                                      ),
-                                      onTap: () => kickPlayer(playerIds[index]),
+                        ),
+                        Text(
+                          playerIds[index] == data['leader']
+                              ? ' (glorious leader) '
+                              : '',
+                          style: TextStyle(fontSize: 14),
+                        ),
+                        userId == data['leader'] &&
+                                playerIds[index] == data['leader']
+                            ? SizedBox(height: 30)
+                            : Container(),
+                        userId == data['leader'] &&
+                                playerIds[index] != data['leader']
+                            ? Row(
+                                children: <Widget>[
+                                  SizedBox(width: 20),
+                                  GestureDetector(
+                                    child: Icon(
+                                      MdiIcons.accountRemove,
+                                      size: 20,
+                                      color: Colors.redAccent,
                                     ),
-                                  ],
-                                )
-                              : Container(),
-                        ],
-                      ),
-                    ],
-                  );
-                });
-          }),
-    );
+                                    onTap: () => kickPlayer(playerIds[index]),
+                                  ),
+                                ],
+                              )
+                            : Container(),
+                      ],
+                    ),
+                  ],
+                );
+              });
+        });
   }
 
   shufflePlayers(data) async {
@@ -1594,6 +1756,15 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
       case 'Plot Twist':
         rules['location'] = sessionData['rules']['location'];
         rules['numNarrators'] = sessionData['rules']['numNarrators'];
+        break;
+      case 'Show & Tell':
+        rules['numTeams'] = sessionData['rules']['numTeams'];
+        rules['playerWords'] = sessionData['rules']['playerWords'];
+        rules['collectionWordLimit'] =
+            sessionData['rules']['collectionWordLimit'];
+        rules['collectionTimeLimit'] =
+            sessionData['rules']['collectionTimeLimit'];
+        rules['roundTimeLimit'] = sessionData['rules']['roundTimeLimit'];
         break;
     }
     if (widget.game == 'The Hunt') {
@@ -2282,6 +2453,194 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
                       });
                     },
                     items: <int>[1, 2, 3, 4]
+                        .map<DropdownMenuItem<int>>((int value) {
+                      return DropdownMenuItem<int>(
+                        value: value,
+                        child: Text(value.toString(),
+                            style: TextStyle(fontFamily: 'Balsamiq')),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            Container(
+              child: FlatButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('Cancel'),
+              ),
+            ),
+            FlatButton(
+              onPressed: () {
+                updateRules();
+              },
+              child: Text('Update'),
+            )
+          ],
+        );
+        break;
+      case 'Show & Tell':
+        return AlertDialog(
+          title: Text('Edit game rules:'),
+          contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),
+          content: Container(
+            // decoration: BoxDecoration(border: Border.all()),
+            height: 460,
+            width: width * 0.95,
+            child: ListView(
+              children: <Widget>[
+                SizedBox(height: 20),
+                Text('Number of teams:'),
+                Container(
+                  width: 80,
+                  child: DropdownButton<int>(
+                    isExpanded: true,
+                    value: rules['numTeams'],
+                    iconSize: 24,
+                    elevation: 16,
+                    style: TextStyle(color: Theme.of(context).primaryColor),
+                    underline: Container(
+                      height: 2,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    onChanged: (int newValue) {
+                      setState(() {
+                        rules['numTeams'] = newValue;
+                      });
+                    },
+                    items:
+                        <int>[2, 3, 4].map<DropdownMenuItem<int>>((int value) {
+                      return DropdownMenuItem<int>(
+                        value: value,
+                        child: Text(value.toString(),
+                            style: TextStyle(fontFamily: 'Balsamiq')),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                SizedBox(height: 20),
+                Text('Round time limit:'),
+                Container(
+                  width: 80,
+                  child: DropdownButton<int>(
+                    isExpanded: true,
+                    value: rules['roundTimeLimit'],
+                    iconSize: 24,
+                    elevation: 16,
+                    style: TextStyle(color: Theme.of(context).primaryColor),
+                    underline: Container(
+                      height: 2,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    onChanged: (int newValue) {
+                      setState(() {
+                        rules['roundTimeLimit'] = newValue;
+                      });
+                    },
+                    items: <int>[40, 50, 60, 70, 80, 90, 100, 110, 120]
+                        .map<DropdownMenuItem<int>>((int value) {
+                      return DropdownMenuItem<int>(
+                        value: value,
+                        child: Text(value.toString(),
+                            style: TextStyle(fontFamily: 'Balsamiq')),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                SizedBox(height: 20),
+                Text('Number of words:'),
+                Container(
+                  width: 80,
+                  child: DropdownButton<int>(
+                    isExpanded: true,
+                    value: rules['collectionWordLimit'],
+                    iconSize: 24,
+                    elevation: 16,
+                    style: TextStyle(color: Theme.of(context).primaryColor),
+                    underline: Container(
+                      height: 2,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    onChanged: (int newValue) {
+                      setState(() {
+                        rules['collectionWordLimit'] = newValue;
+                      });
+                    },
+                    items: <int>[
+                      10,
+                      15,
+                      20,
+                      25,
+                      30,
+                      40,
+                      50,
+                      60,
+                      70,
+                      80,
+                      90,
+                      100
+                    ].map<DropdownMenuItem<int>>((int value) {
+                      return DropdownMenuItem<int>(
+                        value: value,
+                        child: Text(value.toString(),
+                            style: TextStyle(fontFamily: 'Balsamiq')),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                SizedBox(height: 20),
+                Text('Player chosen or random words:'),
+                Container(
+                  width: 80,
+                  child: DropdownButton<String>(
+                    isExpanded: true,
+                    value: rules['playerWords'] ? 'Player' : 'Random',
+                    iconSize: 24,
+                    elevation: 16,
+                    style: TextStyle(color: Theme.of(context).primaryColor),
+                    underline: Container(
+                      height: 2,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    onChanged: (String newValue) {
+                      setState(() {
+                        rules['playerWords'] = newValue == 'Player';
+                      });
+                    },
+                    items: <String>['Player', 'Random']
+                        .map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value.toString(),
+                            style: TextStyle(fontFamily: 'Balsamiq')),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                SizedBox(height: 20),
+                Text('Word collection time limit:'),
+                Container(
+                  width: 80,
+                  child: DropdownButton<int>(
+                    isExpanded: true,
+                    value: rules['collectionTimeLimit'],
+                    iconSize: 24,
+                    elevation: 16,
+                    style: TextStyle(color: Theme.of(context).primaryColor),
+                    underline: Container(
+                      height: 2,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    onChanged: (int newValue) {
+                      setState(() {
+                        rules['collectionTimeLimit'] = newValue;
+                      });
+                    },
+                    items: <int>[60, 120, 180, 240, 300, 360, 420, 480]
                         .map<DropdownMenuItem<int>>((int value) {
                       return DropdownMenuItem<int>(
                         value: value,
