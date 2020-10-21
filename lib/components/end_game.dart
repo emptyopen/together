@@ -18,7 +18,7 @@ class EndGameButton extends StatelessWidget {
         'End game',
         style: TextStyle(
           fontSize: fontSize,
-          color: Colors.black,
+          color: Colors.white,
         ),
       ),
       onPressed: () {
@@ -35,8 +35,10 @@ class EndGameButton extends StatelessWidget {
       width: width,
       gradient: LinearGradient(
         colors: <Color>[
-          Color.fromARGB(255, 255, 185, 0),
-          Color.fromARGB(255, 255, 213, 0),
+          Colors.red[700],
+          Colors.red[400],
+          // Color.fromARGB(255, 255, 185, 0),
+          // Color.fromARGB(255, 255, 213, 0),
         ],
       ),
     );

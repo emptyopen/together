@@ -15,6 +15,7 @@ import 'package:together/components/info_box.dart';
 import '../models/models.dart';
 import '../services/three_crowns_services.dart';
 import '../services/plot_twist_services.dart';
+import '../services/show_and_tell_services.dart';
 import 'package:together/help_screens/help_screens.dart';
 import 'package:together/constants/values.dart';
 import 'package:together/services/services.dart';
@@ -834,6 +835,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
         playerIds.removeLast();
       }
     }
+    data['teams'] = teams;
 
     // initialize words (generate if not user input)
     data['words'] = [];
@@ -842,10 +844,16 @@ class _LobbyScreenState extends State<LobbyScreen> {
     data['internalState'] = 'wordSelection';
     if (!data['rules']['playerWords']) {
       // random words
+      var words = [showAndTellWords, showAndTellExpressions, showAndTellPeople]
+          .expand((x) => x)
+          .toList();
+      words.shuffle();
+      int i = 0;
       while (data['words'].length < data['rules']['collectionWordLimit']) {
-        data['words'].add('randomWord');
+        data['words'].add(words[i]);
+        i += 1;
       }
-      data['internalState'] = 'definitionRound';
+      data['internalState'] = 'describe';
     }
 
     // set piles equal to word list
@@ -928,6 +936,9 @@ class _LobbyScreenState extends State<LobbyScreen> {
     // if we are started, countdown if we are before the time, otherwise pop and move to game room
     isStarting = true;
     startTime = data['startTime'].toDate();
+    if (startTime.difference(_now).inSeconds <= 0) {
+      return Container();
+    }
     return Column(
       children: <Widget>[
         Text(
@@ -1253,67 +1264,73 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
   Widget _getPlayers(data) {
     var playerIds = data['playerIds'];
-    return ListView.builder(
-        physics: NeverScrollableScrollPhysics(),
-        shrinkWrap: true,
-        itemCount: playerIds.length,
-        itemBuilder: (context, index) {
-          return FutureBuilder(
-              future: Firestore.instance
-                  .collection('users')
-                  .document(playerIds[index])
-                  .get(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return Container();
-                }
-                return Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    Row(
+    return Column(
+      children: [
+        ListView.builder(
+            physics: NeverScrollableScrollPhysics(),
+            shrinkWrap: true,
+            itemCount: playerIds.length,
+            itemBuilder: (context, index) {
+              return FutureBuilder(
+                  future: Firestore.instance
+                      .collection('users')
+                      .document(playerIds[index])
+                      .get(),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) {
+                      return Container();
+                    }
+                    return Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: <Widget>[
-                        Text(
-                          snapshot.data['name'],
-                          style: TextStyle(
-                            fontSize: 20,
-                            color: userId == playerIds[index]
-                                ? Theme.of(context).primaryColor
-                                : Theme.of(context).highlightColor,
-                          ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            Text(
+                              snapshot.data['name'],
+                              style: TextStyle(
+                                fontSize: 20,
+                                color: userId == playerIds[index]
+                                    ? Theme.of(context).primaryColor
+                                    : Theme.of(context).highlightColor,
+                              ),
+                            ),
+                            Text(
+                              playerIds[index] == data['leader']
+                                  ? ' (glorious leader) '
+                                  : '',
+                              style: TextStyle(fontSize: 14),
+                            ),
+                            userId == data['leader'] &&
+                                    playerIds[index] == data['leader']
+                                ? SizedBox(height: 30)
+                                : Container(),
+                            userId == data['leader'] &&
+                                    playerIds[index] != data['leader']
+                                ? Row(
+                                    children: <Widget>[
+                                      SizedBox(width: 20),
+                                      GestureDetector(
+                                        child: Icon(
+                                          MdiIcons.accountRemove,
+                                          size: 20,
+                                          color: Colors.redAccent,
+                                        ),
+                                        onTap: () =>
+                                            kickPlayer(playerIds[index]),
+                                      ),
+                                    ],
+                                  )
+                                : Container(),
+                          ],
                         ),
-                        Text(
-                          playerIds[index] == data['leader']
-                              ? ' (glorious leader) '
-                              : '',
-                          style: TextStyle(fontSize: 14),
-                        ),
-                        userId == data['leader'] &&
-                                playerIds[index] == data['leader']
-                            ? SizedBox(height: 30)
-                            : Container(),
-                        userId == data['leader'] &&
-                                playerIds[index] != data['leader']
-                            ? Row(
-                                children: <Widget>[
-                                  SizedBox(width: 20),
-                                  GestureDetector(
-                                    child: Icon(
-                                      MdiIcons.accountRemove,
-                                      size: 20,
-                                      color: Colors.redAccent,
-                                    ),
-                                    onTap: () => kickPlayer(playerIds[index]),
-                                  ),
-                                ],
-                              )
-                            : Container(),
                       ],
-                    ),
-                  ],
-                );
-              });
-        });
+                    );
+                  });
+            }),
+        SizedBox(height: 10),
+      ],
+    );
   }
 
   shufflePlayers(data) async {
@@ -1544,9 +1561,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                         ),
                         PageBreak(width: 50),
                         _getPlayers(data),
-                        userId == data['leader'] &&
-                                !isStarting &&
-                                ['The Hunt', 'Bananaphone'].contains(gameName)
+                        userId == data['leader'] && !isStarting
                             ? Column(
                                 children: <Widget>[
                                   RaisedGradientButton(
@@ -1554,12 +1569,12 @@ class _LobbyScreenState extends State<LobbyScreen> {
                                       'Shuffle Players',
                                       style: TextStyle(
                                         color: Colors.white,
-                                        fontSize: 18,
+                                        fontSize: 14,
                                       ),
                                     ),
                                     onPressed: () => shufflePlayers(data),
-                                    height: 40,
-                                    width: 170,
+                                    height: 25,
+                                    width: 120,
                                     gradient: LinearGradient(
                                       colors: <Color>[
                                         Theme.of(context).primaryColor,
@@ -1567,7 +1582,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                                       ],
                                     ),
                                   ),
-                                  SizedBox(height: 30),
+                                  SizedBox(height: 20),
                                 ],
                               )
                             : Container(),

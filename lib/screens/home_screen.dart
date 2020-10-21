@@ -95,21 +95,21 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               SizedBox(width: intervalLength),
               QuickStartButton(
-                gameName: 'Plot Twist',
-                subtitle: 'Chit & chat!',
-                icon: Icon(
-                  MdiIcons.chatProcessingOutline,
-                  color: colorPlotTwist,
-                  size: 30,
-                ),
-              ),
-              SizedBox(width: intervalLength),
-              QuickStartButton(
                 gameName: 'Show & Tell',
                 subtitle: 'Three round\ncharades!',
                 icon: Icon(
                   MdiIcons.dramaMasks,
                   color: colorShowAndTell,
+                  size: 30,
+                ),
+              ),
+              SizedBox(width: intervalLength),
+              QuickStartButton(
+                gameName: 'Plot Twist',
+                subtitle: 'Chit & chat!',
+                icon: Icon(
+                  MdiIcons.chatProcessingOutline,
+                  color: colorPlotTwist,
                   size: 30,
                 ),
               ),
@@ -229,9 +229,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       SizedBox(height: 10),
                       Marquee(
                         child: getGamesMarquee(context),
-                        animationDuration: Duration(seconds: 13),
+                        animationDuration: Duration(seconds: 15),
                         backDuration: Duration(seconds: 13),
-                        pauseDuration: Duration(seconds: 3),
+                        pauseDuration: Duration(seconds: 4),
                         directionMarguee: DirectionMarguee.TwoDirection,
                       ),
                       SizedBox(height: 40),
