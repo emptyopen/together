@@ -878,6 +878,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
     }
 
     data['log'] = ['', '', ''];
+    data['judgeList'] = [];
+    data['roundScore'] = 0;
 
     return data;
   }

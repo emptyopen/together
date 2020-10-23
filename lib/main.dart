@@ -30,6 +30,7 @@ void main() => runApp(MyApp());
 // - add final scoreboard screen with "winners" who guessed correctly
 
 // TODO:
+// show & tell: shimmer for high round scores
 // show arrow for scrollable!!
 // check if working: undo button not working in bananaphone 2nd+ drawings
 // plot twist: capability for narrator to cast poll, and for players to vote
