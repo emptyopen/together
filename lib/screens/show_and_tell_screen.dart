@@ -617,6 +617,24 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
     );
   }
 
+  getStats(data) {
+    return Container(
+      child: Text(
+        'Round score: 0',
+        style: TextStyle(
+          fontSize: 22,
+        ),
+      ),
+      width: 230,
+      height: 80,
+      padding: EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        border: Border.all(color: Theme.of(context).highlightColor),
+        borderRadius: BorderRadius.circular(5),
+      ),
+    );
+  }
+
   getGameboard(data) {
     // if it is not your turn, should be "other team is playing!", "waiting for XX to start!"
     var playerTeamIndex;
@@ -651,7 +669,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
           SizedBox(height: 20),
           getTimer(data),
           SizedBox(height: 10),
-          // getStats(data),
+          getStats(data),
           SizedBox(height: 20),
           data['expirationTime'] == null || !isPlayerTurn
               ? Container()
