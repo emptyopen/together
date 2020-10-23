@@ -386,43 +386,25 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
     // all players should see timer
     // all players should see number completed
     var phase = 'describe';
-    Widget emoticon = Container(
-      width: 50,
-      height: 50,
-      child: Icon(
-        MdiIcons.commentText,
-        color: Theme.of(context).highlightColor,
-        size: 50,
-      ),
-      color: Colors.yellow,
-    );
+    var emoticon = MdiIcons.commentText;
     if (data['internalState'] == 'gesture') {
       phase = 'gesture';
-      emoticon = Icon(
-        MdiIcons.humanHandsup,
-        color: Theme.of(context).highlightColor,
-        size: 50,
-      );
+      emoticon = MdiIcons.humanHandsup;
     }
     if (data['internalState'] == 'oneWord') {
-      phase = 'oneWord';
-      emoticon = Container(
-        width: 50,
-        height: 50,
-        child: Icon(
-          MdiIcons.numeric1,
-          color: Theme.of(context).highlightColor,
-          size: 50,
-        ),
-        color: Colors.yellow,
-      );
+      phase = 'one word';
+      emoticon = MdiIcons.flaskEmptyOutline;
     }
     return Column(children: [
       PageBreak(width: 100),
       Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          emoticon,
+          Icon(
+            emoticon,
+            color: Theme.of(context).highlightColor,
+            size: 50,
+          ),
           SizedBox(width: 30),
           Text(
             phase,
@@ -431,7 +413,11 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
             ),
           ),
           SizedBox(width: 30),
-          emoticon,
+          Icon(
+            emoticon,
+            color: Theme.of(context).highlightColor,
+            size: 50,
+          ),
         ],
       ),
       Text(
@@ -740,7 +726,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
             return Scaffold(
               appBar: AppBar(
                 title: Text(
-                  'Plot Twist',
+                  'Show & Tell',
                 ),
               ),
               body: Container(),
@@ -753,7 +739,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
             return Scaffold(
               appBar: AppBar(
                 title: Text(
-                  'Plot Twist',
+                  'Show & Tell',
                 ),
               ),
               body: Container(),
@@ -770,7 +756,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
             resizeToAvoidBottomInset: false,
             appBar: AppBar(
               title: Text(
-                'Plot Twist',
+                'Show & Tell',
               ),
               actions: <Widget>[
                 IconButton(
