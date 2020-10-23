@@ -111,6 +111,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
   updateTurn(data) async {
     // increment team member index, and team index
     print('will go to next team/player');
+    data['roundScore'] = 0;
     // LEAVE THIS FOR LAST
     await Firestore.instance
         .collection('sessions')
@@ -352,8 +353,8 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
               width: 120,
               gradient: LinearGradient(
                 colors: <Color>[
-                  Colors.green[800],
-                  Colors.green[500],
+                  Colors.green[600],
+                  Colors.green[300],
                 ],
               ),
             ),
@@ -370,8 +371,8 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
               width: 120,
               gradient: LinearGradient(
                 colors: <Color>[
-                  Colors.red[900],
                   Colors.red[700],
+                  Colors.red[400],
                 ],
               ),
             ),
@@ -484,7 +485,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
       }
     }
     String subString = '';
-    if (data['judgeList'].length != 0) {
+    if (data['expirationTime'] == null && data['judgeList'].length != 0) {
       subString = '(waiting on judgement of last round)';
     } else if (data['expirationTime'] == null && !isPlayerTurn) {
       subString = '(waiting for XX to start)';
@@ -618,19 +619,58 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
   }
 
   getStats(data) {
+    String pile = data['internalState'];
     return Container(
-      child: Text(
-        'Round score: 0',
-        style: TextStyle(
-          fontSize: 22,
-        ),
-      ),
-      width: 230,
+      width: 180,
       height: 80,
-      padding: EdgeInsets.all(10),
+      padding: EdgeInsets.all(5),
       decoration: BoxDecoration(
         border: Border.all(color: Theme.of(context).highlightColor),
         borderRadius: BorderRadius.circular(5),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Round\nscore:',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                ),
+              ),
+              SizedBox(height: 5),
+              Text(
+                data['roundScore'].toString(),
+                style: TextStyle(
+                  fontSize: 22,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(width: 20),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Remaining\ncards:',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                ),
+              ),
+              SizedBox(height: 5),
+              Text(
+                data['${pile}Pile'].length.toString(),
+                style: TextStyle(
+                  fontSize: 22,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
