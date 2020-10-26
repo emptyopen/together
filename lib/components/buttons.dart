@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class RaisedGradientButton extends StatelessWidget {
   final Widget child;
@@ -24,7 +25,10 @@ class RaisedGradientButton extends StatelessWidget {
       width: width,
       height: height,
       child: RaisedButton(
-        onPressed: onPressed,
+        onPressed: () {
+          HapticFeedback.vibrate();
+          onPressed();
+        },
         shape: RoundedRectangleBorder(
             side: borderHighlight
                 ? BorderSide(width: 3, color: Colors.white)

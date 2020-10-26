@@ -1464,7 +1464,6 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
                   IconButton(
                     icon: Icon(Icons.info),
                     onPressed: () {
-                      // HapticFeedback.heavyImpact();
                       Navigator.of(context).push(
                         PageRouteBuilder(
                           opaque: false,

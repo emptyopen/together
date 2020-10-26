@@ -1081,7 +1081,6 @@ class _AbstractScreenState extends State<AbstractScreen> {
                   IconButton(
                     icon: Icon(Icons.info),
                     onPressed: () {
-                      // HapticFeedback.heavyImpact();
                       Navigator.of(context).push(
                         PageRouteBuilder(
                           opaque: false,

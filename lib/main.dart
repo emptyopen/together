@@ -30,6 +30,7 @@ void main() => runApp(MyApp());
 // - add final scoreboard screen with "winners" who guessed correctly
 
 // TODO:
+// add generic "tools": voice command point counter, roll dice, flip coin, etc.
 // show & tell: shimmer for high round scores
 // show arrow for scrollable!!
 // check if working: undo button not working in bananaphone 2nd+ drawings

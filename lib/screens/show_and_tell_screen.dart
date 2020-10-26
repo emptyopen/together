@@ -11,6 +11,7 @@ import 'lobby_screen.dart';
 import 'package:together/components/end_game.dart';
 import 'package:together/components/buttons.dart';
 import 'package:together/components/misc.dart';
+import 'package:together/services/show_and_tell_services.dart';
 
 class ShowAndTellScreen extends StatefulWidget {
   ShowAndTellScreen({this.sessionId, this.userId, this.roomCode});
@@ -38,7 +39,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
     super.initState();
     wordController = TextEditingController();
     setUpGame();
-    _timer = Timer.periodic(Duration(milliseconds: 100), (Timer t) {
+    _timer = Timer.periodic(Duration(milliseconds: 200), (Timer t) {
       if (!mounted) return;
       setState(() {
         _now = DateTime.now();
@@ -108,49 +109,68 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
     return [m, s];
   }
 
-  updateTurn(data) async {
-    // increment team member index, and team index
-    print('will go to next team/player');
-    data['roundScore'] = 0;
-    // LEAVE THIS FOR LAST
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
-  }
-
   updateInternalState(data) async {
+    if (_now == null || data['internalState'] == 'scoreBoard') {
+      return;
+    }
     // timer expires, OR a pile runs out of cards
     // timer: wordSelection to describe, otherwise update team
     bool updateState = false;
 
     // if pile runs out of cards, save the remaining time to be used for the next phase by the same team
-    String pile = data['internalState'];
-    if (data['${pile}Pile'].length == 0) {
-      updateState = true;
-    }
-    // if timer expires, if state is wordSelection, change
-    var t = _now.difference(data['expirationTime'].toDate()).inSeconds;
-    if (t > 0) {
-      // if (now - expiration time) is negative, set it to null
-      data['expirationTime'] = null;
-      if (data['internalState'] == 'wordSelection') {
+    if (data['internalState'] != 'wordSelection') {
+      String pile = data['internalState'];
+      if (data['${pile}Pile'].length == 0) {
         updateState = true;
-      } else {
-        updateTurn(data);
+      }
+    }
+
+    // if timer expires, if state is wordSelection, change
+    if (data['expirationTime'] != null) {
+      var t = _now.difference(data['expirationTime'].toDate()).inSeconds;
+      if (t > 0) {
+        if (data['internalState'] == 'wordSelection') {
+          updateState = true;
+        } else {
+          updateTurn(data);
+        }
+        data['expirationTime'] = null;
       }
     }
 
     if (updateState) {
       if (data['internalState'] == 'wordSelection') {
+        // check if there are enough words. if not, supplement randomly until full
+        var words = [
+          showAndTellWords,
+          showAndTellExpressions,
+          showAndTellPeople
+        ].expand((x) => x).toList();
+        words.shuffle();
+        int i = 0;
+        while (data['words'].length < data['rules']['collectionWordLimit']) {
+          data['words'].add(words[i]);
+          i += 1;
+        }
+        data['expirationTime'] = null;
         data['internalState'] = 'describe';
       } else if (data['internalState'] == 'describe') {
         data['internalState'] = 'gesture';
       } else if (data['internalState'] == 'gesture') {
-        data['gesture'] = 'oneWord';
+        data['internalState'] = 'oneWord';
       } else {
         data['internalState'] = 'scoreBoard';
       }
+
+      // save expiration time and wait for judgment
+      // if (_now.difference(data['expirationTime'].toDate()).inSeconds < 0) {
+      //   data['temporaryExpirationTime'] =
+      //       _now.difference(data['expirationTime'].toDate()).inSeconds;
+      // } else {
+      //   data['temporaryExpirationTime'] = null;
+      // }
+      // data['expirationTime'] = null;
+
       await Firestore.instance
           .collection('sessions')
           .document(widget.sessionId)
@@ -158,13 +178,28 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
     }
   }
 
+  addWordToList(data) async {
+    data['words'].add(wordController.text);
+    setState(() {
+      wordController.text = '';
+    });
+
+    await Firestore.instance
+        .collection('sessions')
+        .document(widget.sessionId)
+        .setData(data);
+  }
+
   getWordSelection(data) {
+    if (_now == null) {
+      return Container();
+    }
     var t = _now.difference(data['expirationTime'].toDate()).inSeconds;
     var ms = getMinutesSeconds(-t);
     return Center(
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          SizedBox(height: 40),
           t < 0
               ? Text(
                   '${intToString(ms[0], pad: 2)}:${intToString(ms[1], pad: 2)}',
@@ -182,27 +217,28 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
           ),
           SizedBox(height: 20),
           Container(
-            height: 40,
-            width: 200,
+            height: 80,
+            width: 240,
+            padding: EdgeInsets.fromLTRB(15, 5, 15, 5),
             decoration: BoxDecoration(
               border: Border.all(color: Colors.grey),
               borderRadius: BorderRadius.circular(5),
             ),
-            child: TextField(
-              maxLines: null,
-              textAlign: TextAlign.center,
-              decoration: InputDecoration(
-                border: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                errorBorder: InputBorder.none,
-                disabledBorder: InputBorder.none,
-                hintText: 'description here',
+            child: Center(
+              child: TextField(
+                maxLines: null,
+                textAlign: TextAlign.center,
+                decoration: InputDecoration(
+                  border: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  errorBorder: InputBorder.none,
+                  disabledBorder: InputBorder.none,
+                  hintText: 'description here',
+                  isDense: true,
+                ),
+                controller: wordController,
               ),
-              style: TextStyle(
-                fontSize: 16,
-              ),
-              controller: wordController,
             ),
           ),
           SizedBox(height: 10),
@@ -212,7 +248,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
               style: TextStyle(fontSize: 18, color: Colors.white),
             ),
             onPressed: () {
-              print('hey');
+              addWordToList(data);
             },
             height: 40,
             width: 140,
@@ -246,6 +282,11 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
       timerString =
           '${intToString(ms[0], pad: 2)}:${intToString(ms[1], pad: 2)}';
       isRunning = true;
+    }
+    if (data['temporaryExpirationTime'] != null) {
+      var ms = getMinutesSeconds(-data['temporaryExpirationTime']);
+      timerString =
+          '${intToString(ms[0], pad: 2)}:${intToString(ms[1], pad: 2)}';
     }
     return Container(
       height: 50,
@@ -301,8 +342,15 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
   }
 
   startRound(data) async {
-    data['expirationTime'] =
-        DateTime.now().add(Duration(seconds: data['rules']['roundTimeLimit']));
+    if (data['temporaryExpirationTime'] != null) {
+      data['expirationTime'] = DateTime.now().add(Duration(
+        seconds: -data['temporaryExpirationTime'],
+      ));
+      data['temporaryExpirationTime'] = null;
+    } else {
+      data['expirationTime'] = DateTime.now()
+          .add(Duration(seconds: data['rules']['roundTimeLimit']));
+    }
 
     await Firestore.instance
         .collection('sessions')
@@ -317,6 +365,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
     data['judgeList'].add(word);
 
     updateInternalState(data);
+
     await Firestore.instance
         .collection('sessions')
         .document(widget.sessionId)
@@ -433,12 +482,45 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
     ]);
   }
 
-  acceptWord(i, data) async {
-    data['judgeList'].removeAt(i);
-    // increment score
+  updateTurn(data) async {
+    // gets called if time hits 0 or from judge accept/reject button
+
+    if (data['judgeList'].length != 0 && data['expirationTime'] != null) {
+      // save expiration time and wait for judgment ()
+      if (_now.difference(data['expirationTime'].toDate()).inSeconds < 0) {
+        data['temporaryExpirationTime'] =
+            _now.difference(data['expirationTime'].toDate()).inSeconds;
+      } else {
+        data['temporaryExpirationTime'] = null;
+      }
+      data['expirationTime'] = null;
+
+      return;
+    }
+    // if temporary expiration time is not null, save remaining time, allow judgment, same team
+    // if timer expires, if state is wordSelection, change
+    if (data['expirationTime'] != null) {
+      var t = _now.difference(data['expirationTime'].toDate()).inSeconds;
+      if (t <= 0) {
+        data['temporaryExpirationTime'] = data['expirationTime'];
+        return;
+      }
+    }
+
+    // increment team member index, and team index
+    data['turn']['teamTurn'] += 1;
+    if (data['turn']['teamTurn'] >= data['rules']['numTeams']) {
+      data['turn']['teamTurn'] = 0;
+    }
     var currentTeamIndex = data['turn']['teamTurn'];
-    data['scores'][currentTeamIndex] += 1;
-    data['roundScore'] += 1;
+    data['turn']['team${currentTeamIndex}Turn'] += 1;
+    if (data['turn']['team${currentTeamIndex}Turn'] >=
+        data['teams']['team$currentTeamIndex'].length) {
+      data['turn']['team${currentTeamIndex}Turn'] = 0;
+    }
+
+    // if judge list is empty, reset score
+    data['roundScore'] = 0;
 
     await Firestore.instance
         .collection('sessions')
@@ -446,17 +528,52 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
         .setData(data);
   }
 
-  rejectWord(i, data) async {
-    var word = data['judgeList'].removeAt(i);
-    String pile = data['internalState'];
-    data['${pile}Pile'].insert(0, word);
+  acceptWord(i, data) async {
+    data['judgeList'].removeAt(i);
+    // increment score
+    var currentTeamIndex = data['turn']['teamTurn'];
+    data['scores'][currentTeamIndex] += 1;
+    data['roundScore'] += 1;
 
-    print(word);
+    HapticFeedback.vibrate();
 
     await Firestore.instance
         .collection('sessions')
         .document(widget.sessionId)
         .setData(data);
+
+    updateTurn(data);
+  }
+
+  rejectWord(i, data) async {
+    data['judgeList'].removeAt(i);
+
+    HapticFeedback.vibrate();
+
+    await Firestore.instance
+        .collection('sessions')
+        .document(widget.sessionId)
+        .setData(data);
+
+    updateTurn(data);
+  }
+
+  acceptAllWords(data) async {
+    var currentTeamIndex = data['turn']['teamTurn'];
+    data['judgeList'].forEach((v) {
+      data['scores'][currentTeamIndex] += 1;
+      data['roundScore'] += 1;
+    });
+    data['judgeList'] = [];
+
+    HapticFeedback.vibrate();
+
+    await Firestore.instance
+        .collection('sessions')
+        .document(widget.sessionId)
+        .setData(data);
+
+    updateTurn(data);
   }
 
   getStatus(data) {
@@ -485,10 +602,15 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
       }
     }
     String subString = '';
+    var currentTeamIndex = data['turn']['teamTurn'];
+    var currentPlayerIndex = data['turn']['team${currentTeamIndex}Turn'];
+    var currentPlayerId =
+        data['teams']['team${currentTeamIndex}'][currentPlayerIndex];
+    String playerName = data['playerNames'][currentPlayerId];
     if (data['expirationTime'] == null && data['judgeList'].length != 0) {
-      subString = '(waiting on judgement of last round)';
+      subString = '(waiting on judgement)';
     } else if (data['expirationTime'] == null && !isPlayerTurn) {
-      subString = '(waiting for XX to start)';
+      subString = '(waiting for $playerName to start)';
     }
 
     // player on "next" team is judge
@@ -554,6 +676,15 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
           child: Text('approve all'),
           width: 100,
           height: 30,
+          gradient: LinearGradient(
+            colors: [
+              Colors.green[600],
+              Colors.green[400],
+            ],
+          ),
+          onPressed: () {
+            acceptAllWords(data);
+          },
         ),
       ],
     );
@@ -621,7 +752,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
   getStats(data) {
     String pile = data['internalState'];
     return Container(
-      width: 180,
+      width: 190,
       height: 80,
       padding: EdgeInsets.all(5),
       decoration: BoxDecoration(
@@ -629,7 +760,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
         borderRadius: BorderRadius.circular(5),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -638,7 +769,8 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
                 'Round\nscore:',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 12,
+                  color: Colors.grey,
                 ),
               ),
               SizedBox(height: 5),
@@ -650,15 +782,35 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
               ),
             ],
           ),
-          SizedBox(width: 20),
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                'Remaining\ncards:',
+                'Cards to\njudge:',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 12,
+                  color: Colors.grey,
+                ),
+              ),
+              SizedBox(height: 5),
+              Text(
+                data['judgeList'].length.toString(),
+                style: TextStyle(
+                  fontSize: 22,
+                ),
+              ),
+            ],
+          ),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Cards left\nin pile:',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey,
                 ),
               ),
               SizedBox(height: 5),
@@ -675,8 +827,78 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
     );
   }
 
+  getTurn(data) {
+    var currentTeamIndex = data['turn']['teamTurn'];
+    var currentPlayerIndex = data['turn']['team${currentTeamIndex}Turn'];
+    var currentPlayerId =
+        data['teams']['team${currentTeamIndex}'][currentPlayerIndex];
+
+    var nextTeamIndex = currentTeamIndex + 1;
+    if (nextTeamIndex >= data['rules']['numTeams']) {
+      nextTeamIndex = 0;
+    }
+    var nextPlayerIndex = data['turn']['team${nextTeamIndex}Turn'];
+    var currentJudgeId = data['teams']['team$nextTeamIndex'][nextPlayerIndex];
+
+    List<Widget> teams = [SizedBox(width: 15)];
+    // iterate over teams, generate a column for each. indicate if current player or judge
+    for (int i = 0; i < data['teams'].length; i++) {
+      List<Widget> playerNames = [
+        Text('Team ${i + 1}',
+            style: TextStyle(
+              fontSize: 10,
+              color: currentTeamIndex == i ? Colors.blue : Colors.grey,
+            ))
+      ];
+      data['teams']['team$i'].forEach((v) {
+        String playerName = data['playerNames'][v];
+        if (widget.userId == v) {
+          playerName = playerName + ' (you)';
+        }
+        if (currentPlayerId == v) {
+          playerName = '> ' + playerName + ' <';
+        }
+        if (currentJudgeId == v) {
+          playerName = playerName + ' (J)';
+        }
+        playerNames.add(Text(
+          playerName,
+          style: TextStyle(
+            fontSize: 11,
+            color: currentPlayerId == v
+                ? Colors.blue
+                : currentJudgeId == v
+                    ? Colors.amber[800]
+                    : Theme.of(context).highlightColor,
+          ),
+        ));
+      });
+      teams.add(
+        Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: playerNames,
+        ),
+      );
+      teams.add(SizedBox(width: 15));
+    }
+    return Container(
+      padding: EdgeInsets.all(5),
+      decoration: BoxDecoration(
+        border: Border.all(color: Theme.of(context).highlightColor),
+        borderRadius: BorderRadius.circular(5),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: teams,
+      ),
+    );
+  }
+
   getGameboard(data) {
     // if it is not your turn, should be "other team is playing!", "waiting for XX to start!"
+    if (_now == null) {
+      return Container();
+    }
     var playerTeamIndex;
     var playerIndexForTeam;
     data['teams'].forEach((k, v) {
@@ -699,58 +921,174 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
       previousWordsJudged = true;
     }
 
+    return SingleChildScrollView(
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(height: 20),
+            getPhaseTitle(data),
+            SizedBox(height: 20),
+            getStatus(data),
+            SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                getTimer(data),
+                SizedBox(width: 10),
+                getTurn(data),
+              ],
+            ),
+            SizedBox(height: 20),
+            getStats(data),
+            SizedBox(height: 20),
+            data['expirationTime'] == null || !isPlayerTurn
+                ? Container()
+                : Column(
+                    children: [
+                      getWord(data),
+                      SizedBox(height: 20),
+                      getButtons(data),
+                    ],
+                  ),
+            data['expirationTime'] == null && isPlayerTurn
+                ? Column(
+                    children: [
+                      RaisedGradientButton(
+                        child: Text(
+                          'GO!',
+                          style: TextStyle(fontSize: 32, color: Colors.white),
+                        ),
+                        onPressed: previousWordsJudged
+                            ? () {
+                                startRound(data);
+                              }
+                            : null,
+                        height: 60,
+                        width: 100,
+                        gradient: LinearGradient(
+                          colors: previousWordsJudged
+                              ? [
+                                  Colors.blue,
+                                  Colors.blueAccent,
+                                ]
+                              : [
+                                  Colors.grey,
+                                  Colors.grey,
+                                ],
+                        ),
+                      ),
+                      SizedBox(height: 20),
+                    ],
+                  )
+                : Container(),
+            widget.userId == data['leader']
+                ? EndGameButton(
+                    sessionId: widget.sessionId,
+                    fontSize: 14,
+                    height: 30,
+                    width: 100,
+                  )
+                : Container(),
+            SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  getScoreboard(data) {
+    List<Widget> scores = [];
+    data['scores'].asMap().forEach((i, v) {
+      List<Widget> members = [];
+      data['teams']['team$i'].forEach((v) {
+        members.add(Text(data['playerNames'][v]));
+      });
+      bool isWinner = false;
+      int maxScore = 0;
+      data['scores'].forEach((v) {
+        if (v > maxScore) {
+          maxScore = v;
+        }
+      });
+      if (data['scores'][i] == maxScore) {
+        isWinner = true;
+      }
+      scores.add(
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            isWinner
+                ? Icon(
+                    MdiIcons.crown,
+                    color: Colors.amber,
+                    size: 50,
+                  )
+                : Container(),
+            isWinner ? SizedBox(width: 10) : Container(),
+            Column(
+              children: [
+                Text(
+                  'Team ${i + 1}',
+                  style: TextStyle(
+                    fontSize: 18,
+                  ),
+                ),
+                PageBreak(width: 30),
+                Column(children: members),
+                SizedBox(height: 20),
+              ],
+            ),
+            SizedBox(width: 20),
+            Container(
+              height: 70,
+              width: 70,
+              decoration: BoxDecoration(
+                border: Border.all(color: Theme.of(context).highlightColor),
+                borderRadius: BorderRadius.circular(5),
+              ),
+              padding: EdgeInsets.all(5),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      data['scores'][i].toString(),
+                      style: TextStyle(
+                        fontSize: 30,
+                      ),
+                    ),
+                    Text('pts'),
+                  ],
+                ),
+              ),
+            ),
+            isWinner ? SizedBox(width: 10) : Container(),
+            isWinner
+                ? Icon(
+                    MdiIcons.crown,
+                    color: Colors.amber,
+                    size: 50,
+                  )
+                : Container(),
+          ],
+        ),
+      );
+    });
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          getPhaseTitle(data),
+          Text(
+            'Scoreboard',
+            style: TextStyle(
+              fontSize: 30,
+            ),
+          ),
+          PageBreak(width: 100),
           SizedBox(height: 20),
-          getStatus(data),
+          Column(children: scores),
           SizedBox(height: 20),
-          getTimer(data),
-          SizedBox(height: 10),
-          getStats(data),
-          SizedBox(height: 20),
-          data['expirationTime'] == null || !isPlayerTurn
-              ? Container()
-              : Column(
-                  children: [
-                    getWord(data),
-                    SizedBox(height: 20),
-                    getButtons(data),
-                  ],
-                ),
-          data['expirationTime'] == null && isPlayerTurn
-              ? Column(
-                  children: [
-                    RaisedGradientButton(
-                      child: Text(
-                        'GO!',
-                        style: TextStyle(fontSize: 32, color: Colors.white),
-                      ),
-                      onPressed: previousWordsJudged
-                          ? () {
-                              startRound(data);
-                            }
-                          : null,
-                      height: 60,
-                      width: 100,
-                      gradient: LinearGradient(
-                        colors: previousWordsJudged
-                            ? [
-                                Colors.blue,
-                                Colors.blueAccent,
-                              ]
-                            : [
-                                Colors.grey,
-                                Colors.grey,
-                              ],
-                      ),
-                    ),
-                    SizedBox(height: 20),
-                  ],
-                )
-              : Container(),
           widget.userId == data['leader']
               ? EndGameButton(
                   sessionId: widget.sessionId,
@@ -761,14 +1099,6 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
               : Container(),
         ],
       ),
-    );
-  }
-
-  getScoreboard(data) {
-    return Column(
-      children: [
-        Text('Scoreboard'),
-      ],
     );
   }
 
@@ -820,7 +1150,6 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
                 IconButton(
                   icon: Icon(Icons.info),
                   onPressed: () {
-                    // HapticFeedback.heavyImpact();
                     Navigator.of(context).push(
                       PageRouteBuilder(
                         opaque: false,

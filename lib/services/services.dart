@@ -129,7 +129,7 @@ getDefaultRules(String gameName) {
       return {
         'numTeams': 2,
         'playerWords': true,
-        'collectionWordLimit': 20,
+        'collectionWordLimit': 40,
         'collectionTimeLimit': 300,
         'roundTimeLimit': 60,
       };

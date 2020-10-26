@@ -854,6 +854,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
         i += 1;
       }
       data['internalState'] = 'describe';
+      data['expirationTime'] = null;
     }
 
     // set piles equal to word list
@@ -880,6 +881,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
     data['log'] = ['', '', ''];
     data['judgeList'] = [];
     data['roundScore'] = 0;
+    data['temporaryExpirationTime'] = null;
 
     return data;
   }

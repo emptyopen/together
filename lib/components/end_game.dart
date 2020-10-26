@@ -74,14 +74,6 @@ class _EndGameDialogState extends State<EndGameDialog> {
           .collection('sessions')
           .document(widget.sessionId)
           .delete();
-      // WidgetsBinding.instance.addPostFrameCallback((_) {
-      //       Navigator.of(context)
-      //           .pushReplacementNamed(MyScreen.routeName);
-      //     });
-      // WidgetsBinding.instance.addPostFrameCallback((_) {
-      //   Navigator.of(context).pop();
-      //   Navigator.of(context).pop();
-      // });
       Navigator.of(context).pop();
       Navigator.of(context).pop();
     }
