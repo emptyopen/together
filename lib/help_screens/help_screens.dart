@@ -157,7 +157,9 @@ class ShowAndTellScreenHelp extends StatelessWidget {
     return HelpScreen(
       title: 'Plot Twist: Rules',
       information: [
-        '    Welcome to Show & Tell!',
+        '    Welcome to charade à trois! The rules are simple. There are three rounds in which players take turns '
+            'describing, gesturing, and saying but one word to get their teammates to guess the words and phrases. \n'
+            '    Words and phrases can be generated automatically, or players can write their own.',
       ],
       buttonColor: Theme.of(context).primaryColor,
     );

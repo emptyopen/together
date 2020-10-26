@@ -125,7 +125,7 @@ getDefaultRules(String gameName) {
         'numNarrators': 1,
       };
       break;
-    case 'Show & Tell':
+    case 'Charáde à Trois':
       return {
         'numTeams': 2,
         'playerWords': true,

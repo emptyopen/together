@@ -1114,7 +1114,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
             return Scaffold(
               appBar: AppBar(
                 title: Text(
-                  'Show & Tell',
+                  'Charáde à Trois',
                 ),
               ),
               body: Container(),
@@ -1127,7 +1127,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
             return Scaffold(
               appBar: AppBar(
                 title: Text(
-                  'Show & Tell',
+                  'Charáde à Trois',
                 ),
               ),
               body: Container(),
@@ -1144,7 +1144,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
             resizeToAvoidBottomInset: false,
             appBar: AppBar(
               title: Text(
-                'Show & Tell',
+                'Charáde à Trois',
               ),
               actions: <Widget>[
                 IconButton(
