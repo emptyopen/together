@@ -153,7 +153,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                 ),
               );
               break;
-            case 'Show & Tell':
+            case 'Charáde à Trois':
               slideTransition(
                 context,
                 ShowAndTellScreen(
@@ -911,7 +911,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
         data = await setupPlotTwist(data);
         break;
 
-      case 'Show & Tell':
+      case 'Charáde à Trois':
         data = await setupShowAndTell(data);
         break;
     }
@@ -1185,7 +1185,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
           ],
         );
         break;
-      case 'Show & Tell':
+      case 'Charáde à Trois':
         return Column(
           children: <Widget>[
             RulesContainer(rules: <Widget>[
@@ -1774,7 +1774,7 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
         rules['location'] = sessionData['rules']['location'];
         rules['numNarrators'] = sessionData['rules']['numNarrators'];
         break;
-      case 'Show & Tell':
+      case 'Charáde à Trois':
         rules['numTeams'] = sessionData['rules']['numTeams'];
         rules['playerWords'] = sessionData['rules']['playerWords'];
         rules['collectionWordLimit'] =
@@ -2500,7 +2500,7 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
           ],
         );
         break;
-      case 'Show & Tell':
+      case 'Charáde à Trois':
         return AlertDialog(
           title: Text('Edit game rules:'),
           contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),

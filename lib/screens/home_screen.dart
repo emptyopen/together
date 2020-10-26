@@ -14,6 +14,9 @@ import 'package:together/components/info_box.dart';
 
 import 'settings_screen.dart';
 import 'achievements_screen.dart';
+import 'package:together/screens/the_scoreboard_screen.dart';
+import 'package:together/screens/dice_and_coins_screen.dart';
+import 'package:together/screens/team_selector_screen.dart';
 import 'lobby_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -95,7 +98,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               SizedBox(width: intervalLength),
               QuickStartButton(
-                gameName: 'Show & Tell',
+                gameName: 'Charáde à Trois',
                 subtitle: 'Three round\ncharades!',
                 icon: Icon(
                   MdiIcons.dramaMasks,
@@ -237,12 +240,22 @@ class _HomeScreenState extends State<HomeScreen> {
                       SizedBox(height: 40),
                       // CREATE
                       RaisedGradientButton(
-                        child: Text(
-                          'Create a game',
-                          style: TextStyle(
-                            fontSize: 20,
-                            color: Colors.white,
-                          ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              MdiIcons.plusBox,
+                              size: 30,
+                            ),
+                            SizedBox(width: 10),
+                            Text(
+                              'Create game',
+                              style: TextStyle(
+                                fontSize: 20,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
                         ),
                         height: 60,
                         width: 200,
@@ -265,12 +278,22 @@ class _HomeScreenState extends State<HomeScreen> {
                         height: 40,
                       ),
                       RaisedGradientButton(
-                        child: Text(
-                          'Join a game',
-                          style: TextStyle(
-                            fontSize: 20,
-                            color: Colors.white,
-                          ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              MdiIcons.arrowRightBox,
+                              size: 30,
+                            ),
+                            SizedBox(width: 10),
+                            Text(
+                              'Join game',
+                              style: TextStyle(
+                                fontSize: 20,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
                         ),
                         height: 60,
                         width: 200,
@@ -306,12 +329,23 @@ class _HomeScreenState extends State<HomeScreen> {
                                   height: 40,
                                 ),
                                 RaisedGradientButton(
-                                  child: Text(
-                                    'Rejoin game',
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      color: Colors.black,
-                                    ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        MdiIcons.chevronRightBox,
+                                        color: Colors.black,
+                                        size: 30,
+                                      ),
+                                      SizedBox(width: 10),
+                                      Text(
+                                        'Rejoin game',
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                   height: 60,
                                   width: 200,
@@ -334,6 +368,44 @@ class _HomeScreenState extends State<HomeScreen> {
                               ],
                             );
                           }),
+                      SizedBox(
+                        height: 40,
+                      ),
+                      RaisedGradientButton(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              MdiIcons.dice3,
+                              size: 30,
+                            ),
+                            SizedBox(width: 10),
+                            Text(
+                              'Other Tools',
+                              style: TextStyle(
+                                fontSize: 20,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                        height: 60,
+                        width: 200,
+                        gradient: LinearGradient(
+                          colors: <Color>[
+                            Colors.cyan[700],
+                            Colors.cyan[400],
+                          ],
+                        ),
+                        onPressed: () {
+                          showDialog<Null>(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return ToolsDialog();
+                            },
+                          );
+                        },
+                      ),
                       // offset for game list
                       SizedBox(height: 50),
                     ],
@@ -485,7 +557,7 @@ class _LobbyDialogState extends State<LobbyDialog> {
         color = Colors.pink;
         icon = Icon(MdiIcons.chatProcessingOutline, color: color);
         break;
-      case 'Show & Tell':
+      case 'Charáde à Trois':
         color = Colors.indigoAccent;
         icon = Icon(MdiIcons.dramaMasks, color: color);
         break;
@@ -586,6 +658,135 @@ class _LobbyDialogState extends State<LobbyDialog> {
                       context, _dropDownGame, _passwordController.text, true);
             },
             child: Text('Confirm'))
+      ],
+    );
+  }
+}
+
+class ToolsDialog extends StatefulWidget {
+  ToolsDialog({this.userId});
+
+  final userId;
+
+  @override
+  _ToolsDialogState createState() => _ToolsDialogState();
+}
+
+class _ToolsDialogState extends State<ToolsDialog> {
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Game Tools'),
+      content: Container(
+        height: 200.0,
+        width: 100.0,
+        child: ListView(
+          children: <Widget>[
+            GestureDetector(
+              onTap: () {
+                Navigator.of(context).pop();
+                slideTransition(
+                  context,
+                  TheScoreboardScreen(
+                    userId: widget.userId,
+                  ),
+                );
+              },
+              child: Container(
+                width: 80,
+                height: 50,
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Theme.of(context).highlightColor,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  color: Colors.cyan[700],
+                ),
+                child: Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Icon(MdiIcons.matrix),
+                      Text('The Scoreboard'),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: 10),
+            GestureDetector(
+              onTap: () {
+                Navigator.of(context).pop();
+                slideTransition(
+                  context,
+                  TeamSelectorScreen(
+                    userId: widget.userId,
+                  ),
+                );
+              },
+              child: Container(
+                width: 80,
+                height: 50,
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Theme.of(context).highlightColor,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  color: Colors.cyan[700],
+                ),
+                child: Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Icon(MdiIcons.accountSwitch),
+                      Text('Team Selector'),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: 10),
+            GestureDetector(
+              onTap: () {
+                Navigator.of(context).pop();
+                slideTransition(
+                  context,
+                  DiceAndCoinsScreen(
+                    userId: widget.userId,
+                  ),
+                );
+              },
+              child: Container(
+                width: 80,
+                height: 50,
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Theme.of(context).highlightColor,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  color: Colors.cyan[700],
+                ),
+                child: Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Icon(MdiIcons.dice3),
+                      Text('Dice & Coins'),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: <Widget>[
+        FlatButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: const Text("Cancel"),
+        ),
       ],
     );
   }
