@@ -210,34 +210,36 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Center(
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: <Widget>[
-                      // counter balance for REJOIN
                       Container(),
                       // SHOW ALL GAMES
-                      Text(
-                        'Quick Start',
-                        style: TextStyle(
-                          fontSize: 20,
-                          color: Colors.grey,
-                        ),
+                      Column(
+                        children: [
+                          Text(
+                            'Quick Start',
+                            style: TextStyle(
+                              fontSize: 20,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          Text(
+                            '* no password',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          SizedBox(height: 10),
+                          Marquee(
+                            child: getGamesMarquee(context),
+                            animationDuration: Duration(seconds: 15),
+                            backDuration: Duration(seconds: 13),
+                            pauseDuration: Duration(seconds: 4),
+                            directionMarguee: DirectionMarguee.TwoDirection,
+                          ),
+                        ],
                       ),
-                      Text(
-                        '* no password',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      SizedBox(height: 10),
-                      Marquee(
-                        child: getGamesMarquee(context),
-                        animationDuration: Duration(seconds: 15),
-                        backDuration: Duration(seconds: 13),
-                        pauseDuration: Duration(seconds: 4),
-                        directionMarguee: DirectionMarguee.TwoDirection,
-                      ),
-                      SizedBox(height: 40),
                       // CREATE
                       RaisedGradientButton(
                         child: Row(
@@ -273,9 +275,6 @@ class _HomeScreenState extends State<HomeScreen> {
                             },
                           );
                         },
-                      ),
-                      SizedBox(
-                        height: 40,
                       ),
                       RaisedGradientButton(
                         child: Row(
@@ -325,9 +324,6 @@ class _HomeScreenState extends State<HomeScreen> {
                             }
                             return Column(
                               children: <Widget>[
-                                SizedBox(
-                                  height: 40,
-                                ),
                                 RaisedGradientButton(
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
@@ -368,9 +364,6 @@ class _HomeScreenState extends State<HomeScreen> {
                               ],
                             );
                           }),
-                      SizedBox(
-                        height: 40,
-                      ),
                       RaisedGradientButton(
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -406,8 +399,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           );
                         },
                       ),
-                      // offset for game list
-                      SizedBox(height: 50),
+                      Container(),
                     ],
                   ),
                 ),

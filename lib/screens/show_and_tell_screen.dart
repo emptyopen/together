@@ -109,25 +109,84 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
     return [m, s];
   }
 
+  updateTurn(data) async {
+    // gets called if time hits 0 or from judge accept/reject button
+
+    // increment team member index, and team index
+    data['turn']['teamTurn'] += 1;
+    if (data['turn']['teamTurn'] >= data['rules']['numTeams']) {
+      data['turn']['teamTurn'] = 0;
+    }
+    var currentTeamIndex = data['turn']['teamTurn'];
+    data['turn']['team${currentTeamIndex}Turn'] += 1;
+    if (data['turn']['team${currentTeamIndex}Turn'] >=
+        data['teams']['team$currentTeamIndex'].length) {
+      data['turn']['team${currentTeamIndex}Turn'] = 0;
+    }
+
+    // reset round score
+    data['roundScore'] = 0;
+    data['expirationTime'] = null;
+
+    await Firestore.instance
+        .collection('sessions')
+        .document(widget.sessionId)
+        .setData(data);
+  }
+
   updateInternalState(data) async {
-    if (_now == null || data['internalState'] == 'scoreBoard') {
+    // problem: it was describe with time left. finished all cards, time did not freeze, but phase was updated.
+
+    if (_now == null) {
       return;
     }
-    // timer expires, OR a pile runs out of cards
-    // timer: wordSelection to describe, otherwise update team
+    var t = _now.difference(data['expirationTime'].toDate()).inSeconds;
+
     bool updateState = false;
+
+    // if word selection && timer has expired, transition to describe
+    if (data['internalState'] == 'wordSelection' &&
+        (t > 0 ||
+            data['words'].length >= data['rules']['collectionWordLimit'])) {
+      // check if there are enough words. if not, supplement randomly until full
+      var words = [showAndTellWords, showAndTellExpressions, showAndTellPeople]
+          .expand((x) => x)
+          .toList();
+      words.shuffle();
+      int i = 0;
+      while (data['words'].length < data['rules']['collectionWordLimit']) {
+        data['words'].add(words[i]);
+        i += 1;
+      }
+      data['expirationTime'] = null;
+      data['internalState'] = 'describe';
+      // set piles equal to word list
+      data['describePile'] = List.from(data['words']);
+      data['describePile'].shuffle();
+      data['gesturePile'] = List.from(data['words']);
+      data['gesturePile'].shuffle();
+      data['oneWordPile'] = List.from(data['words']);
+      data['oneWordPile'].shuffle();
+    }
 
     // if pile runs out of cards, save the remaining time to be used for the next phase by the same team
     if (data['internalState'] != 'wordSelection') {
       String pile = data['internalState'];
       if (data['${pile}Pile'].length == 0) {
         updateState = true;
+
+        // save expiration time and wait for judgment
+        if (t < 0) {
+          data['temporaryExpirationTime'] = t;
+        } else {
+          data['temporaryExpirationTime'] = null;
+        }
+        data['expirationTime'] = null;
       }
     }
 
     // if timer expires, if state is wordSelection, change
     if (data['expirationTime'] != null) {
-      var t = _now.difference(data['expirationTime'].toDate()).inSeconds;
       if (t > 0) {
         if (data['internalState'] == 'wordSelection') {
           updateState = true;
@@ -139,37 +198,14 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
     }
 
     if (updateState) {
-      if (data['internalState'] == 'wordSelection') {
-        // check if there are enough words. if not, supplement randomly until full
-        var words = [
-          showAndTellWords,
-          showAndTellExpressions,
-          showAndTellPeople
-        ].expand((x) => x).toList();
-        words.shuffle();
-        int i = 0;
-        while (data['words'].length < data['rules']['collectionWordLimit']) {
-          data['words'].add(words[i]);
-          i += 1;
-        }
-        data['expirationTime'] = null;
-        data['internalState'] = 'describe';
-      } else if (data['internalState'] == 'describe') {
+      if (data['internalState'] == 'describe') {
         data['internalState'] = 'gesture';
       } else if (data['internalState'] == 'gesture') {
         data['internalState'] = 'oneWord';
       } else {
+        // TODO: still need to capture final points and allow rejection
         data['internalState'] = 'scoreBoard';
       }
-
-      // save expiration time and wait for judgment
-      // if (_now.difference(data['expirationTime'].toDate()).inSeconds < 0) {
-      //   data['temporaryExpirationTime'] =
-      //       _now.difference(data['expirationTime'].toDate()).inSeconds;
-      // } else {
-      //   data['temporaryExpirationTime'] = null;
-      // }
-      // data['expirationTime'] = null;
 
       await Firestore.instance
           .collection('sessions')
@@ -482,52 +518,6 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
     ]);
   }
 
-  updateTurn(data) async {
-    // gets called if time hits 0 or from judge accept/reject button
-
-    if (data['judgeList'].length != 0 && data['expirationTime'] != null) {
-      // save expiration time and wait for judgment ()
-      if (_now.difference(data['expirationTime'].toDate()).inSeconds < 0) {
-        data['temporaryExpirationTime'] =
-            _now.difference(data['expirationTime'].toDate()).inSeconds;
-      } else {
-        data['temporaryExpirationTime'] = null;
-      }
-      data['expirationTime'] = null;
-
-      return;
-    }
-    // if temporary expiration time is not null, save remaining time, allow judgment, same team
-    // if timer expires, if state is wordSelection, change
-    if (data['expirationTime'] != null) {
-      var t = _now.difference(data['expirationTime'].toDate()).inSeconds;
-      if (t <= 0) {
-        data['temporaryExpirationTime'] = data['expirationTime'];
-        return;
-      }
-    }
-
-    // increment team member index, and team index
-    data['turn']['teamTurn'] += 1;
-    if (data['turn']['teamTurn'] >= data['rules']['numTeams']) {
-      data['turn']['teamTurn'] = 0;
-    }
-    var currentTeamIndex = data['turn']['teamTurn'];
-    data['turn']['team${currentTeamIndex}Turn'] += 1;
-    if (data['turn']['team${currentTeamIndex}Turn'] >=
-        data['teams']['team$currentTeamIndex'].length) {
-      data['turn']['team${currentTeamIndex}Turn'] = 0;
-    }
-
-    // if judge list is empty, reset score
-    data['roundScore'] = 0;
-
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
-  }
-
   acceptWord(i, data) async {
     data['judgeList'].removeAt(i);
     // increment score
@@ -542,7 +532,9 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
         .document(widget.sessionId)
         .setData(data);
 
-    updateTurn(data);
+    // if (data['judgeList'].length == 0 && data['expirationTime'] == null) {
+    //   updateTurn(data);
+    // }
   }
 
   rejectWord(i, data) async {
@@ -555,7 +547,9 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
         .document(widget.sessionId)
         .setData(data);
 
-    updateTurn(data);
+    // if (data['judgeList'].length == 0) {
+    //   updateTurn(data);
+    // }
   }
 
   acceptAllWords(data) async {
@@ -573,7 +567,9 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
         .document(widget.sessionId)
         .setData(data);
 
-    updateTurn(data);
+    // if (data['judgeList'].length == 0) {
+    //   updateTurn(data);
+    // }
   }
 
   getStatus(data) {
@@ -963,7 +959,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
                             ? () {
                                 startRound(data);
                               }
-                            : null,
+                            : () {},
                         height: 60,
                         width: 100,
                         gradient: LinearGradient(

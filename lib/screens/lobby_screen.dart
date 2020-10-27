@@ -91,6 +91,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
           setState(() {
             calledGameRoom = true;
           });
+          print('popping');
           Navigator.of(context).pop();
           switch (gameName) {
             case 'The Hunt':
@@ -840,7 +841,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
     // initialize words (generate if not user input)
     data['words'] = [];
     data['expirationTime'] = DateTime.now()
-        .add(Duration(seconds: data['rules']['collectionTimeLimit']));
+        .add(Duration(seconds: data['rules']['collectionTimeLimit'] + 6));
     data['internalState'] = 'wordSelection';
     if (!data['rules']['playerWords']) {
       // random words
