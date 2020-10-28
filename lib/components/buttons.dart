@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 
 class RaisedGradientButton extends StatelessWidget {
   final Widget child;
@@ -46,6 +47,58 @@ class RaisedGradientButton extends StatelessWidget {
               child: child),
         ),
       ),
+    );
+  }
+}
+
+class MainMenuButton extends StatelessWidget {
+  final Function callback;
+  final String title;
+  final Color textColor;
+  final icon;
+  final gradient;
+
+  MainMenuButton({
+    this.callback,
+    this.title,
+    this.textColor,
+    this.icon,
+    this.gradient,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return RaisedGradientButton(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            color: textColor,
+            size: 30,
+          ),
+          SizedBox(width: 10),
+          Container(
+            width: 110,
+            child: AutoSizeText(
+              title,
+              maxLines: 1,
+              style: TextStyle(
+                fontSize: 20,
+                color: textColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+      height: 60,
+      width: 200,
+      gradient: LinearGradient(
+        colors: gradient,
+      ),
+      onPressed: () {
+        callback();
+      },
     );
   }
 }

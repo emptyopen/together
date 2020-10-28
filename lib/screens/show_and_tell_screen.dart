@@ -135,14 +135,15 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
   }
 
   updateInternalState(data) async {
-    // problem: it was describe with time left. finished all cards, time did not freeze, but phase was updated.
+    // this needs major cleanup and fixing
 
     if (_now == null) {
       return;
     }
     var t = _now.difference(data['expirationTime'].toDate()).inSeconds;
 
-    bool updateState = false;
+    bool updatePhase = false;
+    bool changed = false;
 
     // if word selection && timer has expired, transition to describe
     if (data['internalState'] == 'wordSelection' &&
@@ -158,8 +159,6 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
         data['words'].add(words[i]);
         i += 1;
       }
-      data['expirationTime'] = null;
-      data['internalState'] = 'describe';
       // set piles equal to word list
       data['describePile'] = List.from(data['words']);
       data['describePile'].shuffle();
@@ -167,13 +166,16 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
       data['gesturePile'].shuffle();
       data['oneWordPile'] = List.from(data['words']);
       data['oneWordPile'].shuffle();
-    }
+      data['expirationTime'] = null;
+      data['internalState'] = 'describe';
+      changed = true;
+    } else
 
     // if pile runs out of cards, save the remaining time to be used for the next phase by the same team
     if (data['internalState'] != 'wordSelection') {
       String pile = data['internalState'];
       if (data['${pile}Pile'].length == 0) {
-        updateState = true;
+        updatePhase = true;
 
         // save expiration time and wait for judgment
         if (t < 0) {
@@ -183,21 +185,28 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
         }
         data['expirationTime'] = null;
       }
-    }
+    } else
 
-    // if timer expires, if state is wordSelection, change
+    // if state timer expires && state is describe, gesture, or oneWord && judgeList is empty, update turn
     if (data['expirationTime'] != null) {
       if (t > 0) {
-        if (data['internalState'] == 'wordSelection') {
-          updateState = true;
-        } else {
+        data['expirationTime'] = null;
+        if (['describe', 'gesture', 'oneWord']
+                .contains(data['internalState']) &&
+            data['judgeList'].length == 0) {
           updateTurn(data);
         }
-        data['expirationTime'] = null;
+        changed = true;
       }
+    } else
+
+    // if timer is expired, set it to null
+    if (t > 0) {
+      data['expirationTime'] = null;
+      changed = true;
     }
 
-    if (updateState) {
+    if (updatePhase) {
       if (data['internalState'] == 'describe') {
         data['internalState'] = 'gesture';
       } else if (data['internalState'] == 'gesture') {
@@ -206,7 +215,10 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
         // TODO: still need to capture final points and allow rejection
         data['internalState'] = 'scoreBoard';
       }
+      changed = true;
+    }
 
+    if (changed) {
       await Firestore.instance
           .collection('sessions')
           .document(widget.sessionId)
@@ -527,14 +539,14 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
 
     HapticFeedback.vibrate();
 
+    if (data['expirationTime'] == null && data['judgeList'].length == 0) {
+      updateTurn(data);
+    }
+
     await Firestore.instance
         .collection('sessions')
         .document(widget.sessionId)
         .setData(data);
-
-    // if (data['judgeList'].length == 0 && data['expirationTime'] == null) {
-    //   updateTurn(data);
-    // }
   }
 
   rejectWord(i, data) async {
@@ -542,14 +554,14 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
 
     HapticFeedback.vibrate();
 
+    if (data['expirationTime'] == null && data['judgeList'].length == 0) {
+      updateTurn(data);
+    }
+
     await Firestore.instance
         .collection('sessions')
         .document(widget.sessionId)
         .setData(data);
-
-    // if (data['judgeList'].length == 0) {
-    //   updateTurn(data);
-    // }
   }
 
   acceptAllWords(data) async {
@@ -562,14 +574,14 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
 
     HapticFeedback.vibrate();
 
+    if (data['expirationTime'] == null && data['judgeList'].length == 0) {
+      updateTurn(data);
+    }
+
     await Firestore.instance
         .collection('sessions')
         .document(widget.sessionId)
         .setData(data);
-
-    // if (data['judgeList'].length == 0) {
-    //   updateTurn(data);
-    // }
   }
 
   getStatus(data) {
@@ -616,7 +628,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
     }
     List<Widget> words = [];
     List<Widget> reject = [];
-    List<Widget> approve = [];
+    List<Widget> accept = [];
     data['judgeList'].asMap().forEach((i, v) {
       words.add(
         Container(
@@ -638,7 +650,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
           ),
         ),
       );
-      approve.add(
+      accept.add(
         Container(
           height: 30,
           child: GestureDetector(
@@ -664,12 +676,12 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
           children: [
             Column(children: words),
             Column(children: reject),
-            Column(children: approve),
+            Column(children: accept),
           ],
         ),
         SizedBox(height: 10),
         RaisedGradientButton(
-          child: Text('approve all'),
+          child: Text('accept all'),
           width: 100,
           height: 30,
           gradient: LinearGradient(
@@ -701,7 +713,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
             Text(
               'You are the judge!',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 22,
               ),
             ),
             data['judgeList'].length == 0 ? Container() : judgeWordListWidget,

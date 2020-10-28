@@ -240,34 +240,15 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ],
                       ),
-                      // CREATE
-                      RaisedGradientButton(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              MdiIcons.plusBox,
-                              size: 30,
-                            ),
-                            SizedBox(width: 10),
-                            Text(
-                              'Create game',
-                              style: TextStyle(
-                                fontSize: 20,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                        height: 60,
-                        width: 200,
-                        gradient: LinearGradient(
-                          colors: <Color>[
-                            Theme.of(context).primaryColor,
-                            Theme.of(context).accentColor,
-                          ],
-                        ),
-                        onPressed: () {
+                      MainMenuButton(
+                        title: 'Create game',
+                        icon: MdiIcons.plusBox,
+                        textColor: Colors.white,
+                        gradient: [
+                          Theme.of(context).primaryColor,
+                          Theme.of(context).accentColor,
+                        ],
+                        callback: () {
                           showDialog<Null>(
                             context: context,
                             builder: (BuildContext context) {
@@ -276,33 +257,15 @@ class _HomeScreenState extends State<HomeScreen> {
                           );
                         },
                       ),
-                      RaisedGradientButton(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              MdiIcons.arrowRightBox,
-                              size: 30,
-                            ),
-                            SizedBox(width: 10),
-                            Text(
-                              'Join game',
-                              style: TextStyle(
-                                fontSize: 20,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                        height: 60,
-                        width: 200,
-                        gradient: LinearGradient(
-                          colors: <Color>[
-                            Theme.of(context).primaryColor,
-                            Theme.of(context).accentColor,
-                          ],
-                        ),
-                        onPressed: () {
+                      MainMenuButton(
+                        title: 'Join game',
+                        icon: MdiIcons.arrowRightBox,
+                        textColor: Colors.white,
+                        gradient: [
+                          Theme.of(context).primaryColor,
+                          Theme.of(context).accentColor,
+                        ],
+                        callback: () {
                           showDialog<Null>(
                             context: context,
                             builder: (BuildContext context) {
@@ -311,7 +274,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           );
                         },
                       ),
-                      // if player has existing game, allow rejoin
                       StreamBuilder(
                           stream: Firestore.instance
                               .collection('sessions')
@@ -322,75 +284,34 @@ class _HomeScreenState extends State<HomeScreen> {
                                 sessionSnapshot.data.data == null) {
                               return Container();
                             }
-                            return Column(
-                              children: <Widget>[
-                                RaisedGradientButton(
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        MdiIcons.chevronRightBox,
-                                        color: Colors.black,
-                                        size: 30,
-                                      ),
-                                      SizedBox(width: 10),
-                                      Text(
-                                        'Rejoin game',
-                                        style: TextStyle(
-                                          fontSize: 20,
-                                          color: Colors.black,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  height: 60,
-                                  width: 200,
-                                  gradient: LinearGradient(
-                                    colors: <Color>[
-                                      Color.fromARGB(255, 255, 185, 0),
-                                      Color.fromARGB(255, 255, 213, 0),
-                                    ],
-                                  ),
-                                  onPressed: () {
-                                    slideTransition(
-                                      context,
-                                      LobbyScreen(
-                                        roomCode: sessionSnapshot
-                                            .data.data['roomCode'],
-                                      ),
-                                    );
-                                  },
-                                ),
+                            return MainMenuButton(
+                              title: 'Rejoin game',
+                              icon: MdiIcons.chevronRightBox,
+                              textColor: Colors.black,
+                              gradient: [
+                                Color.fromARGB(255, 255, 185, 0),
+                                Color.fromARGB(255, 255, 213, 0),
                               ],
+                              callback: () {
+                                slideTransition(
+                                  context,
+                                  LobbyScreen(
+                                    roomCode:
+                                        sessionSnapshot.data.data['roomCode'],
+                                  ),
+                                );
+                              },
                             );
                           }),
-                      RaisedGradientButton(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              MdiIcons.dice3,
-                              size: 30,
-                            ),
-                            SizedBox(width: 10),
-                            Text(
-                              'Other Tools',
-                              style: TextStyle(
-                                fontSize: 20,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                        height: 60,
-                        width: 200,
-                        gradient: LinearGradient(
-                          colors: <Color>[
-                            Colors.cyan[700],
-                            Colors.cyan[400],
-                          ],
-                        ),
-                        onPressed: () {
+                      MainMenuButton(
+                        title: 'Other Tools',
+                        icon: MdiIcons.dice3,
+                        textColor: Colors.white,
+                        gradient: [
+                          Colors.cyan[700],
+                          Colors.cyan[400],
+                        ],
+                        callback: () {
                           showDialog<Null>(
                             context: context,
                             builder: (BuildContext context) {
