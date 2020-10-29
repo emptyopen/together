@@ -134,87 +134,81 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
         .setData(data);
   }
 
-  updateInternalState(data) async {
-    // this needs major cleanup and fixing
+  judgmentComplete(data) async {
+    print('judgement complete running');
+    // if time is expired, turn should be updated
+    if (data['temporaryExpirationTime'] == null) {
+      print('turn');
+      updateTurn(data);
+    }
+  }
 
+  updateInternalState(data) async {
     if (_now == null) {
       return;
     }
     var t = _now.difference(data['expirationTime'].toDate()).inSeconds;
-
-    bool updatePhase = false;
+    bool doUpdatePhase = false;
     bool changed = false;
 
-    // if word selection && timer has expired, transition to describe
-    if (data['internalState'] == 'wordSelection' &&
-        (t > 0 ||
-            data['words'].length >= data['rules']['collectionWordLimit'])) {
-      // check if there are enough words. if not, supplement randomly until full
-      var words = [showAndTellWords, showAndTellExpressions, showAndTellPeople]
-          .expand((x) => x)
-          .toList();
-      words.shuffle();
-      int i = 0;
-      while (data['words'].length < data['rules']['collectionWordLimit']) {
-        data['words'].add(words[i]);
-        i += 1;
-      }
-      // set piles equal to word list
-      data['describePile'] = List.from(data['words']);
-      data['describePile'].shuffle();
-      data['gesturePile'] = List.from(data['words']);
-      data['gesturePile'].shuffle();
-      data['oneWordPile'] = List.from(data['words']);
-      data['oneWordPile'].shuffle();
-      data['expirationTime'] = null;
-      data['internalState'] = 'describe';
-      changed = true;
-    } else
-
-    // if pile runs out of cards, save the remaining time to be used for the next phase by the same team
-    if (data['internalState'] != 'wordSelection') {
-      String pile = data['internalState'];
-      if (data['${pile}Pile'].length == 0) {
-        updatePhase = true;
-
-        // save expiration time and wait for judgment
-        if (t < 0) {
-          data['temporaryExpirationTime'] = t;
-        } else {
-          data['temporaryExpirationTime'] = null;
+    switch (data['internalState']) {
+      case 'wordSelection':
+        // if timer has expired or words have reached capacity, transition to describe
+        if (t > 0 ||
+            data['words'].length >= data['rules']['collectionWordLimit']) {
+          // supplement words randomly until full
+          // TODO: avoid duplicates and maybe consolidate into single function (lobby also uses)
+          var words = [
+            showAndTellWords,
+            showAndTellExpressions,
+            showAndTellPeople
+          ].expand((x) => x).toList();
+          words.shuffle();
+          int i = 0;
+          while (data['words'].length < data['rules']['collectionWordLimit']) {
+            data['words'].add(words[i]);
+            i += 1;
+          }
+          // set piles equal to word list
+          data['describePile'] = List.from(data['words']);
+          data['describePile'].shuffle();
+          data['gesturePile'] = List.from(data['words']);
+          data['gesturePile'].shuffle();
+          data['oneWordPile'] = List.from(data['words']);
+          data['oneWordPile'].shuffle();
+          data['expirationTime'] = null;
+          doUpdatePhase = true;
         }
-        data['expirationTime'] = null;
-      }
-    } else
-
-    // if state timer expires && state is describe, gesture, or oneWord && judgeList is empty, update turn
-    if (data['expirationTime'] != null) {
-      if (t > 0) {
-        data['expirationTime'] = null;
-        if (['describe', 'gesture', 'oneWord']
-                .contains(data['internalState']) &&
-            data['judgeList'].length == 0) {
-          updateTurn(data);
+        break;
+      case 'describe':
+      case 'gesture':
+      case 'oneWord':
+        // if pile is empty, save expiration time, pause for judgment (move to phase afterwards)
+        String pile = data['internalState'];
+        if (data['${pile}Pile'].length == 0) {
+          doUpdatePhase = true;
+          if (t < 0) {
+            data['temporaryExpirationTime'] = t;
+          }
+          data['expirationTime'] = null;
         }
-        changed = true;
-      }
-    } else
-
-    // if timer is expired, set it to null
-    if (t > 0) {
-      data['expirationTime'] = null;
-      changed = true;
+        // if judgment is complete and timer *just* expires, update turn
+        if (data['expirationTime'] != null) {
+          if (t > 0) {
+            data['expirationTime'] = null;
+            if (['describe', 'gesture', 'oneWord']
+                    .contains(data['internalState']) &&
+                data['judgeList'].length == 0) {
+              updateTurn(data);
+            }
+            changed = true;
+          }
+        }
+        break;
     }
 
-    if (updatePhase) {
-      if (data['internalState'] == 'describe') {
-        data['internalState'] = 'gesture';
-      } else if (data['internalState'] == 'gesture') {
-        data['internalState'] = 'oneWord';
-      } else {
-        // TODO: still need to capture final points and allow rejection
-        data['internalState'] = 'scoreBoard';
-      }
+    if (doUpdatePhase) {
+      updatePhase(data);
       changed = true;
     }
 
@@ -223,6 +217,18 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
           .collection('sessions')
           .document(widget.sessionId)
           .setData(data);
+    }
+  }
+
+  updatePhase(data) {
+    if (data['internalState'] == 'wordSelection') {
+      data['internalState'] = 'describe';
+    } else if (data['internalState'] == 'describe') {
+      data['internalState'] = 'gesture';
+    } else if (data['internalState'] == 'gesture') {
+      data['internalState'] = 'oneWord';
+    } else {
+      data['internalState'] = 'scoreBoard';
     }
   }
 
@@ -493,6 +499,10 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
       phase = 'one word';
       emoticon = MdiIcons.flaskEmptyOutline;
     }
+    if (data['internalState'] == 'scoreBoard') {
+      phase = 'one word';
+      emoticon = MdiIcons.flaskEmptyOutline;
+    }
     return Column(children: [
       PageBreak(width: 100),
       Row(
@@ -540,7 +550,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
     HapticFeedback.vibrate();
 
     if (data['expirationTime'] == null && data['judgeList'].length == 0) {
-      updateTurn(data);
+      judgmentComplete(data);
     }
 
     await Firestore.instance
@@ -555,7 +565,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
     HapticFeedback.vibrate();
 
     if (data['expirationTime'] == null && data['judgeList'].length == 0) {
-      updateTurn(data);
+      judgmentComplete(data);
     }
 
     await Firestore.instance
@@ -575,7 +585,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
     HapticFeedback.vibrate();
 
     if (data['expirationTime'] == null && data['judgeList'].length == 0) {
-      updateTurn(data);
+      judgmentComplete(data);
     }
 
     await Firestore.instance
@@ -759,6 +769,9 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
 
   getStats(data) {
     String pile = data['internalState'];
+    if (pile == 'scoreBoard') {
+      pile = 'oneWord';
+    }
     return Container(
       width: 190,
       height: 80,
@@ -1173,7 +1186,8 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
             body: data['internalState'] == 'wordSelection'
                 ? getWordSelection(data)
                 : ['describe', 'gesture', 'oneWord']
-                        .contains(data['internalState'])
+                            .contains(data['internalState']) ||
+                        data['judgeList'].length != 0
                     ? getGameboard(data)
                     : getScoreboard(data),
           );

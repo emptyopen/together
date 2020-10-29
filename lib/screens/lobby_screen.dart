@@ -91,7 +91,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
           setState(() {
             calledGameRoom = true;
           });
-          print('popping');
           Navigator.of(context).pop();
           switch (gameName) {
             case 'The Hunt':
