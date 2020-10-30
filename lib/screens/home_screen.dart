@@ -85,6 +85,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: colorHunt,
                   size: 30,
                 ),
+                minPlayers: 3,
               ),
               SizedBox(width: intervalLength),
               QuickStartButton(
@@ -95,16 +96,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: colorRivers,
                   size: 30,
                 ),
+                minPlayers: 2,
               ),
               SizedBox(width: intervalLength),
               QuickStartButton(
                 gameName: 'Charáde à Trois',
-                subtitle: 'Three round\ncharades!',
+                subtitle: '3 round charades!',
                 icon: Icon(
                   MdiIcons.dramaMasks,
                   color: colorShowAndTell,
                   size: 30,
                 ),
+                minPlayers: 4,
               ),
               SizedBox(width: intervalLength),
               QuickStartButton(
@@ -115,16 +118,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: colorPlotTwist,
                   size: 30,
                 ),
+                minPlayers: 4,
               ),
               SizedBox(width: intervalLength),
               QuickStartButton(
                 gameName: 'Three Crowns',
-                subtitle: 'Rise of the\npeasants!',
+                subtitle: 'Rise, peasants!',
                 icon: Icon(
                   MdiIcons.crown,
                   color: colorThreeCrowns,
                   size: 30,
                 ),
+                minPlayers: 2,
               ),
               SizedBox(width: intervalLength),
               QuickStartButton(
@@ -135,6 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: colorAbstract,
                   size: 30,
                 ),
+                minPlayers: 4,
               ),
               SizedBox(width: intervalLength),
               QuickStartButton(
@@ -145,6 +151,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: colorBananaphone,
                   size: 30,
                 ),
+                minPlayers: 4,
               ),
               SizedBox(width: intervalLength),
             ],
@@ -219,7 +226,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           Text(
                             'Quick Start',
                             style: TextStyle(
-                              fontSize: 20,
+                              fontSize: 18,
                               color: Colors.grey,
                             ),
                           ),
@@ -458,13 +465,13 @@ class _LobbyDialogState extends State<LobbyDialog> {
         color = Colors.blue;
         icon = Icon(MdiIcons.phoneSettings, color: color);
         break;
-      case 'Rivers':
-        color = Colors.lightBlue;
-        icon = Icon(MdiIcons.waves, color: color);
-        break;
       case 'Three Crowns':
         color = Colors.amber;
         icon = Icon(MdiIcons.crown, color: color);
+        break;
+      case 'Rivers':
+        color = Colors.lightBlue;
+        icon = Icon(MdiIcons.waves, color: color);
         break;
       case 'Plot Twist':
         color = Colors.pink;
@@ -514,10 +521,12 @@ class _LobbyDialogState extends State<LobbyDialog> {
                     },
                     items: <String>[
                       'The Hunt',
-                      'Rivers',
-                      'Three Crowns',
                       'Abstract',
                       'Bananaphone',
+                      'Three Crowns',
+                      'Rivers',
+                      'Plot Twist',
+                      'Charáde à Trois',
                     ].map<DropdownMenuItem<String>>((String value) {
                       return DropdownMenuItem<String>(
                         value: value,
@@ -619,8 +628,19 @@ class _ToolsDialogState extends State<ToolsDialog> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      Icon(MdiIcons.matrix),
-                      Text('The Scoreboard'),
+                      Icon(
+                        MdiIcons.matrix,
+                        color: Colors.white,
+                      ),
+                      Container(
+                        width: 120,
+                        child: Text(
+                          'The Scoreboard',
+                          style: TextStyle(
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -651,8 +671,19 @@ class _ToolsDialogState extends State<ToolsDialog> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      Icon(MdiIcons.accountSwitch),
-                      Text('Team Selector'),
+                      Icon(
+                        MdiIcons.accountSwitch,
+                        color: Colors.white,
+                      ),
+                      Container(
+                        width: 120,
+                        child: Text(
+                          'Team Selector',
+                          style: TextStyle(
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -683,8 +714,19 @@ class _ToolsDialogState extends State<ToolsDialog> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      Icon(MdiIcons.dice3),
-                      Text('Dice & Coins'),
+                      Icon(
+                        MdiIcons.dice3,
+                        color: Colors.white,
+                      ),
+                      Container(
+                        width: 120,
+                        child: Text(
+                          'Dice & Coin',
+                          style: TextStyle(
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -709,22 +751,30 @@ class QuickStartButton extends StatelessWidget {
   final String gameName;
   final String subtitle;
   final Icon icon;
+  final int minPlayers;
+  final int maxPlayers;
 
   QuickStartButton({
     this.gameName,
     this.subtitle,
     this.icon,
+    this.minPlayers,
+    this.maxPlayers,
   });
 
   @override
   Widget build(BuildContext context) {
+    var numberOfPlayersString = '$minPlayers player min';
+    if (maxPlayers != null) {
+      numberOfPlayersString = '$minPlayers-$maxPlayers players';
+    }
     return GestureDetector(
       onTap: () {
         createGame(context, gameName, '', false);
       },
       child: Container(
-        height: 120,
-        width: 120,
+        height: 135,
+        width: 135,
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
@@ -745,6 +795,7 @@ class QuickStartButton extends StatelessWidget {
         ),
         padding: EdgeInsets.all(15),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Container(
               padding: EdgeInsets.all(5),
@@ -754,21 +805,55 @@ class QuickStartButton extends StatelessWidget {
               ),
               child: icon,
             ),
-            SizedBox(height: 5),
-            AutoSizeText(
-              gameName,
-              maxLines: 1,
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.white,
+            SizedBox(height: 7),
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(100),
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.white.withAlpha(100),
+                    Colors.blue.withAlpha(50),
+                  ],
+                ),
+              ),
+              padding: EdgeInsets.fromLTRB(11, 3, 11, 2),
+              child: AutoSizeText(
+                gameName,
+                maxLines: 1,
+                minFontSize: 8,
+                style: TextStyle(
+                  fontSize: 17,
+                  color: Colors.white,
+                ),
               ),
             ),
             SizedBox(height: 1),
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(100),
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.blue.withAlpha(0),
+                    Colors.white.withAlpha(50),
+                  ],
+                ),
+              ),
+              padding: EdgeInsets.fromLTRB(12, 3, 10, 2),
+              child: Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 9,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            SizedBox(height: 3),
             Text(
-              subtitle,
+              numberOfPlayersString,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 9,
                 color: Colors.grey[300],
               ),
             ),

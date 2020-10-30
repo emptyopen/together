@@ -48,9 +48,9 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
   @override
   void dispose() {
     messageController.dispose();
-    createCharacterNameController = TextEditingController();
-    createCharacterAgeController = TextEditingController();
-    createCharacterDescriptionController = TextEditingController();
+    createCharacterNameController.dispose();
+    createCharacterAgeController.dispose();
+    createCharacterDescriptionController.dispose();
     super.dispose();
   }
 

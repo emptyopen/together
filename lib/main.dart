@@ -8,16 +8,19 @@ void main() => runApp(MyApp());
 // done:
 
 // next up:
+// add generic "tools": voice command point counter, roll dice, flip coin, etc.
+// team selector
+// 3Charades (word selection): add "staggering of added words" each player gets their own pile, and when timer is ended, they are put together (use update to avoid resets)
+// use updates where clashes could occur to avoid overwrites (plot twist, and )
 
 // TODO:
+// other tools: add voice commands (+/- team, +/- score)
+// other tools: random number generator
+// scoreboard functionality
 // charades: add everything to a log?
 // BIG: update lobby to allow team switching?
-// Show & tell add "staggering of added words" each player gets their own pile, and when timer is ended, they are put together (use update to avoid resets)
-// use updates where clashes could occur to avoid overwrites
-// add generic "tools": voice command point counter, roll dice, flip coin, etc.
 // PLOT TWIST: (formerly Chit Chat and Hear Me Out):
 // - add ability to click a chat to see the character description
-// - narrator can see everyone's vote to end
 // - add final scoreboard screen with "winners" who guessed correctly
 // show & tell: shimmer for high round scores
 // show arrow for scrollable!!

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'dart:math';
-import 'dart:io';
+import 'package:flutter/services.dart';
 
 import 'package:together/components/buttons.dart';
 
@@ -23,9 +23,11 @@ class _DiceAndCoinsScreenState extends State<DiceAndCoinsScreen> {
 
   rollDice() {
     rollingDice = true;
+    HapticFeedback.vibrate();
     Future.delayed(
       Duration(milliseconds: 400),
       () {
+        HapticFeedback.vibrate();
         rollingDice = false;
         var _random = new Random();
         for (int i = 0; i < dice.length; i++) {
@@ -141,11 +143,13 @@ class _DiceAndCoinsScreenState extends State<DiceAndCoinsScreen> {
   }
 
   flipCoin() async {
+    HapticFeedback.vibrate();
     flippingCoin = true;
     Future.delayed(
       Duration(milliseconds: 400),
       () {
         flippingCoin = false;
+        HapticFeedback.vibrate();
         var _random = new Random();
         coin = _random.nextBool();
         setState(() {});
@@ -192,9 +196,7 @@ class _DiceAndCoinsScreenState extends State<DiceAndCoinsScreen> {
                   child: Icon(
                     flippingCoin
                         ? MdiIcons.squareMedium
-                        : coin
-                            ? MdiIcons.heart
-                            : MdiIcons.heartBroken,
+                        : coin ? MdiIcons.heart : MdiIcons.heartBroken,
                     size: 50,
                     color: Colors.white,
                   ),
@@ -228,7 +230,7 @@ class _DiceAndCoinsScreenState extends State<DiceAndCoinsScreen> {
       appBar: AppBar(
         backgroundColor: Colors.cyan[700],
         title: Text(
-          'Dice & Coins',
+          'Dice & Coin',
         ),
       ),
       body: Center(
@@ -238,8 +240,9 @@ class _DiceAndCoinsScreenState extends State<DiceAndCoinsScreen> {
             getDice(),
             SizedBox(height: 20),
             getCoins(),
-            SizedBox(height: 20),
-            getRandomNumberGenerator(),
+            // TODO: at some point maybe
+            // SizedBox(height: 20),
+            // getRandomNumberGenerator(),
           ],
         ),
       ),

@@ -19,7 +19,7 @@ import '../services/show_and_tell_services.dart';
 import 'package:together/help_screens/help_screens.dart';
 import 'package:together/constants/values.dart';
 import 'package:together/services/services.dart';
-import 'package:together/screens/thehunt_screen.dart';
+import 'package:together/screens/the_hunt_screen.dart';
 import 'package:together/screens/abstract_screen.dart';
 import 'package:together/screens/bananaphone_screen.dart';
 import 'package:together/screens/three_crowns_screen.dart';
