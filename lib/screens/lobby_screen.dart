@@ -785,7 +785,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
       // for every other player, create an empty guess
       List otherPlayers = List.from(data['playerIds']);
       otherPlayers.remove(data['playerIds'][i]);
-      print('doing $otherPlayers and ${data['playerIds']}');
       otherPlayers.forEach((w) {
         data['matchingGuesses'][data['playerIds'][i]][w] = null;
       });
@@ -1355,6 +1354,18 @@ class _LobbyScreenState extends State<LobbyScreen> {
         .updateData({'playerIds': playerOrder, 'turn': playerOrder[0]});
   }
 
+  addTheGang(data) async {
+    data['playerIds'].add('F3cbzZifAqWWM2eyab6x6WvdkyL2');
+    data['playerIds'].add('LoTLbkqfQWcFMzjrYGEne1JhN7j2');
+    data['playerIds'].add('h4BrcG93XgYsBcGpH7q2WySK8rd2');
+    data['playerIds'].add('z5SqbMUvLVb7CfSxQz4OEk9VyDE3');
+    data['playerIds'].add('djawU3QzVCXkLq32mlmd6W81CqK2');
+    await Firestore.instance
+        .collection('sessions')
+        .document(sessionId)
+        .setData(data);
+  }
+
   Widget _getSpectators(data) {
     var spectatorIds = data['spectatorIds'];
     return Container(
@@ -1592,6 +1603,32 @@ class _LobbyScreenState extends State<LobbyScreen> {
                                       colors: <Color>[
                                         Theme.of(context).primaryColor,
                                         Theme.of(context).accentColor,
+                                      ],
+                                    ),
+                                  ),
+                                  SizedBox(height: 20),
+                                ],
+                              )
+                            : Container(),
+                        // if markus, add the gang
+                        userId == 'XMFwripPojYlcvagoiDEmyoxZyK2' && !isStarting
+                            ? Column(
+                                children: <Widget>[
+                                  RaisedGradientButton(
+                                    child: Text(
+                                      'Add the gang',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    onPressed: () => addTheGang(data),
+                                    height: 25,
+                                    width: 120,
+                                    gradient: LinearGradient(
+                                      colors: <Color>[
+                                        Colors.green[200],
+                                        Colors.green[100],
                                       ],
                                     ),
                                   ),

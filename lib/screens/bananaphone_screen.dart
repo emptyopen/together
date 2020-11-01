@@ -9,6 +9,7 @@ import 'dart:collection';
 import 'package:together/models/models.dart';
 import 'package:together/components/misc.dart';
 import 'package:together/services/services.dart';
+import 'package:together/services/firestore.dart';
 import 'package:together/help_screens/help_screens.dart';
 import 'lobby_screen.dart';
 import 'package:together/components/end_game.dart';
@@ -36,10 +37,12 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
   String currPhase = 'draw1';
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   bool isSpectator = false;
+  var T;
 
   @override
   void initState() {
     super.initState();
+    T = Transactor(sessionId: widget.sessionId);
     setUpGame();
   }
 
@@ -71,7 +74,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
       await Firestore.instance
           .collection('sessions')
           .document(widget.sessionId)
-          .setData(data.data);
+          .setData(data);
       // navigate to lobby
       Navigator.of(context).pop();
       slideTransition(
@@ -112,10 +115,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
     } else {
       nextPhase = 'vote';
     }
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .updateData({'phase': nextPhase});
+    T.transact(data);
   }
 
   Widget getStatusOverview(data) {
@@ -510,10 +510,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
       // TODO: should probably also reset painting tools?
     });
 
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
+    T.transact(data);
   }
 
   getDrawing(data) {
@@ -881,10 +878,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
       pointsList.clear();
     });
 
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
+    T.transact(data);
 
     setState(() {
       descriptionController.text = '';
@@ -1217,10 +1211,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
       }
     }
 
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
+    T.transact(data);
 
     setState(() {
       pointsList.clear();
@@ -1613,7 +1604,9 @@ class VotableSquare extends StatelessWidget {
                         width: 5,
                         color: isSelf
                             ? Colors.grey
-                            : isVoted ? color : Colors.white)),
+                            : isVoted
+                                ? color
+                                : Colors.white)),
                 child: child,
               ),
               isVoted

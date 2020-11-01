@@ -36,7 +36,6 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
   DateTime _now;
   String errorMessage;
   var T;
-  // vibrate states
 
   @override
   void initState() {
@@ -65,7 +64,10 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
       Navigator.of(context).pop();
     } else if (data['state'] == 'lobby') {
       // I DON'T KNOW WHY WE NEED THIS BUT OTHERWISE WE GET DEBUG LOCKED ISSUES
-      T.transact(data);
+      await Firestore.instance
+          .collection('sessions')
+          .document(widget.sessionId)
+          .setData(data);
       // navigate to lobby
       Navigator.of(context).pop();
       slideTransition(

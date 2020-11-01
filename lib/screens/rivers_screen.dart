@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'dart:math';
 
 import 'package:together/services/services.dart';
+import 'package:together/services/firestore.dart';
 import 'package:together/components/buttons.dart';
 import 'package:together/help_screens/help_screens.dart';
 import 'lobby_screen.dart';
@@ -28,10 +29,12 @@ class _RiversScreenState extends State<RiversScreen> {
   int clickedHandCard = -1;
   var currPlayer = '';
   bool isSpectator = false;
+  var T;
 
   @override
   void initState() {
     super.initState();
+    T = Transactor(sessionId: widget.sessionId);
     setUpGame();
   }
 
@@ -143,10 +146,7 @@ class _RiversScreenState extends State<RiversScreen> {
     // remove card from draw pile
     data['drawPile'].remove(data['drawPile'].last);
 
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
+    T.transact(data);
   }
 
   getDrawPile(data) {
@@ -239,10 +239,7 @@ class _RiversScreenState extends State<RiversScreen> {
       data['drawPile'].remove(data['drawPile'].last);
     }
 
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
+    T.transact(data);
   }
 
   playCard(data, pileName, cardToAdd) async {
@@ -289,10 +286,7 @@ class _RiversScreenState extends State<RiversScreen> {
       }
     }
 
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
+    T.transact(data);
   }
 
   getAscendPiles(data) {
@@ -613,10 +607,7 @@ class _RiversScreenState extends State<RiversScreen> {
           'rivers${data['rules']['handSize']}', data['playerIds'][i]);
     }
 
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
+    T.transact(data);
   }
 
   getGiveUpButton(data) {
@@ -661,10 +652,7 @@ class _RiversScreenState extends State<RiversScreen> {
 
   logEvent(data, eventText) async {
     data['log'].add(eventText);
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
+    T.transact(data);
   }
 
   getGameboard(data) {
@@ -1070,7 +1058,9 @@ class RiversCard extends StatelessWidget {
                 ? Colors.blue
                 : clickable
                     ? Colors.lightGreen
-                    : extraClickable ? Colors.indigoAccent : Colors.black,
+                    : extraClickable
+                        ? Colors.indigoAccent
+                        : Colors.black,
             width: clickable || clicked || extraClickable ? 5 : 1,
           ),
           borderRadius: BorderRadius.circular(10),

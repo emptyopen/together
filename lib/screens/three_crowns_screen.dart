@@ -5,6 +5,7 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import 'package:flutter/services.dart';
 
 import 'package:together/services/services.dart';
+import 'package:together/services/firestore.dart';
 import 'package:together/services/three_crowns_services.dart';
 import 'package:together/help_screens/help_screens.dart';
 import 'lobby_screen.dart';
@@ -28,6 +29,13 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
   var currDuelerIndex = 0;
   var currDueleeIndex = 1;
   var currDuelPhase = 'duel';
+  var T;
+
+  @override
+  void initState() {
+    super.initState();
+    T = Transactor(sessionId: widget.sessionId);
+  }
 
   checkIfExit(data) async {
     // run async func to check if game is over, or back to lobby or deleted (main menu)
@@ -94,10 +102,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
 
     HapticFeedback.heavyImpact();
 
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
+    T.transact(data);
   }
 
   setWinner(winnerIndex, data) {
@@ -207,10 +212,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
       data['duel']['state'] = 'matching';
     }
 
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
+    T.transact(data);
   }
 
   playCard(data, i, val) async {
@@ -314,10 +316,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
 
     HapticFeedback.heavyImpact();
 
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
+    T.transact(data);
   }
 
   getHand(data) {
@@ -667,10 +666,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
       cleanupDuel(data);
     }
 
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
+    T.transact(data);
   }
 
   pillage(data) async {
@@ -699,10 +695,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     data['player${playerIndex}Hand'].add(data['duel']['matchingCards'].last);
     data['duel']['matchingCards'].removeLast();
 
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
+    T.transact(data);
   }
 
   returnPeasantCard(data) async {
@@ -710,10 +703,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     data['player${playerIndex}Hand'].add(data['duel']['peasantCards'].last);
     data['duel']['peasantCards'].removeLast();
 
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
+    T.transact(data);
   }
 
   matchDuel(data) async {
@@ -725,10 +715,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     );
     data['log'].add('$player matches!');
 
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
+    T.transact(data);
   }
 
   peasantResponse(data) async {
@@ -754,10 +741,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     }
     data['duel']['state'] = 'collection';
 
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
+    T.transact(data);
   }
 
   concede(data) async {
@@ -801,10 +785,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
       data['duel']['peasantCards'] = [];
     }
 
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
+    T.transact(data);
   }
 
   grabCrown(data) async {
@@ -819,10 +800,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
 
     HapticFeedback.heavyImpact();
 
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
+    T.transact(data);
   }
 
   burnTiles(data) async {
@@ -862,10 +840,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
 
     HapticFeedback.heavyImpact();
 
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
+    T.transact(data);
   }
 
   showPlayersDialog(data) {
@@ -1940,10 +1915,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
       startNextRound(data);
     }
 
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
+    T.transact(data);
   }
 
   getRoundEnd(data) {

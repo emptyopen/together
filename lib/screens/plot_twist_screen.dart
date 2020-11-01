@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 
 import 'package:together/services/services.dart';
+import 'package:together/services/firestore.dart';
 import 'package:together/help_screens/help_screens.dart';
 import 'lobby_screen.dart';
 import 'package:together/components/end_game.dart';
@@ -34,6 +35,7 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
   // vibrate states
   bool allDone = false;
   int chatLength = 0;
+  var T;
 
   @override
   void initState() {
@@ -42,6 +44,7 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
     createCharacterNameController = TextEditingController();
     createCharacterAgeController = TextEditingController();
     createCharacterDescriptionController = TextEditingController();
+    T = Transactor(sessionId: widget.sessionId);
     setUpGame();
   }
 
@@ -253,10 +256,7 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
 
     FocusScope.of(context).unfocus();
 
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
+    T.transact(data);
 
     HapticFeedback.vibrate();
   }
@@ -514,10 +514,7 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
       data['internalState'] = 'chat';
     }
 
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
+    T.transact(data);
   }
 
   getCharacterSelection(data) {
@@ -716,10 +713,7 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
   toggleReadyToEnd(data) async {
     data['readyToEnd'][widget.userId] = !data['readyToEnd'][widget.userId];
 
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
+    T.transact(data);
   }
 
   getGameboard(data) {
@@ -1045,6 +1039,13 @@ class CharactersDialog extends StatefulWidget {
 class _CharactersDialogState extends State<CharactersDialog> {
   int selectedCharacterIndex;
   int selectedPlayerIndex;
+  var T;
+
+  @override
+  initState() {
+    super.initState();
+    T = Transactor(sessionId: widget.sessionId);
+  }
 
   matchColors(otherPlayers) {
     if (selectedCharacterIndex != null && selectedPlayerIndex != null) {
@@ -1096,10 +1097,7 @@ class _CharactersDialogState extends State<CharactersDialog> {
 
               setState(() {});
 
-              await Firestore.instance
-                  .collection('sessions')
-                  .document(widget.sessionId)
-                  .setData(widget.data);
+              T.transact(widget.data);
             },
             child: Center(
               child: Container(
@@ -1172,10 +1170,7 @@ class _CharactersDialogState extends State<CharactersDialog> {
 
               setState(() {});
 
-              await Firestore.instance
-                  .collection('sessions')
-                  .document(widget.sessionId)
-                  .setData(widget.data);
+              T.transact(widget.data);
             },
             child: Center(
               child: Container(
