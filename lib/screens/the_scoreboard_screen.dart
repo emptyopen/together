@@ -496,6 +496,7 @@ class _AddScoreDialogState extends State<AddScoreDialog> {
           children: <Widget>[
             TextField(
               controller: controller,
+              autofocus: true,
               keyboardType: TextInputType.number,
             ),
           ],
@@ -566,6 +567,7 @@ class _AddTeamDialogState extends State<AddTeamDialog> {
         child: ListView(
           children: <Widget>[
             TextField(
+              autofocus: true,
               controller: controller,
             ),
           ],
@@ -634,6 +636,7 @@ class _EditNameDialogState extends State<EditNameDialog> {
       title: Text('Edit team name'),
       contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),
       content: TextField(
+        autofocus: true,
         controller: controller,
       ),
       actions: <Widget>[

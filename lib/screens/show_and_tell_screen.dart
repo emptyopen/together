@@ -13,6 +13,7 @@ import 'package:together/components/end_game.dart';
 import 'package:together/components/buttons.dart';
 import 'package:together/components/misc.dart';
 import 'package:together/services/show_and_tell_services.dart';
+import 'package:together/services/firestore.dart';
 
 class ShowAndTellScreen extends StatefulWidget {
   ShowAndTellScreen({this.sessionId, this.userId, this.roomCode});
@@ -34,12 +35,14 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
   Timer _timer;
   DateTime _now;
   String errorMessage;
+  var T;
   // vibrate states
 
   @override
   void initState() {
     super.initState();
     wordController = TextEditingController();
+    T = Transactor(sessionId: widget.sessionId);
     setUpGame();
     _timer = Timer.periodic(Duration(milliseconds: 200), (Timer t) {
       if (!mounted) return;
@@ -62,10 +65,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
       Navigator.of(context).pop();
     } else if (data['state'] == 'lobby') {
       // I DON'T KNOW WHY WE NEED THIS BUT OTHERWISE WE GET DEBUG LOCKED ISSUES
-      await Firestore.instance
-          .collection('sessions')
-          .document(widget.sessionId)
-          .setData(data);
+      T.transact(data);
       // navigate to lobby
       Navigator.of(context).pop();
       slideTransition(
@@ -130,10 +130,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
     data['roundScore'] = 0;
     data['expirationTime'] = null;
 
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
+    T.transact(data);
   }
 
   judgmentComplete(data) async {
@@ -215,10 +212,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
     }
 
     if (changed) {
-      await Firestore.instance
-          .collection('sessions')
-          .document(widget.sessionId)
-          .setData(data);
+      T.transact(data);
     }
   }
 
@@ -238,20 +232,17 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
     // check if word already exists
     bool wordAlreadyExists = false;
     data['words'].forEach((v) {
-      if (v.similarityTo(wordController.text) > 0.5) {
+      if (StringSimilarity.compareTwoStrings(v, wordController.text) > 0.7) {
         wordAlreadyExists = true;
       }
     });
-    if (wordAlreadyExists) {
+    if (!wordAlreadyExists) {
       data['words'].add(wordController.text);
       setState(() {
         wordController.text = '';
         errorMessage = null;
       });
-      await Firestore.instance
-          .collection('sessions')
-          .document(widget.sessionId)
-          .setData(data);
+      T.transact(data);
     } else {
       setState(() {
         errorMessage = 'Similar submission already exists!';
@@ -430,10 +421,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
           .add(Duration(seconds: data['rules']['roundTimeLimit']));
     }
 
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
+    T.transact(data);
   }
 
   playerGotWord(data) async {
@@ -444,10 +432,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
 
     updateInternalState(data);
 
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
+    T.transact(data);
   }
 
   playerSkipsWord(data) async {
@@ -456,10 +441,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
     var word = data['${pile}Pile'].removeLast();
     data['${pile}Pile'].insert(0, word);
 
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
+    T.transact(data);
   }
 
   getButtons(data) {
@@ -577,10 +559,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
       judgmentComplete(data);
     }
 
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
+    T.transact(data);
   }
 
   rejectWord(i, data) async {
@@ -592,10 +571,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
       judgmentComplete(data);
     }
 
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
+    T.transact(data);
   }
 
   acceptAllWords(data) async {
@@ -612,10 +588,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
       judgmentComplete(data);
     }
 
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
+    T.transact(data);
   }
 
   getStatus(data) {

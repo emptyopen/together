@@ -136,7 +136,8 @@ getDefaultRules(String gameName) {
   }
 }
 
-createGame(BuildContext context, String game, String password, bool pop) async {
+createGame(BuildContext context, String game, String password, bool pop,
+    Function unpress) async {
   final _rnd = Random();
   final letters = 'ABCDEFGHJKMNPQRSTUVWXYZ';
   String randLetter() => letters[_rnd.nextInt(letters.length)];
@@ -162,7 +163,8 @@ createGame(BuildContext context, String game, String password, bool pop) async {
 
   // remove user from old game
   final userId = (await FirebaseAuth.instance.currentUser()).uid;
-  checkUserInGame(userId: userId);
+  // TODO: should fix this downstream. neatly clean up olde lobbies
+  // checkUserInGame(userId: userId);
 
   // define initial rules per game
   Map<String, dynamic> defaultRules = getDefaultRules(game);
@@ -195,6 +197,8 @@ createGame(BuildContext context, String game, String password, bool pop) async {
     case 'Rivers':
       sessionContents['turn'] = userId;
       break;
+    default:
+      break;
   }
   var result =
       await Firestore.instance.collection('sessions').add(sessionContents);
@@ -209,6 +213,10 @@ createGame(BuildContext context, String game, String password, bool pop) async {
   if (pop) {
     Navigator.of(context).pop();
   }
+
+  // unpress
+  unpress();
+
   // player.play('new-lobby.mp3');
   slideTransition(
     context,

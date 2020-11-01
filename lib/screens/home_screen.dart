@@ -576,8 +576,8 @@ class _LobbyDialogState extends State<LobbyDialog> {
             onPressed: () {
               widget.isJoin
                   ? joinGame(_roomCodeController.text, _passwordController.text)
-                  : createGame(
-                      context, _dropDownGame, _passwordController.text, true);
+                  : createGame(context, _dropDownGame, _passwordController.text,
+                      true, () => null);
             },
             child: Text('Confirm'))
       ],
@@ -772,6 +772,12 @@ class QuickStartButton extends StatefulWidget {
 class _QuickStartButtonState extends State<QuickStartButton> {
   bool pressed = false;
 
+  unpress() async {
+    setState(() {
+      pressed = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     var numberOfPlayersString = '${widget.minPlayers} player min';
@@ -782,13 +788,11 @@ class _QuickStartButtonState extends State<QuickStartButton> {
     return GestureDetector(
       onTap: () async {
         HapticFeedback.vibrate();
+        print('hey pressed');
         setState(() {
           pressed = true;
         });
-        createGame(context, widget.gameName, '', false);
-        setState(() {
-          pressed = false;
-        });
+        createGame(context, widget.gameName, '', false, unpress);
       },
       child: Container(
         height: 135,
@@ -806,8 +810,8 @@ class _QuickStartButtonState extends State<QuickStartButton> {
           gradient: LinearGradient(
             colors: pressed
                 ? [
-                    Colors.green[800],
-                    Colors.green[400],
+                    Colors.blue[900],
+                    Colors.blue[600],
                   ]
                 : [
                     Colors.blue[800],

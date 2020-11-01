@@ -8,13 +8,14 @@ void main() => runApp(MyApp());
 // done:
 
 // next up:
-// add generic "tools": voice command point counter, roll dice, flip coin, etc.
-// team selector
+// add developer page with donations link
+// voice command for the scoreboard
+// team selector chwazy
+// create method to use transactions for updating firestore, use with 'wordSelection', then everywhere
 // 3Charades (word selection): add "staggering of added words" each player gets their own pile, and when timer is ended, they are put together (use update to avoid resets)
 // use updates where clashes could occur to avoid overwrites (plot twist, and )
 
 // TODO:
-// add developer page with donations link
 // other tools: add voice commands (+/- team, +/- score)
 // charades: add everything to a log?
 // BIG: update lobby to allow team switching?

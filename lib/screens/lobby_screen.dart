@@ -853,11 +853,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
       while (data['words'].length < data['rules']['collectionWordLimit']) {
         bool wordAlreadyExists = false;
         data['words'].forEach((v) {
-          if (v.similarityTo(words[i]) > 0.5) {
+          if (StringSimilarity.compareTwoStrings(v, words[i]) > 0.7) {
             wordAlreadyExists = true;
           }
         });
-        if (wordAlreadyExists) {
+        if (!wordAlreadyExists) {
           data['words'].add(words[i]);
         }
         i += 1;
