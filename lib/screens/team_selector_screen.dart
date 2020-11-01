@@ -12,7 +12,6 @@ class TeamSelectorScreen extends StatefulWidget {
 }
 
 class _TeamSelectorScreenState extends State<TeamSelectorScreen> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   bool isPickTeams = true;
   int numTeams = 2;
 
@@ -41,8 +40,7 @@ class _TeamSelectorScreenState extends State<TeamSelectorScreen> {
               children: [
                 Text(
                   isPickTeams ? 'Pick teams' : 'Pick one',
-                  style: TextStyle(
-                      fontSize: 14, color: Colors.cyan[700].withAlpha(200)),
+                  style: TextStyle(fontSize: 18, color: Colors.cyan[700]),
                 ),
                 SizedBox(height: 5),
                 Container(
@@ -75,7 +73,7 @@ class _TeamSelectorScreenState extends State<TeamSelectorScreen> {
         SizedBox(width: 20),
         Container(
           width: 160,
-          height: 50,
+          height: 60,
           decoration: BoxDecoration(
             border: Border.all(color: Colors.grey),
             borderRadius: BorderRadius.circular(5),
@@ -106,17 +104,17 @@ class _TeamSelectorScreenState extends State<TeamSelectorScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    '$numTeams ',
+                    '$numTeams',
                     style: TextStyle(
                       color: isPickTeams ? Colors.cyan[700] : Colors.grey,
-                      fontSize: 20,
+                      fontSize: 22,
                     ),
                   ),
                   Text(
                     'teams',
                     style: TextStyle(
                       color: Colors.cyan[700].withAlpha(160),
-                      fontSize: 11,
+                      fontSize: 14,
                     ),
                   ),
                 ],

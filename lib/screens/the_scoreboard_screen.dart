@@ -13,7 +13,6 @@ class TheScoreboardScreen extends StatefulWidget {
 }
 
 class _TheScoreboardScreenState extends State<TheScoreboardScreen> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   var teamNames = ['Team 1', 'Team 2'];
   var scoreValues = [
     [0],
@@ -84,6 +83,7 @@ class _TheScoreboardScreenState extends State<TheScoreboardScreen> {
       ];
       teamScores.add(GestureDetector(
         onTap: () {
+          HapticFeedback.vibrate();
           showDialog<Null>(
             context: context,
             builder: (BuildContext context) {
@@ -111,7 +111,11 @@ class _TheScoreboardScreenState extends State<TheScoreboardScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              v == 0 ? '' : v > 0 ? '+' : '-',
+              v == 0
+                  ? ''
+                  : v > 0
+                      ? '+'
+                      : '-',
               style: TextStyle(
                 fontSize: v > 0 ? 11 : 14,
               ),
@@ -163,7 +167,7 @@ class _TheScoreboardScreenState extends State<TheScoreboardScreen> {
                     child: Icon(
                       MdiIcons.undo,
                       size: 20,
-                      color: Colors.black.withAlpha(150),
+                      color: Theme.of(context).highlightColor.withAlpha(150),
                     ),
                   ),
                 ),
@@ -356,6 +360,7 @@ class _TheScoreboardScreenState extends State<TheScoreboardScreen> {
     }
     scores.add(GestureDetector(
         onTap: () {
+          HapticFeedback.vibrate();
           showDialog<Null>(
             context: context,
             builder: (BuildContext context) {
@@ -374,6 +379,7 @@ class _TheScoreboardScreenState extends State<TheScoreboardScreen> {
                 fontSize: 12,
               ),
             ),
+            SizedBox(height: 5),
             Icon(
               MdiIcons.plusBox,
               color: Colors.cyan[700],
@@ -407,8 +413,8 @@ class _TheScoreboardScreenState extends State<TheScoreboardScreen> {
               borderRadius: BorderRadius.circular(15),
               gradient: LinearGradient(
                 colors: [
-                  Colors.cyan[700].withAlpha(100),
-                  Colors.cyan[700].withAlpha(200),
+                  Colors.cyan[500].withAlpha(100),
+                  Colors.cyan[500].withAlpha(200),
                 ],
               ),
             ),
@@ -624,7 +630,6 @@ class _EditNameDialogState extends State<EditNameDialog> {
 
   @override
   Widget build(BuildContext context) {
-    var width = MediaQuery.of(context).size.width;
     return AlertDialog(
       title: Text('Edit team name'),
       contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),

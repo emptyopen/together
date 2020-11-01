@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'dart:async';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:string_similarity/string_similarity.dart';
 
 import 'package:together/services/services.dart';
 import 'package:together/help_screens/help_screens.dart';
@@ -32,6 +33,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
   String characterSelection;
   Timer _timer;
   DateTime _now;
+  String errorMessage;
   // vibrate states
 
   @override
@@ -233,15 +235,28 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
   }
 
   addWordToList(data) async {
-    data['words'].add(wordController.text);
-    setState(() {
-      wordController.text = '';
+    // check if word already exists
+    bool wordAlreadyExists = false;
+    data['words'].forEach((v) {
+      if (v.similarityTo(wordController.text) > 0.5) {
+        wordAlreadyExists = true;
+      }
     });
-
-    await Firestore.instance
-        .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
+    if (wordAlreadyExists) {
+      data['words'].add(wordController.text);
+      setState(() {
+        wordController.text = '';
+        errorMessage = null;
+      });
+      await Firestore.instance
+          .collection('sessions')
+          .document(widget.sessionId)
+          .setData(data);
+    } else {
+      setState(() {
+        errorMessage = 'Similar submission already exists!';
+      });
+    }
   }
 
   getWordSelection(data) {
@@ -313,6 +328,15 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
               ],
             ),
           ),
+          errorMessage != null ? SizedBox(height: 5) : Container(),
+          errorMessage != null
+              ? Text(
+                  errorMessage,
+                  style: TextStyle(
+                    color: Colors.red,
+                  ),
+                )
+              : Container(),
           SizedBox(height: 20),
           widget.userId == data['leader']
               ? EndGameButton(

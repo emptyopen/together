@@ -19,6 +19,7 @@ dependencies:
   # audioplayers: ^0.16.1
   random_words: ^1.0.2
   simple_animations: ^2.2.2
+  string_similarity: ^1.1.0
 
   firebase_core: ^0.4.5
   firebase_analytics: ^5.0.14

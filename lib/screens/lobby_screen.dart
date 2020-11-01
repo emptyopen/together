@@ -7,6 +7,7 @@ import 'dart:collection';
 import 'dart:math';
 import 'package:flutter/services.dart';
 // import 'package:audioplayers/audio_cache.dart';
+import 'package:string_similarity/string_similarity.dart';
 
 import '../components/buttons.dart';
 import '../components/layouts.dart';
@@ -850,7 +851,15 @@ class _LobbyScreenState extends State<LobbyScreen> {
       words.shuffle();
       int i = 0;
       while (data['words'].length < data['rules']['collectionWordLimit']) {
-        data['words'].add(words[i]);
+        bool wordAlreadyExists = false;
+        data['words'].forEach((v) {
+          if (v.similarityTo(words[i]) > 0.5) {
+            wordAlreadyExists = true;
+          }
+        });
+        if (wordAlreadyExists) {
+          data['words'].add(words[i]);
+        }
         i += 1;
       }
       data['internalState'] = 'describe';

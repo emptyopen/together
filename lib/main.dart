@@ -14,31 +14,30 @@ void main() => runApp(MyApp());
 // use updates where clashes could occur to avoid overwrites (plot twist, and )
 
 // TODO:
+// add developer page with donations link
 // other tools: add voice commands (+/- team, +/- score)
-// other tools: random number generator
-// scoreboard functionality
 // charades: add everything to a log?
 // BIG: update lobby to allow team switching?
 // PLOT TWIST: (formerly Chit Chat and Hear Me Out):
 // - add ability to click a chat to see the character description
 // - add final scoreboard screen with "winners" who guessed correctly
 // show & tell: shimmer for high round scores
-// show arrow for scrollable!!
+// general: show arrow for scrollable!!
 // check if working: undo button not working in bananaphone 2nd+ drawings
 // plot twist: capability for narrator to cast poll, and for players to vote
 // plot twist: add "narrator silence" so narrators can only say something every X chats
 // plot twist: add ability to delete chats?
 // plot twist: add ability to choose narrator in lobby?
-// add sounds and vibration
 // the hunt: add timer to voting!!
 // change button texture when loading during async call
 // abstract: logic to ensure at least one group of words is selected
 // rivers: show stacks history
+// other tools: random number generator?
 // abstract games has funky behavior? - green wins then orange hits grey - should be over but timer glitches
 // make all buttons disappear when they are clicked (especially when they cause an effect - there are double effects happening)
 // fine grained control of teams in lobby for abstract
-// add scores button to view scores in bananaphone
-// orange team needs to win when green wins for them
+// bananaphone: add scores button to view scores
+// abstract: orange team needs to win when green wins for them
 // tiebreaker for abstract, with total time used as second marker
 // add timer to the hunt?
 // abstract: ability to manually change teams (people can just join the team they want to be on?)

@@ -281,6 +281,23 @@ class _HomeScreenState extends State<HomeScreen> {
                           );
                         },
                       ),
+                      MainMenuButton(
+                        title: 'Other Tools',
+                        icon: MdiIcons.dice3,
+                        textColor: Colors.white,
+                        gradient: [
+                          Colors.cyan[700],
+                          Colors.cyan[400],
+                        ],
+                        callback: () {
+                          showDialog<Null>(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return ToolsDialog();
+                            },
+                          );
+                        },
+                      ),
                       StreamBuilder(
                           stream: Firestore.instance
                               .collection('sessions')
@@ -310,23 +327,6 @@ class _HomeScreenState extends State<HomeScreen> {
                               },
                             );
                           }),
-                      MainMenuButton(
-                        title: 'Other Tools',
-                        icon: MdiIcons.dice3,
-                        textColor: Colors.white,
-                        gradient: [
-                          Colors.cyan[700],
-                          Colors.cyan[400],
-                        ],
-                        callback: () {
-                          showDialog<Null>(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return ToolsDialog();
-                            },
-                          );
-                        },
-                      ),
                       Container(),
                     ],
                   ),
@@ -607,6 +607,7 @@ class _ToolsDialogState extends State<ToolsDialog> {
             GestureDetector(
               onTap: () {
                 Navigator.of(context).pop();
+                HapticFeedback.vibrate();
                 slideTransition(
                   context,
                   TheScoreboardScreen(
@@ -650,6 +651,7 @@ class _ToolsDialogState extends State<ToolsDialog> {
             GestureDetector(
               onTap: () {
                 Navigator.of(context).pop();
+                HapticFeedback.vibrate();
                 slideTransition(
                   context,
                   TeamSelectorScreen(
@@ -693,6 +695,7 @@ class _ToolsDialogState extends State<ToolsDialog> {
             GestureDetector(
               onTap: () {
                 Navigator.of(context).pop();
+                HapticFeedback.vibrate();
                 slideTransition(
                   context,
                   DiceAndCoinsScreen(
@@ -747,7 +750,7 @@ class _ToolsDialogState extends State<ToolsDialog> {
   }
 }
 
-class QuickStartButton extends StatelessWidget {
+class QuickStartButton extends StatefulWidget {
   final String gameName;
   final String subtitle;
   final Icon icon;
@@ -763,14 +766,29 @@ class QuickStartButton extends StatelessWidget {
   });
 
   @override
+  _QuickStartButtonState createState() => _QuickStartButtonState();
+}
+
+class _QuickStartButtonState extends State<QuickStartButton> {
+  bool pressed = false;
+
+  @override
   Widget build(BuildContext context) {
-    var numberOfPlayersString = '$minPlayers player min';
-    if (maxPlayers != null) {
-      numberOfPlayersString = '$minPlayers-$maxPlayers players';
+    var numberOfPlayersString = '${widget.minPlayers} player min';
+    if (widget.maxPlayers != null) {
+      numberOfPlayersString =
+          '${widget.minPlayers}-${widget.maxPlayers} players';
     }
     return GestureDetector(
-      onTap: () {
-        createGame(context, gameName, '', false);
+      onTap: () async {
+        HapticFeedback.vibrate();
+        setState(() {
+          pressed = true;
+        });
+        createGame(context, widget.gameName, '', false);
+        setState(() {
+          pressed = false;
+        });
       },
       child: Container(
         height: 135,
@@ -786,10 +804,15 @@ class QuickStartButton extends StatelessWidget {
             )
           ],
           gradient: LinearGradient(
-            colors: <Color>[
-              Colors.blue[800],
-              Colors.blue[400],
-            ],
+            colors: pressed
+                ? [
+                    Colors.green[800],
+                    Colors.green[400],
+                  ]
+                : [
+                    Colors.blue[800],
+                    Colors.blue[400],
+                  ],
           ),
           borderRadius: BorderRadius.circular(20),
         ),
@@ -803,7 +826,7 @@ class QuickStartButton extends StatelessWidget {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: icon,
+              child: widget.icon,
             ),
             SizedBox(height: 7),
             Container(
@@ -818,7 +841,7 @@ class QuickStartButton extends StatelessWidget {
               ),
               padding: EdgeInsets.fromLTRB(11, 3, 11, 2),
               child: AutoSizeText(
-                gameName,
+                widget.gameName,
                 maxLines: 1,
                 minFontSize: 8,
                 style: TextStyle(
@@ -840,7 +863,7 @@ class QuickStartButton extends StatelessWidget {
               ),
               padding: EdgeInsets.fromLTRB(12, 3, 10, 2),
               child: Text(
-                subtitle,
+                widget.subtitle,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 9,

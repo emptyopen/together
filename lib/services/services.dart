@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/services.dart';
 // import 'package:audioplayers/audio_cache.dart';
 
 import '../screens/lobby_screen.dart';
@@ -205,9 +204,6 @@ createGame(BuildContext context, String game, String password, bool pop) async {
       .collection('users')
       .document(userId)
       .updateData({'currentGame': result.documentID});
-
-  // vibrate
-  HapticFeedback.vibrate();
 
   // navigate to lobby
   if (pop) {

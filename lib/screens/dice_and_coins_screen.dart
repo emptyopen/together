@@ -97,6 +97,7 @@ class _DiceAndCoinsScreenState extends State<DiceAndCoinsScreen> {
               dice.length > 1
                   ? GestureDetector(
                       onTap: () {
+                        HapticFeedback.vibrate();
                         removeDice();
                       },
                       child: Icon(
@@ -110,6 +111,7 @@ class _DiceAndCoinsScreenState extends State<DiceAndCoinsScreen> {
               dice.length < 10
                   ? GestureDetector(
                       onTap: () {
+                        HapticFeedback.vibrate();
                         addDice();
                       },
                       child: Icon(
