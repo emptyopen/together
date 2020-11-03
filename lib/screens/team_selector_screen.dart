@@ -1,6 +1,8 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 
 class TeamSelectorScreen extends StatefulWidget {
   TeamSelectorScreen({this.userId});
@@ -38,9 +40,11 @@ class _TeamSelectorScreenState extends State<TeamSelectorScreen> {
             padding: EdgeInsets.all(5),
             child: Column(
               children: [
-                Text(
+                AutoSizeText(
                   isPickTeams ? 'Pick teams' : 'Pick one',
+                  maxLines: 1,
                   style: TextStyle(fontSize: 18, color: Colors.cyan[700]),
+                  textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 5),
                 Container(
@@ -113,7 +117,7 @@ class _TeamSelectorScreenState extends State<TeamSelectorScreen> {
                   Text(
                     'teams',
                     style: TextStyle(
-                      color: Colors.cyan[700].withAlpha(160),
+                      color: isPickTeams ? Colors.cyan[700] : Colors.grey,
                       fontSize: 14,
                     ),
                   ),
@@ -163,7 +167,16 @@ class _TeamSelectorScreenState extends State<TeamSelectorScreen> {
                   color: Colors.red,
                 ),
               ),
-              child: Center(child: Text('coming soon!')),
+              child: Center(
+                child: MultiTouchPage(
+                  backgroundColor: Colors.white,
+                  borderColor: Colors.amber,
+                  minTouches: 2,
+                  onTapCallback: (touchCount, correct) {
+                    print("Touch" + touchCount.toString());
+                  },
+                ),
+              ),
             ),
           ),
         ],
@@ -171,3 +184,123 @@ class _TeamSelectorScreenState extends State<TeamSelectorScreen> {
     );
   }
 }
+
+typedef MultiTouchGestureRecognizerCallback = void Function(
+    int touchCount, bool correctNumberOfTouches);
+
+class MultiTouchGestureRecognizer extends MultiTapGestureRecognizer {
+  MultiTouchGestureRecognizerCallback onMultiTap;
+  var numberOfTouches = 0;
+  int minNumberOfTouches = 0;
+
+  MultiTouchGestureRecognizer() {
+    super.onTapDown = (pointer, details) => this.addTouch(pointer, details);
+    super.onTapUp = (pointer, details) => this.removeTouch(pointer, details);
+    super.onTapCancel = (pointer) => this.cancelTouch(pointer);
+    super.onTap = (pointer) => this.captureDefaultTap(pointer);
+  }
+
+  void addTouch(int pointer, TapDownDetails details) {
+    this.numberOfTouches++;
+  }
+
+  void removeTouch(int pointer, TapUpDetails details) {
+    if (this.numberOfTouches == this.minNumberOfTouches) {
+      this.onMultiTap(numberOfTouches, true);
+    } else if (this.numberOfTouches != 0) {
+      this.onMultiTap(numberOfTouches, false);
+    }
+
+    this.numberOfTouches = 0;
+  }
+
+  void cancelTouch(int pointer) {
+    this.numberOfTouches = 0;
+  }
+
+  void captureDefaultTap(int pointer) {}
+
+  @override
+  set onTapDown(_onTapDown) {}
+
+  @override
+  set onTapUp(_onTapUp) {}
+
+  @override
+  set onTapCancel(_onTapCancel) {}
+
+  @override
+  set onTap(_onTap) {}
+}
+
+class MultiTouchPage extends StatefulWidget {
+  final MultiTouchPageCallback onTapCallback;
+  final int minTouches;
+  final Color backgroundColor;
+  final Color borderColor;
+
+  MultiTouchPage(
+      {this.backgroundColor,
+      this.borderColor,
+      this.minTouches,
+      this.onTapCallback});
+  @override
+  _MultiTouchPageState createState() => _MultiTouchPageState();
+}
+
+class _MultiTouchPageState extends State<MultiTouchPage> {
+  bool correctNumberOfTouches;
+  int touchCount;
+  @override
+  Widget build(BuildContext context) {
+    return RawGestureDetector(
+      gestures: {
+        MultiTouchGestureRecognizer:
+            GestureRecognizerFactoryWithHandlers<MultiTouchGestureRecognizer>(
+          () => MultiTouchGestureRecognizer(),
+          (MultiTouchGestureRecognizer instance) {
+            instance.minNumberOfTouches = widget.minTouches;
+            instance.onMultiTap = (
+              touchCount,
+              correctNumberOfTouches,
+            ) =>
+                this.onTap(touchCount, correctNumberOfTouches);
+          },
+        ),
+      },
+      child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Expanded(
+              child: Container(
+                padding: EdgeInsets.all(12.0),
+                decoration: BoxDecoration(
+                  color: widget.backgroundColor,
+                  border: Border(
+                    top: BorderSide(width: 1.0, color: widget.borderColor),
+                    left: BorderSide(width: 1.0, color: widget.borderColor),
+                    right: BorderSide(width: 1.0, color: widget.borderColor),
+                    bottom: BorderSide(width: 1.0, color: widget.borderColor),
+                  ),
+                ),
+                child: Text(
+                    "Tap with " + this.touchCount.toString() + " finger(s).",
+                    textAlign: TextAlign.center),
+              ),
+            ),
+          ]),
+    );
+  }
+
+  void onTap(int touchCount, bool correctNumberOfTouches) {
+    this.correctNumberOfTouches = correctNumberOfTouches;
+    setState(() {
+      this.touchCount = touchCount;
+    });
+    print("Tapped with " + touchCount.toString() + " finger(s)");
+    widget.onTapCallback(touchCount, correctNumberOfTouches);
+  }
+}
+
+typedef MultiTouchPageCallback = void Function(
+    int touchCount, bool correctNumberOfTouches);

@@ -399,14 +399,19 @@ class _TheScoreboardScreenState extends State<TheScoreboardScreen> {
   }
 
   getScoreboard() {
-    var width = MediaQuery.of(context).size.width;
+    final Shader linearGradient = LinearGradient(
+      colors: <Color>[
+        Colors.white,
+        Colors.white,
+      ],
+    ).createShader(Rect.fromLTWH(0.0, 0.0, 200.0, 200.0));
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         getScores(),
         GestureDetector(
           child: Container(
-            width: 250,
+            width: 300,
             height: 60,
             decoration: BoxDecoration(
               border: Border.all(color: Theme.of(context).highlightColor),
@@ -415,12 +420,13 @@ class _TheScoreboardScreenState extends State<TheScoreboardScreen> {
                 colors: [
                   Colors.cyan[500].withAlpha(100),
                   Colors.cyan[500].withAlpha(200),
+                  Colors.cyan[500].withAlpha(100),
                 ],
               ),
             ),
             child: Center(
               child: Container(
-                width: 240,
+                width: 290,
                 height: 50,
                 decoration: BoxDecoration(
                   border: Border.all(color: Theme.of(context).canvasColor),
@@ -432,7 +438,7 @@ class _TheScoreboardScreenState extends State<TheScoreboardScreen> {
                     style: TextStyle(
                       fontSize: 16,
                       fontFamily: 'SyneMono',
-                      color: Colors.white,
+                      foreground: Paint()..shader = linearGradient,
                     ),
                   ),
                 ),
