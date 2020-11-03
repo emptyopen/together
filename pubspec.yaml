@@ -50,6 +50,7 @@ flutter:
       fonts:
         - asset: assets/fonts/SyneMono-Regular.ttf
   assets:
+    - assets/images/matt_aki.jpg
     - assets/sounds/approved-notification.wav
     - assets/sounds/birds.mp3
     - assets/sounds/complete-notification.wav

@@ -239,12 +239,11 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
       }
     });
     if (!wordAlreadyExists) {
-      data['words'].add(wordController.text);
+      T.transactShowAndTellWords(wordController.text);
       setState(() {
         wordController.text = '';
         errorMessage = null;
       });
-      T.transact(data);
     } else {
       setState(() {
         errorMessage = 'Similar submission already exists!';
@@ -611,11 +610,11 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
       // it is player team's turn
       if (data['turn']['team${playerTeamIndex}Turn'] == playerIndexForTeam) {
         turnString = 'It is your turn';
-        backgroundColor = Colors.green.withAlpha(100);
+        backgroundColor = Colors.green.withAlpha(150);
         isPlayerTurn = true;
       } else {
         turnString = 'It is your team\'s turn';
-        backgroundColor = Colors.green.withAlpha(100);
+        backgroundColor = Colors.green.withAlpha(150);
       }
     }
     String subString = '';
@@ -732,8 +731,8 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
     }
 
     return Container(
-      width: 230,
-      height: 80,
+      width: 180,
+      height: 70,
       decoration: BoxDecoration(
         color: backgroundColor,
         border: Border.all(color: Theme.of(context).highlightColor),
@@ -754,10 +753,11 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
             subString == '' ? Container() : SizedBox(height: 10),
             subString == ''
                 ? Container()
-                : Text(
+                : AutoSizeText(
                     subString,
+                    maxLines: 1,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 11,
                     ),
                   ),
           ],
@@ -949,7 +949,39 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
             SizedBox(height: 20),
             getPhaseTitle(data),
             SizedBox(height: 20),
-            getStatus(data),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                getStatus(data),
+                SizedBox(width: 10),
+                Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(5),
+                      border: Border.all(
+                        color: Theme.of(context).highlightColor,
+                      ),
+                    ),
+                    padding: EdgeInsets.all(5),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Room code:',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        Text(
+                          widget.roomCode,
+                          style: TextStyle(
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    )),
+              ],
+            ),
             SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,

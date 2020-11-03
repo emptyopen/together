@@ -15,7 +15,8 @@ class SettingsScreen extends StatefulWidget {
   _SettingsScreenState createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _SettingsScreenState extends State<SettingsScreen>
+    with SingleTickerProviderStateMixin {
   TextEditingController _newNameController = new TextEditingController();
   String currName;
   String nameError = '';
@@ -28,11 +29,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
   List<String> reservedGames = ['001', '002', '003'];
   int sessionDeletionDaysThreshold = 3;
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
+  TabController _tabController;
+  final List<Tab> myTabs = <Tab>[
+    Tab(text: 'Settings', icon: Icon(Icons.settings)),
+    Tab(text: 'About the Developer', icon: Icon(Icons.person)),
+  ];
 
   @override
   void initState() {
     super.initState();
     getCurrName();
+    _tabController = TabController(vsync: this, length: myTabs.length);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   getCurrName() async {
@@ -210,52 +223,126 @@ class _SettingsScreenState extends State<SettingsScreen> {
           'Settings',
           style: TextStyle(fontFamily: 'Balsamiq'),
         ),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: myTabs,
+        ),
       ),
       key: _scaffoldKey,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            getNameBox(),
-            SizedBox(height: 30),
-            admins.contains(userId) ? getMattBox() : Container(),
-            RaisedGradientButton(
-                child: Text(
-                  'Main Menu',
-                  style: TextStyle(
-                    fontSize: 20,
-                    color: Colors.white,
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                getNameBox(),
+                SizedBox(height: 30),
+                admins.contains(userId) ? getMattBox() : Container(),
+                RaisedGradientButton(
+                    child: Text(
+                      'Main Menu',
+                      style: TextStyle(
+                        fontSize: 20,
+                        color: Colors.white,
+                      ),
+                    ),
+                    height: 50,
+                    width: 180,
+                    gradient: LinearGradient(
+                      colors: <Color>[
+                        Colors.blue[500],
+                        Colors.blue[100],
+                      ],
+                    ),
+                    onPressed: () => Navigator.of(context).pop()),
+                SizedBox(height: 10),
+                RaisedGradientButton(
+                    child: Text(
+                      'Logout',
+                      style: TextStyle(
+                        fontSize: 20,
+                        color: Colors.white,
+                      ),
+                    ),
+                    height: 50,
+                    width: 180,
+                    gradient: LinearGradient(
+                      colors: <Color>[
+                        Colors.pink[500],
+                        Colors.pink[100],
+                      ],
+                    ),
+                    onPressed: () => signOut()),
+              ],
+            ),
+          ),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(50),
+              child: Column(
+                children: <Widget>[
+                  Container(
+                    decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Theme.of(context).highlightColor,
+                        ),
+                        borderRadius: BorderRadius.circular(20)),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(19),
+                      child: Image(
+                        height: 200,
+                        image: AssetImage(
+                          'assets/images/matt_aki.jpg',
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-                height: 50,
-                width: 180,
-                gradient: LinearGradient(
-                  colors: <Color>[
-                    Colors.blue[500],
-                    Colors.blue[100],
-                  ],
-                ),
-                onPressed: () => Navigator.of(context).pop()),
-            SizedBox(height: 10),
-            RaisedGradientButton(
-                child: Text(
-                  'Logout',
-                  style: TextStyle(
-                    fontSize: 20,
-                    color: Colors.white,
+                  SizedBox(
+                    height: 30,
                   ),
-                ),
-                height: 50,
-                width: 180,
-                gradient: LinearGradient(
-                  colors: <Color>[
-                    Colors.pink[500],
-                    Colors.pink[100],
-                  ],
-                ),
-                onPressed: () => signOut()),
-          ],
-        ),
+                  Text(
+                    '    Matt and Aki live in LA and are always having a good time with friends and family. ',
+                    style: TextStyle(
+                      color: Theme.of(context).highlightColor,
+                      fontSize: 22,
+                    ),
+                  ),
+                  SizedBox(
+                    height: 30,
+                  ),
+                  // Container(
+                  //   height: 40,
+                  //   width: 140,
+                  //   decoration: BoxDecoration(
+                  //     borderRadius: BorderRadius.circular(5),
+                  //     border: Border.all(color: backgroundHighlightColor),
+                  //     gradient: LinearGradient(
+                  //       begin: Alignment.topLeft,
+                  //       end: Alignment.bottomRight,
+                  //       colors: [
+                  //         Colors.yellow[200],
+                  //         Colors.yellow[700],
+                  //       ], // whitish to gray
+                  //       tileMode: TileMode
+                  //           .repeated, // repeats the gradient over the canvas
+                  //     ),
+                  //   ),
+                  //   child: Center(
+                  //     child: InkWell(
+                  //       child: Text(
+                  //         'Give Matt beer!',
+                  //         style: TextStyle(color: Colors.black),
+                  //       ),
+                  //       onTap: () => launch('http://paypal.me/takaomatt'),
+                  //     ),
+                  //   ),
+                  // ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

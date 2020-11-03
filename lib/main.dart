@@ -6,23 +6,24 @@ import 'screens/root_screen.dart';
 void main() => runApp(MyApp());
 
 // done:
+// clashes are still occuring.... new attempt ready for show & tell! (will have to have new functions for all dangerous writes)
+// add room code to show & tell
+// add developer page
 
 // next up:
-// add developer page with donations link
-// voice command for the scoreboard
-// team selector chwazy
+// big: voice command for the scoreboard (+/- team, +/- score)
+// big: team selector chwazy
 // create method to use transactions for updating firestore, use with 'wordSelection', then everywhere
-// 3Charades (word selection): add "staggering of added words" each player gets their own pile, and when timer is ended, they are put together (use update to avoid resets)
-// use updates where clashes could occur to avoid overwrites (plot twist, and )
+// use updates where clashes could occur to avoid overwrites (if confirmed working, plot twist next (for chat))
 
 // TODO:
-// other tools: add voice commands (+/- team, +/- score)
+// show & tell: shimmer for high round scores
+// add LEGAL donations link for ios/android
 // charades: add everything to a log?
 // BIG: update lobby to allow team switching?
 // PLOT TWIST: (formerly Chit Chat and Hear Me Out):
 // - add ability to click a chat to see the character description
 // - add final scoreboard screen with "winners" who guessed correctly
-// show & tell: shimmer for high round scores
 // general: show arrow for scrollable!!
 // check if working: undo button not working in bananaphone 2nd+ drawings
 // plot twist: capability for narrator to cast poll, and for players to vote
@@ -30,7 +31,6 @@ void main() => runApp(MyApp());
 // plot twist: add ability to delete chats?
 // plot twist: add ability to choose narrator in lobby?
 // the hunt: add timer to voting!!
-// change button texture when loading during async call
 // abstract: logic to ensure at least one group of words is selected
 // rivers: show stacks history
 // other tools: random number generator?
