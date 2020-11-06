@@ -16,10 +16,157 @@ class TeamSelectorScreen extends StatefulWidget {
 class _TeamSelectorScreenState extends State<TeamSelectorScreen> {
   bool isPickTeams = true;
   int numTeams = 2;
+  int numSome = 1;
+
+  getTeamSizePicker() {
+    return Container(
+      width: 160,
+      height: 60,
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey),
+        borderRadius: BorderRadius.circular(5),
+        color: Theme.of(context).canvasColor.withAlpha(200),
+      ),
+      padding: EdgeInsets.all(5),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          GestureDetector(
+            onTap: numTeams > 2
+                ? () {
+                    setState(() {
+                      numTeams -= 1;
+                    });
+                    HapticFeedback.vibrate();
+                  }
+                : null,
+            child: Icon(
+              MdiIcons.chevronLeftBoxOutline,
+              size: 35,
+              color: numTeams > 2 ? Colors.purple : Colors.grey,
+            ),
+          ),
+          SizedBox(width: 10),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '$numTeams',
+                style: TextStyle(
+                  color: Colors.purple,
+                  fontSize: 22,
+                ),
+              ),
+              Text(
+                'teams',
+                style: TextStyle(
+                  color: Colors.purple,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(width: 10),
+          GestureDetector(
+            onTap: numTeams < 5
+                ? () {
+                    setState(() {
+                      numTeams += 1;
+                    });
+                    HapticFeedback.vibrate();
+                  }
+                : null,
+            child: Icon(
+              MdiIcons.chevronRightBoxOutline,
+              size: 35,
+              color: numTeams < 5 ? Colors.purple : Colors.grey,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  getSomeSizePicker() {
+    return Container(
+      width: 160,
+      height: 70,
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey),
+        borderRadius: BorderRadius.circular(5),
+        color: Theme.of(context).canvasColor.withAlpha(200),
+      ),
+      padding: EdgeInsets.all(5),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          GestureDetector(
+            onTap: numSome > 1
+                ? () {
+                    setState(() {
+                      numSome -= 1;
+                    });
+                    HapticFeedback.vibrate();
+                  }
+                : null,
+            child: Icon(
+              MdiIcons.chevronLeftBoxOutline,
+              size: 35,
+              color: numSome > 1 ? Colors.orange : Colors.grey,
+            ),
+          ),
+          SizedBox(width: 10),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Pick',
+                style: TextStyle(
+                  color: Colors.orange,
+                  fontSize: 14,
+                ),
+              ),
+              Text(
+                '$numSome',
+                style: TextStyle(
+                  color: Colors.orange,
+                  fontSize: 22,
+                ),
+              ),
+              Text(
+                'player' + (numSome == 1 ? '' : 's'),
+                style: TextStyle(
+                  color: Colors.orange,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(width: 10),
+          GestureDetector(
+            onTap: numSome < 5
+                ? () {
+                    setState(() {
+                      numSome += 1;
+                    });
+                    HapticFeedback.vibrate();
+                  }
+                : null,
+            child: Icon(
+              MdiIcons.chevronRightBoxOutline,
+              size: 35,
+              color: numSome < 5 ? Colors.orange : Colors.grey,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   getSettings() {
-    // pick 1 vs pick teams
-    // if pick teams, how many teams (1 < x < 8)
+    // pick some vs pick teams
+    // if pick teams, how many teams (1 < x < 5)
+    // if pick some, choose how many to pick (1 <= x <= 5)
     // (max 10 touch points)
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -32,18 +179,22 @@ class _TeamSelectorScreenState extends State<TeamSelectorScreen> {
             });
           },
           child: Container(
+            height: 60,
             width: 100,
             decoration: BoxDecoration(
               border: Border.all(color: Colors.grey),
               borderRadius: BorderRadius.circular(5),
+              color: Theme.of(context).canvasColor.withAlpha(200),
             ),
             padding: EdgeInsets.all(5),
             child: Column(
               children: [
                 AutoSizeText(
-                  isPickTeams ? 'Pick teams' : 'Pick one',
+                  isPickTeams ? 'Pick teams' : 'Pick some',
                   maxLines: 1,
-                  style: TextStyle(fontSize: 18, color: Colors.cyan[700]),
+                  style: TextStyle(
+                      fontSize: 18,
+                      color: isPickTeams ? Colors.purple : Colors.orange),
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 5),
@@ -64,7 +215,7 @@ class _TeamSelectorScreenState extends State<TeamSelectorScreen> {
                         width: 25,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(10),
-                          color: Colors.cyan[700],
+                          color: isPickTeams ? Colors.purple : Colors.orange,
                         ),
                       ),
                     ],
@@ -75,75 +226,7 @@ class _TeamSelectorScreenState extends State<TeamSelectorScreen> {
           ),
         ),
         SizedBox(width: 20),
-        Container(
-          width: 160,
-          height: 60,
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey),
-            borderRadius: BorderRadius.circular(5),
-          ),
-          padding: EdgeInsets.all(5),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              GestureDetector(
-                onTap: numTeams > 2 && isPickTeams
-                    ? () {
-                        setState(() {
-                          numTeams -= 1;
-                        });
-                        HapticFeedback.vibrate();
-                      }
-                    : null,
-                child: Icon(
-                  MdiIcons.chevronLeftBoxOutline,
-                  size: 35,
-                  color: numTeams > 2 && isPickTeams
-                      ? Colors.cyan[700]
-                      : Colors.grey,
-                ),
-              ),
-              SizedBox(width: 10),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    '$numTeams',
-                    style: TextStyle(
-                      color: isPickTeams ? Colors.cyan[700] : Colors.grey,
-                      fontSize: 22,
-                    ),
-                  ),
-                  Text(
-                    'teams',
-                    style: TextStyle(
-                      color: isPickTeams ? Colors.cyan[700] : Colors.grey,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(width: 10),
-              GestureDetector(
-                onTap: numTeams < 8 && isPickTeams
-                    ? () {
-                        setState(() {
-                          numTeams += 1;
-                        });
-                        HapticFeedback.vibrate();
-                      }
-                    : null,
-                child: Icon(
-                  MdiIcons.chevronRightBoxOutline,
-                  size: 35,
-                  color: numTeams < 8 && isPickTeams
-                      ? Colors.cyan[700]
-                      : Colors.grey,
-                ),
-              ),
-            ],
-          ),
-        ),
+        isPickTeams ? getTeamSizePicker() : getSomeSizePicker(),
       ],
     );
   }
@@ -157,150 +240,255 @@ class _TeamSelectorScreenState extends State<TeamSelectorScreen> {
           'Team Selector',
         ),
       ),
-      body: Column(
-        children: [
-          getSettings(),
-          Expanded(
-            child: Container(
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Container(
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: Colors.red,
+                  color: Colors.white,
                 ),
               ),
               child: Center(
-                child: MultiTouchPage(
-                  backgroundColor: Colors.white,
-                  borderColor: Colors.amber,
-                  minTouches: 2,
-                  onTapCallback: (touchCount, correct) {
-                    print("Touch" + touchCount.toString());
-                  },
+                child: TeamSelectorArea(
+                  isPickTeams: isPickTeams,
+                  numSome: numSome,
+                  numTeams: numTeams,
+                ),
+              ),
+            ),
+            Align(
+              alignment: Alignment.topCenter,
+              child: RotatedBox(
+                quarterTurns: 1,
+                child: getSettings(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ----------------------------------------------------------------------------
+
+class TeamSelectorArea extends StatefulWidget {
+  final isPickTeams;
+  final numSome;
+  final numTeams;
+
+  TeamSelectorArea({this.isPickTeams, this.numSome, this.numTeams});
+
+  @override
+  _TeamSelectorAreaState createState() => _TeamSelectorAreaState();
+}
+
+class _TeamSelectorAreaState extends State<TeamSelectorArea> {
+  Map touches = {};
+  Map colors = {};
+  GlobalKey _key = GlobalKey();
+
+  getCoords() {
+    List<Widget> pointerPositions = [Text('$colors')];
+    touches.forEach((i, v) {
+      pointerPositions.add(
+        Text(
+          (i + 1).toString(),
+          style: TextStyle(
+            color: getColorFromString(colors[i]),
+          ),
+        ),
+      );
+    });
+    return Column(children: pointerPositions);
+  }
+
+  getColorFromString(String colorString) {
+    switch (colorString) {
+      case 'green':
+        return Colors.green;
+      case 'purple':
+        return Colors.purple;
+      case 'yellow':
+        return Colors.yellow;
+      case 'blue':
+        return Colors.blue;
+      case 'pink':
+        return Colors.pink;
+      case 'grey':
+        return Colors.grey;
+    }
+    return Colors.white;
+  }
+
+  getColorAccentFromString(String colorString) {
+    switch (colorString) {
+      case 'green':
+        return Colors.greenAccent;
+      case 'purple':
+        return Colors.purpleAccent;
+      case 'yellow':
+        return Colors.yellowAccent;
+      case 'blue':
+        return Colors.blueAccent;
+      case 'pink':
+        return Colors.pinkAccent;
+      case 'grey':
+        return Colors.grey;
+    }
+    return Colors.white;
+  }
+
+  getPointerIndicators() {
+    double indicatorRadius = 140;
+    List<Widget> indicators = [];
+    touches.forEach((i, v) {
+      indicators.add(Positioned(
+        left: v.dx - indicatorRadius / 2,
+        top: v.dy - indicatorRadius / 2,
+        child: IgnorePointer(
+          child: Container(
+            height: indicatorRadius,
+            width: indicatorRadius,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(indicatorRadius),
+              border: Border.all(
+                width: 10,
+                color: getColorFromString(colors[i]),
+              ),
+            ),
+            child: Center(
+              child: Container(
+                height: indicatorRadius - 30,
+                width: indicatorRadius - 30,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(indicatorRadius),
+                  border: Border.all(
+                    width: 10,
+                    color: getColorAccentFromString(colors[i]),
+                  ),
                 ),
               ),
             ),
           ),
+        ),
+      ));
+    });
+    return Stack(children: indicators);
+  }
+
+  setColors() async {
+    var possibleColors = ['purple', 'green', 'yellow', 'blue', 'pink'];
+    possibleColors.shuffle();
+    // if isPickTeams, create colors for numTeams teams, and distribute existing players
+    if (widget.isPickTeams) {
+      var teamColors = possibleColors.sublist(0, widget.numTeams);
+      int index = 0;
+      colors.forEach((i, v) {
+        colors[i] = teamColors[index];
+        index += 1;
+        if (index == teamColors.length) {
+          index = 0;
+        }
+      });
+      setState(() {});
+    }
+    // otherwise is pick some. one random selection of numSome players get colored
+    else {
+      int colorCounter = 0;
+      var list = new List<int>.generate(colors.length, (i) => i);
+      list.shuffle();
+      list.forEach((i) {
+        if (colorCounter < widget.numSome) {
+          colors[i] = 'green';
+        } else {
+          colors[i] = 'grey';
+        }
+        colorCounter += 1;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return RawGestureDetector(
+      key: _key,
+      gestures: <Type, GestureRecognizerFactory>{
+        ImmediateMultiDragGestureRecognizer:
+            new GestureRecognizerFactoryWithHandlers<
+                ImmediateMultiDragGestureRecognizer>(
+          () => new ImmediateMultiDragGestureRecognizer(),
+          (ImmediateMultiDragGestureRecognizer instance) {
+            instance
+              ..onStart = (Offset offset) {
+                // start
+                touches[touches.length] = Offset(0, 0);
+                colors[colors.length] = 'grey';
+                setColors();
+                setState(() {});
+
+                onDrag(DragUpdateDetails d, touchIndex, colorIndex) {
+                  RenderBox getBox = _key.currentContext.findRenderObject();
+                  var local = getBox.globalToLocal(d.globalPosition);
+                  touches[colorIndex] = local;
+                  setState(() {});
+                }
+
+                endDrag(DragEndDetails d, touchIndex, colorIndex) {
+                  touches.remove(touchIndex);
+                  colors.remove(colorIndex);
+                  setState(() {});
+                }
+
+                return ItemDrag(
+                    onDrag, endDrag, touches.length - 1, colors.length - 1);
+              };
+          },
+        ),
+      },
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Expanded(
+                  child: Container(
+                    padding: EdgeInsets.all(12.0),
+                    decoration: BoxDecoration(
+                      border: Border.all(),
+                    ),
+                    child: getCoords(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          getPointerIndicators(),
         ],
       ),
     );
   }
 }
 
-typedef MultiTouchGestureRecognizerCallback = void Function(
-    int touchCount, bool correctNumberOfTouches);
+class ItemDrag extends Drag {
+  final Function onUpdate;
+  final Function onEnd;
+  final itemNum;
+  final colorNum;
 
-class MultiTouchGestureRecognizer extends MultiTapGestureRecognizer {
-  MultiTouchGestureRecognizerCallback onMultiTap;
-  var numberOfTouches = 0;
-  int minNumberOfTouches = 0;
+  ItemDrag(this.onUpdate, this.onEnd, this.itemNum, this.colorNum);
 
-  MultiTouchGestureRecognizer() {
-    super.onTapDown = (pointer, details) => this.addTouch(pointer, details);
-    super.onTapUp = (pointer, details) => this.removeTouch(pointer, details);
-    super.onTapCancel = (pointer) => this.cancelTouch(pointer);
-    super.onTap = (pointer) => this.captureDefaultTap(pointer);
+  @override
+  void update(DragUpdateDetails details) {
+    super.update(details);
+    onUpdate(details, itemNum, colorNum);
   }
 
-  void addTouch(int pointer, TapDownDetails details) {
-    this.numberOfTouches++;
-  }
-
-  void removeTouch(int pointer, TapUpDetails details) {
-    if (this.numberOfTouches == this.minNumberOfTouches) {
-      this.onMultiTap(numberOfTouches, true);
-    } else if (this.numberOfTouches != 0) {
-      this.onMultiTap(numberOfTouches, false);
-    }
-
-    this.numberOfTouches = 0;
-  }
-
-  void cancelTouch(int pointer) {
-    this.numberOfTouches = 0;
-  }
-
-  void captureDefaultTap(int pointer) {}
-
   @override
-  set onTapDown(_onTapDown) {}
-
-  @override
-  set onTapUp(_onTapUp) {}
-
-  @override
-  set onTapCancel(_onTapCancel) {}
-
-  @override
-  set onTap(_onTap) {}
-}
-
-class MultiTouchPage extends StatefulWidget {
-  final MultiTouchPageCallback onTapCallback;
-  final int minTouches;
-  final Color backgroundColor;
-  final Color borderColor;
-
-  MultiTouchPage(
-      {this.backgroundColor,
-      this.borderColor,
-      this.minTouches,
-      this.onTapCallback});
-  @override
-  _MultiTouchPageState createState() => _MultiTouchPageState();
-}
-
-class _MultiTouchPageState extends State<MultiTouchPage> {
-  bool correctNumberOfTouches;
-  int touchCount;
-  @override
-  Widget build(BuildContext context) {
-    return RawGestureDetector(
-      gestures: {
-        MultiTouchGestureRecognizer:
-            GestureRecognizerFactoryWithHandlers<MultiTouchGestureRecognizer>(
-          () => MultiTouchGestureRecognizer(),
-          (MultiTouchGestureRecognizer instance) {
-            instance.minNumberOfTouches = widget.minTouches;
-            instance.onMultiTap = (
-              touchCount,
-              correctNumberOfTouches,
-            ) =>
-                this.onTap(touchCount, correctNumberOfTouches);
-          },
-        ),
-      },
-      child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Expanded(
-              child: Container(
-                padding: EdgeInsets.all(12.0),
-                decoration: BoxDecoration(
-                  color: widget.backgroundColor,
-                  border: Border(
-                    top: BorderSide(width: 1.0, color: widget.borderColor),
-                    left: BorderSide(width: 1.0, color: widget.borderColor),
-                    right: BorderSide(width: 1.0, color: widget.borderColor),
-                    bottom: BorderSide(width: 1.0, color: widget.borderColor),
-                  ),
-                ),
-                child: Text(
-                    "Tap with " + this.touchCount.toString() + " finger(s).",
-                    textAlign: TextAlign.center),
-              ),
-            ),
-          ]),
-    );
-  }
-
-  void onTap(int touchCount, bool correctNumberOfTouches) {
-    this.correctNumberOfTouches = correctNumberOfTouches;
-    setState(() {
-      this.touchCount = touchCount;
-    });
-    print("Tapped with " + touchCount.toString() + " finger(s)");
-    widget.onTapCallback(touchCount, correctNumberOfTouches);
+  void end(DragEndDetails details) {
+    super.end(details);
+    onEnd(details, itemNum, colorNum);
   }
 }
-
-typedef MultiTouchPageCallback = void Function(
-    int touchCount, bool correctNumberOfTouches);
