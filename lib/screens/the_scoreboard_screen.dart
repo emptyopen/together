@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:together/components/misc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:flutter/services.dart';
-import 'package:speech_to_text/speech_to_text.dart';
+import 'package:together/services/speech_recognition_service.dart';
 
 class TheScoreboardScreen extends StatefulWidget {
   TheScoreboardScreen({this.userId});
@@ -19,6 +19,18 @@ class _TheScoreboardScreenState extends State<TheScoreboardScreen> {
     [0],
     [0],
   ];
+  SpeechRecognitionService speechRecognitionService;
+  bool listening = false;
+
+  @override
+  initState() {
+    super.initState();
+    setupScoreboard();
+  }
+
+  setupScoreboard() async {
+    await speechRecognitionService.initSpeech();
+  }
 
   addScoreToTeam(teamIndex, scoreString) {
     HapticFeedback.vibrate();
@@ -399,6 +411,18 @@ class _TheScoreboardScreenState extends State<TheScoreboardScreen> {
     );
   }
 
+  toggleListen() async {
+    if (!listening) {
+      speechRecognitionService.startListening();
+      listening = true;
+    } else {
+      speechRecognitionService.stopListening();
+      listening = false;
+    }
+    print('listening: $listening');
+    setState(() {});
+  }
+
   getScoreboard() {
     final Shader linearGradient = LinearGradient(
       colors: <Color>[
@@ -412,7 +436,7 @@ class _TheScoreboardScreenState extends State<TheScoreboardScreen> {
         getScores(),
         GestureDetector(
           onTap: () {
-            print('wow');
+            toggleListen();
           },
           child: Container(
             width: 300,

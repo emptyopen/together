@@ -21,6 +21,7 @@ dependencies:
   simple_animations:
   string_similarity:
   speech_to_text:
+  rxdart:
 
   firebase_core:
   firebase_analytics:

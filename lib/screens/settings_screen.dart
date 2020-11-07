@@ -31,8 +31,14 @@ class _SettingsScreenState extends State<SettingsScreen>
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   TabController _tabController;
   final List<Tab> myTabs = <Tab>[
-    Tab(text: 'Settings', icon: Icon(Icons.settings)),
-    Tab(text: 'About the Developer', icon: Icon(Icons.person)),
+    Tab(
+      text: 'Settings',
+      // icon: Icon(Icons.settings),
+    ),
+    Tab(
+      text: 'About the Developer',
+      // icon: Icon(Icons.person),
+    ),
   ];
 
   @override
