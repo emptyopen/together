@@ -90,7 +90,7 @@ class _TeamSelectorScreenState extends State<TeamSelectorScreen> {
   getSomeSizePicker() {
     return Container(
       width: 160,
-      height: 70,
+      height: 80,
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey),
         borderRadius: BorderRadius.circular(5),
@@ -290,7 +290,7 @@ class _TeamSelectorAreaState extends State<TeamSelectorArea> {
   GlobalKey _key = GlobalKey();
 
   getCoords() {
-    List<Widget> pointerPositions = [Text('$colors')];
+    List<Widget> pointerPositions = [];
     touches.forEach((i, v) {
       pointerPositions.add(
         Text(

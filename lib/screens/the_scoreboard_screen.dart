@@ -3,6 +3,7 @@ import 'package:together/components/misc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:together/services/speech_recognition_service.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 
 class TheScoreboardScreen extends StatefulWidget {
   TheScoreboardScreen({this.userId});
@@ -25,11 +26,6 @@ class _TheScoreboardScreenState extends State<TheScoreboardScreen> {
   @override
   initState() {
     super.initState();
-    setupScoreboard();
-  }
-
-  setupScoreboard() async {
-    await speechRecognitionService.initSpeech();
   }
 
   addScoreToTeam(teamIndex, scoreString) {
@@ -77,22 +73,39 @@ class _TheScoreboardScreenState extends State<TheScoreboardScreen> {
 
   getScores() {
     List<Widget> scores = [];
+    var screenWidth = MediaQuery.of(context).size.width;
+    var containerWidth =
+        (screenWidth - 8 * teamNames.length) / (teamNames.length + 1);
     for (int i = 0; i < teamNames.length; i++) {
       List<Widget> teamScores = [
-        Text(
-          teamNames[i],
-          style: TextStyle(
-            fontSize: 22,
+        Container(
+          height: 30,
+          child: Center(
+            child: AutoSizeText(
+              teamNames[i],
+              maxLines: 2,
+              style: TextStyle(
+                fontSize: 18,
+              ),
+              textAlign: TextAlign.center,
+            ),
           ),
         ),
         SizedBox(height: 10),
-        PageBreak(width: 50),
-        Text(
-          scoreValues[i].reduce((a, b) => a + b).toString(),
-          style: TextStyle(fontSize: 22),
+        PageBreak(width: 50, color: Colors.grey),
+        Container(
+          height: 30,
+          child: Center(
+            child: AutoSizeText(
+              scoreValues[i].reduce((a, b) => a + b).toString(),
+              maxLines: 1,
+              minFontSize: 6,
+              style: TextStyle(fontSize: 22),
+            ),
+          ),
         ),
         SizedBox(height: 5),
-        PageBreak(width: 50),
+        PageBreak(width: 50, color: Colors.grey),
       ];
       teamScores.add(GestureDetector(
         onTap: () {
@@ -120,117 +133,36 @@ class _TheScoreboardScreenState extends State<TheScoreboardScreen> {
             visibleScores.length - 11, visibleScores.length);
       }
       visibleScores.reversed.forEach((v) {
-        teamScores.add(Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              v == 0
-                  ? ''
-                  : v > 0
-                      ? '+'
-                      : '-',
-              style: TextStyle(
-                fontSize: v > 0 ? 11 : 14,
-              ),
-            ),
-            Text(
-              v.abs().toString(),
+        teamScores.add(Container(
+          height: 18,
+          child: Center(
+            child: AutoSizeText(
+              (v == 0
+                      ? ''
+                      : v > 0
+                          ? '+'
+                          : '-') +
+                  v.abs().toString(),
               style: TextStyle(
                 fontSize: 18,
               ),
+              minFontSize: 7,
+              maxLines: 1,
             ),
-          ],
+          ),
         ));
         teamScores.add(SizedBox(height: 5));
       });
       teamScores.removeLast();
       teamScores.removeLast();
-      Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              GestureDetector(
-                onTap: () {
-                  print('delete team');
-                },
-                child: Container(
-                  height: 30,
-                  width: 30,
-                  child: GestureDetector(
-                    onTap: () {},
-                    child: Icon(
-                      MdiIcons.delete,
-                      size: 20,
-                      color: Colors.red.withAlpha(190),
-                    ),
-                  ),
-                ),
-              ),
-              GestureDetector(
-                onTap: () {
-                  print('undo');
-                },
-                child: Container(
-                  height: 30,
-                  width: 30,
-                  child: GestureDetector(
-                    onTap: () {},
-                    child: Icon(
-                      MdiIcons.undo,
-                      size: 20,
-                      color: Theme.of(context).highlightColor.withAlpha(150),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              GestureDetector(
-                onTap: () {
-                  print('clear list');
-                },
-                child: Container(
-                  height: 30,
-                  width: 30,
-                  child: GestureDetector(
-                    onTap: () {},
-                    child: Icon(
-                      MdiIcons.layersOff,
-                      size: 20,
-                      color: Colors.orange.withAlpha(190),
-                    ),
-                  ),
-                ),
-              ),
-              GestureDetector(
-                onTap: () {
-                  print('rename team');
-                },
-                child: Container(
-                  height: 30,
-                  width: 30,
-                  child: GestureDetector(
-                    onTap: () {},
-                    child: Icon(
-                      MdiIcons.pencil,
-                      size: 20,
-                      color: Colors.green.withAlpha(200),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      );
       scores.add(Container(
-        width: 90,
-        height: 460,
+        width: containerWidth,
+        height: 480,
+        padding: EdgeInsets.fromLTRB(5, 15, 5, 10),
+        decoration: BoxDecoration(
+          border: Border.all(color: Theme.of(context).dialogBackgroundColor),
+          borderRadius: BorderRadius.circular(5),
+        ),
         child: Column(
           children: [
             Expanded(
@@ -258,7 +190,7 @@ class _TheScoreboardScreenState extends State<TheScoreboardScreen> {
                 ],
               ),
             ),
-            PageBreak(width: 30),
+            PageBreak(width: 30, color: Colors.grey),
             // buttons
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -267,48 +199,56 @@ class _TheScoreboardScreenState extends State<TheScoreboardScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     GestureDetector(
-                      onTap: () {
-                        HapticFeedback.vibrate();
-                        showDialog<Null>(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return ConfirmDialog(
-                                callback: deleteTeam,
-                                teamIndex: i,
-                                title: 'Delete team?');
-                          },
-                        );
-                      },
+                      onTap: teamNames.length > 1
+                          ? () {
+                              HapticFeedback.vibrate();
+                              showDialog<Null>(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return ConfirmDialog(
+                                      callback: deleteTeam,
+                                      teamIndex: i,
+                                      title: 'Delete team?');
+                                },
+                              );
+                            }
+                          : null,
                       child: Container(
                         height: 30,
                         width: 30,
                         child: Icon(
                           MdiIcons.delete,
                           size: 20,
-                          color: Colors.red.withAlpha(190),
+                          color: teamNames.length > 1
+                              ? Colors.red.withAlpha(190)
+                              : Colors.grey.withAlpha(100),
                         ),
                       ),
                     ),
                     GestureDetector(
-                      onTap: () {
-                        HapticFeedback.vibrate();
-                        showDialog<Null>(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return ConfirmDialog(
-                                callback: undoLast,
-                                teamIndex: i,
-                                title: 'Undo?');
-                          },
-                        );
-                      },
+                      onTap: scoreValues[i].length > 1
+                          ? () {
+                              HapticFeedback.vibrate();
+                              showDialog<Null>(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return ConfirmDialog(
+                                      callback: undoLast,
+                                      teamIndex: i,
+                                      title: 'Undo?');
+                                },
+                              );
+                            }
+                          : null,
                       child: Container(
                         height: 30,
                         width: 30,
                         child: Icon(
                           MdiIcons.undo,
                           size: 20,
-                          color: Colors.black.withAlpha(150),
+                          color: scoreValues[i].length > 1
+                              ? Colors.black.withAlpha(150)
+                              : Colors.grey.withAlpha(100),
                         ),
                       ),
                     ),
@@ -318,25 +258,29 @@ class _TheScoreboardScreenState extends State<TheScoreboardScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     GestureDetector(
-                      onTap: () {
-                        HapticFeedback.vibrate();
-                        showDialog<Null>(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return ConfirmDialog(
-                                callback: clearTeamScore,
-                                teamIndex: i,
-                                title: 'Clear team score?');
-                          },
-                        );
-                      },
+                      onTap: scoreValues[i].length > 1
+                          ? () {
+                              HapticFeedback.vibrate();
+                              showDialog<Null>(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return ConfirmDialog(
+                                      callback: clearTeamScore,
+                                      teamIndex: i,
+                                      title: 'Clear team score?');
+                                },
+                              );
+                            }
+                          : null,
                       child: Container(
                         height: 30,
                         width: 30,
                         child: Icon(
                           MdiIcons.layersOff,
                           size: 20,
-                          color: Colors.orange.withAlpha(190),
+                          color: scoreValues[i].length > 1
+                              ? Colors.orange.withAlpha(190)
+                              : Colors.grey.withAlpha(100),
                         ),
                       ),
                     ),
@@ -370,35 +314,45 @@ class _TheScoreboardScreenState extends State<TheScoreboardScreen> {
           ],
         ),
       ));
+      scores.add(SizedBox(width: 5));
     }
-    scores.add(GestureDetector(
-        onTap: () {
-          HapticFeedback.vibrate();
-          showDialog<Null>(
-            context: context,
-            builder: (BuildContext context) {
-              return AddTeamDialog(
-                callback: addTeam,
-              );
-            },
-          );
-        },
-        child: Column(
-          children: [
-            Text(
-              '(new team)',
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 12,
+    scores.add(Container(
+      width: containerWidth,
+      padding: EdgeInsets.fromLTRB(5, 15, 5, 15),
+      decoration: BoxDecoration(
+        border: Border.all(color: Theme.of(context).dialogBackgroundColor),
+        borderRadius: BorderRadius.circular(5),
+      ),
+      child: GestureDetector(
+          onTap: () {
+            HapticFeedback.vibrate();
+            showDialog<Null>(
+              context: context,
+              builder: (BuildContext context) {
+                return AddTeamDialog(
+                  callback: addTeam,
+                );
+              },
+            );
+          },
+          child: Column(
+            children: [
+              Text(
+                '(new team)',
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 12,
+                ),
               ),
-            ),
-            SizedBox(height: 5),
-            Icon(
-              MdiIcons.plusBox,
-              color: Colors.cyan[700],
-            ),
-          ],
-        )));
+              SizedBox(height: 5),
+              Icon(
+                MdiIcons.plusBox,
+                color: Colors.cyan[700].withAlpha(70),
+                size: 40,
+              ),
+            ],
+          )),
+    ));
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
@@ -423,57 +377,61 @@ class _TheScoreboardScreenState extends State<TheScoreboardScreen> {
     setState(() {});
   }
 
-  getScoreboard() {
+  getGenieBar() {
     final Shader linearGradient = LinearGradient(
       colors: <Color>[
         Colors.white,
         Colors.white,
       ],
     ).createShader(Rect.fromLTWH(0.0, 0.0, 200.0, 200.0));
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        getScores(),
-        GestureDetector(
-          onTap: () {
-            toggleListen();
-          },
+    return GestureDetector(
+      onTap: () {
+        toggleListen();
+      },
+      child: Container(
+        width: 300,
+        height: 60,
+        decoration: BoxDecoration(
+          border: Border.all(color: Theme.of(context).highlightColor),
+          borderRadius: BorderRadius.circular(15),
+          gradient: LinearGradient(
+            colors: [
+              Colors.cyan[500].withAlpha(100),
+              Colors.cyan[500].withAlpha(200),
+              Colors.cyan[500].withAlpha(100),
+            ],
+          ),
+        ),
+        child: Center(
           child: Container(
-            width: 300,
-            height: 60,
+            width: 290,
+            height: 50,
             decoration: BoxDecoration(
-              border: Border.all(color: Theme.of(context).highlightColor),
-              borderRadius: BorderRadius.circular(15),
-              gradient: LinearGradient(
-                colors: [
-                  Colors.cyan[500].withAlpha(100),
-                  Colors.cyan[500].withAlpha(200),
-                  Colors.cyan[500].withAlpha(100),
-                ],
-              ),
+              border: Border.all(color: Theme.of(context).canvasColor),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Center(
-              child: Container(
-                width: 290,
-                height: 50,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Theme.of(context).canvasColor),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Center(
-                  child: Text(
-                    'your wish is my command',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontFamily: 'SyneMono',
-                      foreground: Paint()..shader = linearGradient,
-                    ),
-                  ),
+              child: Text(
+                'your wish is my command',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontFamily: 'SyneMono',
+                  foreground: Paint()..shader = linearGradient,
                 ),
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  getScoreboard() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        getScores(),
+        getGenieBar(),
       ],
     );
   }

@@ -14,6 +14,9 @@ void main() async {
 
 // next up:
 // big: voice command for the scoreboard (+/- team, +/- score)
+// add app link share (android/ios specific)
+// https://apps.apple.com/app/id1514995376
+// https://play.google.com/store/apps/details?id=com.takaomatt.together
 
 // TODO:
 // flesh out team selector (a few slight bugs remaining with rapid touches)

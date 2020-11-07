@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:clipboard/clipboard.dart';
 
 import '../services/services.dart';
 import '../services/authentication.dart';
@@ -32,6 +33,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
+
   signOutCallback() async {
     try {
       await widget.auth.signOut();
@@ -182,11 +185,23 @@ class _HomeScreenState extends State<HomeScreen> {
           // all data for all components
           var userData = snapshot.data.data();
           return Scaffold(
+            key: _scaffoldKey,
             appBar: AppBar(
               title: Text(
                 'Main Menu',
               ),
               actions: <Widget>[
+                IconButton(
+                  icon: Icon(MdiIcons.share),
+                  onPressed: () {
+                    showDialog<Null>(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return ShareLinkDialog(scaffoldKey: _scaffoldKey);
+                      },
+                    );
+                  },
+                ),
                 IconButton(
                   icon: Icon(MdiIcons.trophy),
                   onPressed: () {
@@ -579,6 +594,156 @@ class _LobbyDialogState extends State<LobbyDialog> {
                       true, () => null);
             },
             child: Text('Confirm'))
+      ],
+    );
+  }
+}
+
+class ShareLinkDialog extends StatelessWidget {
+  final scaffoldKey;
+
+  ShareLinkDialog({this.scaffoldKey});
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Copy app link'),
+      content: Container(
+        width: 100.0,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  MdiIcons.googlePlay,
+                  size: 30,
+                ),
+                SizedBox(height: 10),
+                Icon(
+                  MdiIcons.appleIos,
+                  size: 30,
+                ),
+                SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      MdiIcons.googlePlay,
+                      size: 30,
+                    ),
+                    Icon(
+                      MdiIcons.appleIos,
+                      size: 30,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'play store',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey,
+                  ),
+                ),
+                SizedBox(height: 20),
+                Text(
+                  'ios store',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey,
+                  ),
+                ),
+                SizedBox(height: 20),
+                Text(
+                  'both',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(width: 40),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    HapticFeedback.vibrate();
+                    FlutterClipboard.copy(
+                            'https://play.google.com/store/apps/details?id=com.takaomatt.together')
+                        .then((value) {
+                      scaffoldKey.currentState.showSnackBar(SnackBar(
+                        content: Text('google play store link copied!'),
+                        duration: Duration(seconds: 3),
+                      ));
+                    });
+                    Navigator.of(context).pop();
+                  },
+                  child: Icon(
+                    MdiIcons.contentCopy,
+                    color: Colors.blue,
+                    size: 30,
+                  ),
+                ),
+                SizedBox(height: 10),
+                GestureDetector(
+                  onTap: () {
+                    HapticFeedback.vibrate();
+                    FlutterClipboard.copy(
+                            'https://apps.apple.com/app/id1514995376')
+                        .then((value) {
+                      scaffoldKey.currentState.showSnackBar(SnackBar(
+                        content: Text('ios store link copied!'),
+                        duration: Duration(seconds: 3),
+                      ));
+                    });
+                    Navigator.of(context).pop();
+                  },
+                  child: Icon(
+                    MdiIcons.contentCopy,
+                    color: Colors.blue,
+                    size: 30,
+                  ),
+                ),
+                SizedBox(height: 10),
+                GestureDetector(
+                  onTap: () {
+                    HapticFeedback.vibrate();
+                    FlutterClipboard.copy(
+                            'https://play.google.com/store/apps/details?id=com.takaomatt.together\nhttps://apps.apple.com/app/id1514995376')
+                        .then((value) {
+                      scaffoldKey.currentState.showSnackBar(SnackBar(
+                        content: Text('both links copied!'),
+                        duration: Duration(seconds: 3),
+                      ));
+                    });
+                    Navigator.of(context).pop();
+                  },
+                  child: Icon(
+                    MdiIcons.contentCopy,
+                    color: Colors.blue,
+                    size: 30,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+      actions: <Widget>[
+        FlatButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: const Text('Done'),
+        ),
       ],
     );
   }
