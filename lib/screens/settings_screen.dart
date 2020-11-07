@@ -49,13 +49,13 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   getCurrName() async {
-    userId = (await FirebaseAuth.instance.currentUser()).uid;
+    userId = FirebaseAuth.instance.currentUser.uid;
     setState(() {
       userId = userId;
     });
     Map<String, dynamic> data =
-        (await Firestore.instance.collection('users').document(userId).get())
-            .data;
+        (await FirebaseFirestore.instance.collection('users').doc(userId).get())
+            .data();
     setState(() {
       currName = data['name'];
     });
@@ -84,10 +84,10 @@ class _SettingsScreenState extends State<SettingsScreen>
       setState(() {
         currName = _newNameController.text;
       });
-      await Firestore.instance
+      await FirebaseFirestore.instance
           .collection('users')
-          .document(userId)
-          .updateData({'name': _newNameController.text});
+          .doc(userId)
+          .update({'name': _newNameController.text});
     }
     _scaffoldKey.currentState.showSnackBar(SnackBar(
       content: Text('Name updated!'),
@@ -149,31 +149,31 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   destroyOldGames() async {
     List sessionsToDelete = [];
-    List deletingSessionNames = [];
-    await Firestore.instance
+    await FirebaseFirestore.instance
         .collection("sessions")
-        .getDocuments()
+        .get()
         .then((QuerySnapshot snapshot) {
-      snapshot.documents.forEach((f) {
-        if (!f.data.containsKey('dateCreated')) {
-          print('didnt have date created: ${f.data["roomCode"]}');
+      snapshot.docs.forEach((f) {
+        if (!f.data().containsKey('dateCreated')) {
+          print('didnt have date created: ${f.data()["roomCode"]}');
         } else {
           var date = new DateTime.fromMicrosecondsSinceEpoch(
-              f.data['dateCreated'].seconds * 1000000);
+              f.data()['dateCreated'].seconds * 1000000);
           var daysSince = DateTime.now().difference(date);
-          if (!reservedGames.contains(f.data['roomCode']) &&
+          if (!reservedGames.contains(f.data()['roomCode']) &&
               daysSince.compareTo(
                       Duration(days: sessionDeletionDaysThreshold)) >=
                   0) {
-            print('destroying ${f.data["roomCode"]}');
+            print('destroying ${f.data()["roomCode"]}');
             sessionsToDelete.add(f.reference);
           }
         }
       });
     });
     sessionsToDelete.forEach((v) {
-      Firestore.instance.runTransaction((Transaction myTransaction) async {
-        await myTransaction.delete(v);
+      FirebaseFirestore.instance
+          .runTransaction((Transaction myTransaction) async {
+        myTransaction.delete(v);
       });
     });
   }
@@ -228,6 +228,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           tabs: myTabs,
         ),
       ),
+      resizeToAvoidBottomPadding: false,
       key: _scaffoldKey,
       body: TabBarView(
         controller: _tabController,

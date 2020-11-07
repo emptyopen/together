@@ -45,10 +45,10 @@ class _RiversScreenState extends State<RiversScreen> {
       Navigator.of(context).pop();
     } else if (data['state'] == 'lobby') {
       // I DON'T KNOW WHY WE NEED THIS BUT OTHERWISE WE GET DEBUG LOCKED ISSUES
-      await Firestore.instance
+      await FirebaseFirestore.instance
           .collection('sessions')
-          .document(widget.sessionId)
-          .setData(data);
+          .doc(widget.sessionId)
+          .set(data);
       // navigate to lobby
       Navigator.of(context).pop();
       slideTransition(
@@ -71,11 +71,11 @@ class _RiversScreenState extends State<RiversScreen> {
 
   setUpGame() async {
     // get session info for locations
-    var data = (await Firestore.instance
+    var data = (await FirebaseFirestore.instance
             .collection('sessions')
-            .document(widget.sessionId)
+            .doc(widget.sessionId)
             .get())
-        .data;
+        .data();
     setState(() {
       isSpectator = data['spectatorIds'].contains(widget.userId);
     });
@@ -809,9 +809,9 @@ class _RiversScreenState extends State<RiversScreen> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
-        stream: Firestore.instance
+        stream: FirebaseFirestore.instance
             .collection('sessions')
-            .document(widget.sessionId)
+            .doc(widget.sessionId)
             .snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
@@ -826,7 +826,7 @@ class _RiversScreenState extends State<RiversScreen> {
           }
           // all data for all components
           DocumentSnapshot snapshotData = snapshot.data;
-          var data = snapshotData.data;
+          var data = snapshotData.data();
           if (data == null) {
             return Scaffold(
               appBar: AppBar(

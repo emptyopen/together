@@ -69,10 +69,10 @@ class _AbstractScreenState extends State<AbstractScreen> {
       Navigator.of(context).pop();
     } else if (data['state'] == 'lobby') {
       // reset first team to green
-      await Firestore.instance
+      await FirebaseFirestore.instance
           .collection('sessions')
-          .document(widget.sessionId)
-          .updateData({'turn': 'green'});
+          .doc(widget.sessionId)
+          .update({'turn': 'green'});
 
       // navigate to lobby
       Navigator.of(context).pop();
@@ -95,11 +95,11 @@ class _AbstractScreenState extends State<AbstractScreen> {
   }
 
   setUpGame() async {
-    var data = (await Firestore.instance
+    var data = (await FirebaseFirestore.instance
             .collection('sessions')
-            .document(widget.sessionId)
+            .doc(widget.sessionId)
             .get())
-        .data;
+        .data();
 
     setState(() {
       numTeams = data['rules']['numTeams'];
@@ -164,10 +164,10 @@ class _AbstractScreenState extends State<AbstractScreen> {
     var nextActiveTeam = '';
     if (currActiveTeam == 'green') {
       nextActiveTeam = 'orange';
-      await Firestore.instance
+      await FirebaseFirestore.instance
           .collection('sessions')
-          .document(widget.sessionId)
-          .updateData({
+          .doc(widget.sessionId)
+          .update({
         'greenTime': data['greenTime'] +
             _now.difference(data['greenStart'].toDate()).inMilliseconds,
         'orangeStart': DateTime.now(),
@@ -175,30 +175,30 @@ class _AbstractScreenState extends State<AbstractScreen> {
     } else if (currActiveTeam == 'orange') {
       if (numTeams == 2) {
         nextActiveTeam = 'green';
-        await Firestore.instance
+        await FirebaseFirestore.instance
             .collection('sessions')
-            .document(widget.sessionId)
-            .updateData({
+            .doc(widget.sessionId)
+            .update({
           'orangeTime': data['orangeTime'] +
               _now.difference(data['orangeStart'].toDate()).inMilliseconds,
           'greenStart': DateTime.now(),
         });
       } else {
         nextActiveTeam = 'purple';
-        await Firestore.instance
+        await FirebaseFirestore.instance
             .collection('sessions')
-            .document(widget.sessionId)
-            .updateData({
+            .doc(widget.sessionId)
+            .update({
           'orangeTime': data['orangeTime'] +
               _now.difference(data['orangeStart'].toDate()).inMilliseconds,
           'purpleStart': DateTime.now(),
         });
       }
     } else {
-      await Firestore.instance
+      await FirebaseFirestore.instance
           .collection('sessions')
-          .document(widget.sessionId)
-          .updateData({
+          .doc(widget.sessionId)
+          .update({
         'purpleTime': data['purpleTime'] +
             _now.difference(data['purpleStart'].toDate()).inMilliseconds,
         'purpleStart': DateTime.now(),
@@ -214,10 +214,10 @@ class _AbstractScreenState extends State<AbstractScreen> {
     }
 
     // update timer
-    await Firestore.instance
+    await FirebaseFirestore.instance
         .collection('sessions')
-        .document(widget.sessionId)
-        .updateData({
+        .doc(widget.sessionId)
+        .update({
       'turn': nextActiveTeam,
       'timer':
           DateTime.now().add(Duration(seconds: 10 + increment * numUnflipped))
@@ -381,11 +381,11 @@ class _AbstractScreenState extends State<AbstractScreen> {
   }
 
   flipCard(int x, int y) async {
-    var data = (await Firestore.instance
+    var data = (await FirebaseFirestore.instance
             .collection('sessions')
-            .document(widget.sessionId)
+            .doc(widget.sessionId)
             .get())
-        .data;
+        .data();
 
     // check if game is over
     if (data['state'] == 'complete') {
@@ -411,10 +411,10 @@ class _AbstractScreenState extends State<AbstractScreen> {
         }
       }
     }
-    await Firestore.instance
+    await FirebaseFirestore.instance
         .collection('sessions')
-        .document(widget.sessionId)
-        .updateData({'rules': data['rules']});
+        .doc(widget.sessionId)
+        .update({'rules': data['rules']});
 
     // if card is bad, update turn
     if (data['rules']['words'][x]['rowWords'][y]['color'] != userTeam) {
@@ -499,11 +499,11 @@ class _AbstractScreenState extends State<AbstractScreen> {
       freshTurnOnThisFlip = true;
     }
 
-    data = (await Firestore.instance
+    data = (await FirebaseFirestore.instance
             .collection('sessions')
-            .document(widget.sessionId)
+            .doc(widget.sessionId)
             .get())
-        .data;
+        .data();
 
     // end game if there is a winner and turn has just become green, OR if the black card was drawn, OR all teams have won
     if ((thereIsWinner && data['turn'] == 'green' && freshTurnOnThisFlip) ||
@@ -527,10 +527,10 @@ class _AbstractScreenState extends State<AbstractScreen> {
         }
       }
 
-      await Firestore.instance
+      await FirebaseFirestore.instance
           .collection('sessions')
-          .document(widget.sessionId)
-          .updateData(deathCardDrawn
+          .doc(widget.sessionId)
+          .update(deathCardDrawn
               ? {
                   'state': 'complete',
                   'winners': winningTeams,
@@ -878,8 +878,10 @@ class _AbstractScreenState extends State<AbstractScreen> {
 
     for (var playerId in data['rules']['greenTeam']) {
       greenTeam.add(FutureBuilder(
-          future:
-              Firestore.instance.collection('users').document(playerId).get(),
+          future: FirebaseFirestore.instance
+              .collection('users')
+              .doc(playerId)
+              .get(),
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
               return Container();
@@ -893,8 +895,10 @@ class _AbstractScreenState extends State<AbstractScreen> {
     }
     for (var playerId in data['rules']['orangeTeam']) {
       orangeTeam.add(FutureBuilder(
-          future:
-              Firestore.instance.collection('users').document(playerId).get(),
+          future: FirebaseFirestore.instance
+              .collection('users')
+              .doc(playerId)
+              .get(),
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
               return Container();
@@ -909,8 +913,10 @@ class _AbstractScreenState extends State<AbstractScreen> {
     if (numTeams == 3) {
       for (var playerId in data['rules']['purpleTeam']) {
         purpleTeam.add(FutureBuilder(
-            future:
-                Firestore.instance.collection('users').document(playerId).get(),
+            future: FirebaseFirestore.instance
+                .collection('users')
+                .doc(playerId)
+                .get(),
             builder: (context, snapshot) {
               if (!snapshot.hasData) {
                 return Container();
@@ -1044,9 +1050,9 @@ class _AbstractScreenState extends State<AbstractScreen> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
-        stream: Firestore.instance
+        stream: FirebaseFirestore.instance
             .collection('sessions')
-            .document(widget.sessionId)
+            .doc(widget.sessionId)
             .snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {

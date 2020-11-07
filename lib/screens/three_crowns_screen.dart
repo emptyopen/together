@@ -44,10 +44,10 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
       Navigator.of(context).pop();
     } else if (data['state'] == 'lobby') {
       // I DON'T KNOW WHY WE NEED THIS BUT OTHERWISE WE GET DEBUG LOCKED ISSUES
-      await Firestore.instance
+      await FirebaseFirestore.instance
           .collection('sessions')
-          .document(widget.sessionId)
-          .setData(data);
+          .doc(widget.sessionId)
+          .set(data);
 
       // navigate to lobby
       Navigator.of(context).pop();
@@ -322,23 +322,6 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
   getHand(data) {
     var playerIndex = data['playerIds'].indexOf(widget.userId);
     List<Widget> cards = [];
-    // angles: 5 cards -> -80, -40, 0, 40, 80
-    // 4 cards -> -60, -20, 20, 60
-    // var angles = [-pi / 5, -pi / 10, 0.0, pi / 10, pi / 5];
-    // switch (cards.length) {
-    //   case 1:
-    //     angles = [0.0];
-    //     break;
-    //   case 2:
-    //     angles = [pi / 3, pi / 3];
-    //     break;
-    //   case 3:
-    //     angles = [-pi / 3, 0.0, pi / 3];
-    //     break;
-    //   case 4:
-    //     angles = [-pi / 3, -pi / 6, pi / 6, pi / 3];
-    //     break;
-    // }
     data['player${playerIndex}Hand'].asMap().forEach((i, val) {
       var card = Card(
         value: val,
@@ -350,34 +333,6 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     });
     return Column(
       children: <Widget>[
-        // RaisedGradientButton(
-        //   child: Text(
-        //     'Fill Hand',
-        //     style: TextStyle(color: Colors.white),
-        //   ),
-        //   height: 35,
-        //   width: 110,
-        //   onPressed: () => fillHand(
-        //     data: data,
-        //     scaffoldKey: _scaffoldKey,
-        //     userId: widget.userId,
-        //     sessionId: widget.sessionId,
-        //   ), // TODO: disable if during duel
-        //   gradient: !playerInDuel(data, widget.userId)
-        //       ? LinearGradient(
-        //           colors: <Color>[
-        //             Theme.of(context).primaryColor,
-        //             Theme.of(context).accentColor,
-        //           ],
-        //         )
-        //       : LinearGradient(
-        //           colors: <Color>[
-        //             Colors.grey[600],
-        //             Colors.grey[400],
-        //           ],
-        //         ),
-        // ),
-        // SizedBox(height: 15),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: cards,
@@ -2109,9 +2064,9 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
-        stream: Firestore.instance
+        stream: FirebaseFirestore.instance
             .collection('sessions')
-            .document(widget.sessionId)
+            .doc(widget.sessionId)
             .snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
@@ -2126,7 +2081,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
           }
           // all data for all components
           DocumentSnapshot snapshotData = snapshot.data;
-          var data = snapshotData.data;
+          var data = snapshotData.data();
           if (data == null) {
             return Scaffold(
               appBar: AppBar(
@@ -2394,10 +2349,10 @@ class _PillageDialogState extends State<PillageDialog> {
       cleanupDuel(widget.data);
     }
 
-    await Firestore.instance
+    await FirebaseFirestore.instance
         .collection('sessions')
-        .document(widget.sessionId)
-        .setData(widget.data);
+        .doc(widget.sessionId)
+        .set(widget.data);
   }
 
   @override
@@ -2524,10 +2479,10 @@ class _PillageDialogState extends State<PillageDialog> {
               cleanupDuel(widget.data);
             }
 
-            await Firestore.instance
+            await FirebaseFirestore.instance
                 .collection('sessions')
-                .document(widget.sessionId)
-                .setData(widget.data);
+                .doc(widget.sessionId)
+                .set(widget.data);
 
             Navigator.of(context).pop();
           },

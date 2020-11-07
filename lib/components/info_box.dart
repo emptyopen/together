@@ -21,22 +21,24 @@ class InfoBox extends StatelessWidget {
 
   setInfoKey() async {
     HapticFeedback.vibrate();
-    await Firestore.instance
+    await FirebaseFirestore.instance
         .collection('users')
-        .document(userId)
-        .updateData({infoKey: true});
+        .doc(userId)
+        .update({infoKey: true});
   }
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
-        stream:
-            Firestore.instance.collection('users').document(userId).snapshots(),
+        stream: FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return Container();
           }
-          var data = snapshot.data.data;
+          var data = snapshot.data.data();
           // don't display until all dependent keys exist
           bool dependentInfoKeysSatisfied = true;
           dependentInfoKeys.forEach((v) {

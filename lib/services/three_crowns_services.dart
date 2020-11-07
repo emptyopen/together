@@ -173,10 +173,10 @@ fillHand({data, scaffoldKey, userId, sessionId, force = false}) async {
     cnt += 1;
   }
   if (changed) {
-    await Firestore.instance
+    await FirebaseFirestore.instance
         .collection('sessions')
-        .document(sessionId)
-        .setData(data);
+        .doc(sessionId)
+        .set(data);
   }
 }
 

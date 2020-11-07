@@ -64,15 +64,15 @@ class _EndGameDialogState extends State<EndGameDialog> {
     // go to lobby or main menu
     if (isToLobby) {
       // update session state to lobby - this automatically will trigger to lobby
-      await Firestore.instance
+      await FirebaseFirestore.instance
           .collection('sessions')
-          .document(widget.sessionId)
-          .updateData({'state': 'lobby'});
+          .doc(widget.sessionId)
+          .update({'state': 'lobby'});
       Navigator.of(context).pop();
     } else {
-      await Firestore.instance
+      await FirebaseFirestore.instance
           .collection('sessions')
-          .document(widget.sessionId)
+          .doc(widget.sessionId)
           .delete();
       Navigator.of(context).pop();
       Navigator.of(context).pop();

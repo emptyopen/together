@@ -28,52 +28,52 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
   }
 
   getScores() async {
-    var data = (await Firestore.instance
+    var data = (await FirebaseFirestore.instance
             .collection('users')
-            .document(widget.userId)
+            .doc(widget.userId)
             .get())
-        .data;
+        .data();
     if (data['theHuntScore'] == null) {
-      await Firestore.instance
+      await FirebaseFirestore.instance
           .collection('users')
-          .document(widget.userId)
-          .updateData({'theHuntScore': 0});
+          .doc(widget.userId)
+          .update({'theHuntScore': 0});
     }
     if (data['theHuntScore'] == null) {
-      await Firestore.instance
+      await FirebaseFirestore.instance
           .collection('users')
-          .document(widget.userId)
-          .updateData({'riversScore': 0});
+          .doc(widget.userId)
+          .update({'riversScore': 0});
     }
     if (data['abstractScore'] == null) {
-      await Firestore.instance
+      await FirebaseFirestore.instance
           .collection('users')
-          .document(widget.userId)
-          .updateData({'abstractScore': 0});
+          .doc(widget.userId)
+          .update({'abstractScore': 0});
     }
     if (data['bananaphoneScore'] == null) {
-      await Firestore.instance
+      await FirebaseFirestore.instance
           .collection('users')
-          .document(widget.userId)
-          .updateData({'bananaphoneScore': 0});
+          .doc(widget.userId)
+          .update({'bananaphoneScore': 0});
     }
     if (data['threeCrownsScore'] == null) {
-      await Firestore.instance
+      await FirebaseFirestore.instance
           .collection('users')
-          .document(widget.userId)
-          .updateData({'threeCrownsScore': 0});
+          .doc(widget.userId)
+          .update({'threeCrownsScore': 0});
     }
     if (data['riversScore'] == null) {
-      await Firestore.instance
+      await FirebaseFirestore.instance
           .collection('users')
-          .document(widget.userId)
-          .updateData({'riversScore': 0});
+          .doc(widget.userId)
+          .update({'riversScore': 0});
     }
-    data = (await Firestore.instance
+    data = (await FirebaseFirestore.instance
             .collection('users')
-            .document(widget.userId)
+            .doc(widget.userId)
             .get())
-        .data;
+        .data();
     setState(() {
       theHuntScore = data['theHuntScore'];
       riversScore = data['riversScore'];

@@ -165,9 +165,9 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
-        stream: Firestore.instance
+        stream: FirebaseFirestore.instance
             .collection('users')
-            .document(widget.userId)
+            .doc(widget.userId)
             .snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
@@ -180,7 +180,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 body: Container());
           }
           // all data for all components
-          var userData = snapshot.data.data;
+          var userData = snapshot.data.data();
           return Scaffold(
             appBar: AppBar(
               title: Text(
@@ -299,9 +299,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         },
                       ),
                       StreamBuilder(
-                          stream: Firestore.instance
+                          stream: FirebaseFirestore.instance
                               .collection('sessions')
-                              .document(userData['currentGame'])
+                              .doc(userData['currentGame'])
                               .snapshots(),
                           builder: (context, sessionSnapshot) {
                             if (sessionSnapshot.hasData &&
@@ -321,7 +321,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   context,
                                   LobbyScreen(
                                     roomCode:
-                                        sessionSnapshot.data.data['roomCode'],
+                                        sessionSnapshot.data.data()['roomCode'],
                                   ),
                                 );
                               },
@@ -377,16 +377,16 @@ class _LobbyDialogState extends State<LobbyDialog> {
 
   joinGame(String roomCode, String password) async {
     roomCode = roomCode.toUpperCase();
-    final userId = (await FirebaseAuth.instance.currentUser()).uid;
+    final userId = FirebaseAuth.instance.currentUser.uid;
 
-    await Firestore.instance
+    await FirebaseFirestore.instance
         .collection('sessions')
         .where('roomCode', isEqualTo: roomCode)
-        .getDocuments()
+        .get()
         .then((event) async {
-      if (event.documents.isNotEmpty) {
-        var data = event.documents.single.data;
-        String sessionId = event.documents.single.documentID;
+      if (event.docs.isNotEmpty) {
+        var data = event.docs.single.data();
+        String sessionId = event.docs.single.id;
 
         // check password
         var correctPassword = data['password'];
@@ -402,8 +402,7 @@ class _LobbyDialogState extends State<LobbyDialog> {
         }
 
         // remove player from previous game
-        await checkUserInGame(
-            userId: userId, sessionId: event.documents.single.documentID);
+        await checkUserInGame(userId: userId, sessionId: event.docs.single.id);
 
         // determine if user needs to be added as a player or spectator
         if (data['state'] == 'lobby') {
@@ -419,16 +418,16 @@ class _LobbyDialogState extends State<LobbyDialog> {
             data['spectatorIds'].add(userId);
           }
         }
-        await Firestore.instance
+        await FirebaseFirestore.instance
             .collection('sessions')
-            .document(sessionId)
-            .setData(data);
+            .doc(sessionId)
+            .set(data);
 
         // update player's currentGame
-        await Firestore.instance
+        await FirebaseFirestore.instance
             .collection('users')
-            .document(userId)
-            .updateData({'currentGame': sessionId});
+            .doc(userId)
+            .update({'currentGame': sessionId});
 
         // move to room
         Navigator.of(context).pop();

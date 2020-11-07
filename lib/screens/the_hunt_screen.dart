@@ -44,10 +44,10 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
       Navigator.of(context).pop();
     } else if (data['state'] == 'lobby') {
       // I DON'T KNOW WHY WE NEED THIS BUT OTHERWISE WE GET DEBUG LOCKED ISSUES
-      await Firestore.instance
+      await FirebaseFirestore.instance
           .collection('sessions')
-          .document(widget.sessionId)
-          .setData(data);
+          .doc(widget.sessionId)
+          .set(data);
       // navigate to lobby
       Navigator.of(context).pop();
       slideTransition(
@@ -70,11 +70,11 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
 
   setUpGame() async {
     // get session info for locations
-    var data = (await Firestore.instance
+    var data = (await FirebaseFirestore.instance
             .collection('sessions')
-            .document(widget.sessionId)
+            .doc(widget.sessionId)
             .get())
-        .data;
+        .data();
     var possibleLocations = data['rules']['locations'];
     subList2 = possibleLocations.sublist(0, possibleLocations.length ~/ 2);
     subList1 = possibleLocations.sublist(possibleLocations.length ~/ 2);
@@ -88,11 +88,11 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
   }
 
   updateTurn() async {
-    Map<String, dynamic> data = (await Firestore.instance
+    Map<String, dynamic> data = (await FirebaseFirestore.instance
             .collection('sessions')
-            .document(widget.sessionId)
+            .doc(widget.sessionId)
             .get())
-        .data;
+        .data();
     data['numQuestions'] += 1;
     var currActivePlayer = data['turn'];
     var allPlayers = data['playerIds'];
@@ -107,10 +107,10 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
     // update accusation cooldowns
     data['remainingAccusationsThisTurn'] = data['rules']['accusationsPerTurn'];
 
-    await Firestore.instance
+    await FirebaseFirestore.instance
         .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
+        .doc(widget.sessionId)
+        .set(data);
   }
 
   fakeCallback() {}
@@ -122,7 +122,8 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
     players.forEach((val) {
       names.add(
         FutureBuilder(
-            future: Firestore.instance.collection('users').document(val).get(),
+            future:
+                FirebaseFirestore.instance.collection('users').doc(val).get(),
             builder: (context, snapshot) {
               if (!snapshot.hasData) {
                 return Container();
@@ -146,8 +147,10 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
       );
     });
     return FutureBuilder(
-      future:
-          Firestore.instance.collection('users').document(activePlayer).get(),
+      future: FirebaseFirestore.instance
+          .collection('users')
+          .doc(activePlayer)
+          .get(),
       builder: (context, snapshot) {
         if (snapshot.hasData && snapshot.data.data == null) {
           return Container();
@@ -250,7 +253,9 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
                   ? (roleIsVisible
                       ? '(Tap to hide location)'
                       : 'Tap to show location')
-                  : roleIsVisible ? '(Tap to hide role)' : 'Tap to show role',
+                  : roleIsVisible
+                      ? '(Tap to hide role)'
+                      : 'Tap to show role',
               style: TextStyle(
                   fontSize: roleIsVisible ? 16 : 20,
                   color: roleIsVisible ? Colors.grey[400] : Colors.white),
@@ -368,10 +373,10 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
       }
     }
     data['accusation'] = accusation;
-    await Firestore.instance
+    await FirebaseFirestore.instance
         .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
+        .doc(widget.sessionId)
+        .set(data);
   }
 
   getAccuseOrReveal(data) {
@@ -446,7 +451,11 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
                       ? 'Waiting for $numPlayersToAccuse to accuse first'
                       : 'I know!',
           style: TextStyle(
-            fontSize: !everyoneHasAskedAQuestion ? 12 : canAccuse ? 20 : 13,
+            fontSize: !everyoneHasAskedAQuestion
+                ? 12
+                : canAccuse
+                    ? 20
+                    : 13,
             color: Colors.white,
           ),
           textAlign: TextAlign.center,
@@ -755,9 +764,9 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
-        stream: Firestore.instance
+        stream: FirebaseFirestore.instance
             .collection('sessions')
-            .document(widget.sessionId)
+            .doc(widget.sessionId)
             .snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
@@ -901,10 +910,10 @@ class _RevealDialogState extends State<RevealDialog> {
         }
       }
     }
-    await Firestore.instance
+    await FirebaseFirestore.instance
         .collection('sessions')
-        .document(widget.sessionId)
-        .updateData({'spyRevealed': _guessedLocation});
+        .doc(widget.sessionId)
+        .update({'spyRevealed': _guessedLocation});
   }
 
   @override
@@ -1014,10 +1023,10 @@ class _AccuseDialogState extends State<AccuseDialog> {
       data['remainingAccusationsThisTurn'] -= 1;
     }
 
-    await Firestore.instance
+    await FirebaseFirestore.instance
         .collection('sessions')
-        .document(widget.sessionId)
-        .setData(data);
+        .doc(widget.sessionId)
+        .set(data);
   }
 
   @override

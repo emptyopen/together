@@ -3,27 +3,37 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class Transactor {
   Transactor({this.sessionId});
 
-  Firestore _firestore = Firestore.instance;
+  var _firestore = FirebaseFirestore.instance;
   String sessionId;
 
   transact(newData) async {
     await _firestore.runTransaction((transaction) async {
       DocumentReference postRef =
-          _firestore.collection('sessions').document(sessionId);
+          _firestore.collection('sessions').doc(sessionId);
       // DocumentSnapshot snapshot = await transaction.get(postRef);
-      await transaction.set(postRef, newData);
+      transaction.set(postRef, newData);
     });
   }
 
   transactShowAndTellWords(newWord) async {
-    print('hey');
     await _firestore.runTransaction((transaction) async {
       DocumentReference postRef =
-          _firestore.collection('sessions').document(sessionId);
+          _firestore.collection('sessions').doc(sessionId);
       DocumentSnapshot snapshot = await transaction.get(postRef);
-      List messages = snapshot.data['words'];
-      messages.add(newWord);
-      await transaction.update(postRef, {'words': messages});
+      List words = snapshot.data()['words'];
+      words.add(newWord);
+      transaction.update(postRef, {'words': words});
+    });
+  }
+
+  transactPlotTwistMessage(newText) async {
+    await _firestore.runTransaction((transaction) async {
+      DocumentReference postRef =
+          _firestore.collection('sessions').doc(sessionId);
+      DocumentSnapshot snapshot = await transaction.get(postRef);
+      List texts = snapshot.data()['texts'];
+      texts.add(newText);
+      transaction.update(postRef, {'texts': texts});
     });
   }
 }

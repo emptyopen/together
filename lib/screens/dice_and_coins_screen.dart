@@ -15,7 +15,6 @@ class DiceAndCoinsScreen extends StatefulWidget {
 }
 
 class _DiceAndCoinsScreenState extends State<DiceAndCoinsScreen> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   List dice = [1, 1];
   bool rollingDice = false;
   bool coin = true;
@@ -198,7 +197,9 @@ class _DiceAndCoinsScreenState extends State<DiceAndCoinsScreen> {
                   child: Icon(
                     flippingCoin
                         ? MdiIcons.squareMedium
-                        : coin ? MdiIcons.heart : MdiIcons.heartBroken,
+                        : coin
+                            ? MdiIcons.heart
+                            : MdiIcons.heartBroken,
                     size: 50,
                     color: Colors.white,
                   ),

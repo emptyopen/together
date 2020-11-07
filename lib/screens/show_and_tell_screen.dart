@@ -64,10 +64,10 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
       Navigator.of(context).pop();
     } else if (data['state'] == 'lobby') {
       // I DON'T KNOW WHY WE NEED THIS BUT OTHERWISE WE GET DEBUG LOCKED ISSUES
-      await Firestore.instance
+      await FirebaseFirestore.instance
           .collection('sessions')
-          .document(widget.sessionId)
-          .setData(data);
+          .doc(widget.sessionId)
+          .set(data);
       // navigate to lobby
       Navigator.of(context).pop();
       slideTransition(
@@ -89,11 +89,11 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
 
   setUpGame() async {
     // get session info for locations
-    var data = (await Firestore.instance
+    var data = (await FirebaseFirestore.instance
             .collection('sessions')
-            .document(widget.sessionId)
+            .doc(widget.sessionId)
             .get())
-        .data;
+        .data();
     setState(() {
       isSpectator = data['spectatorIds'].contains(widget.userId);
     });
@@ -158,7 +158,6 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
         if (t > 0 ||
             data['words'].length >= data['rules']['collectionWordLimit']) {
           // supplement words randomly until full
-          // TODO: avoid duplicates and maybe consolidate into single function (lobby also uses)
           var words = [
             showAndTellWords,
             showAndTellExpressions,
@@ -621,7 +620,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
     var currentTeamIndex = data['turn']['teamTurn'];
     var currentPlayerIndex = data['turn']['team${currentTeamIndex}Turn'];
     var currentPlayerId =
-        data['teams']['team${currentTeamIndex}'][currentPlayerIndex];
+        data['teams']['team$currentTeamIndex'][currentPlayerIndex];
     String playerName = data['playerNames'][currentPlayerId];
     if (data['expirationTime'] == null && data['judgeList'].length != 0) {
       subString = '(waiting on judgement)';
@@ -851,7 +850,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
     var currentTeamIndex = data['turn']['teamTurn'];
     var currentPlayerIndex = data['turn']['team${currentTeamIndex}Turn'];
     var currentPlayerId =
-        data['teams']['team${currentTeamIndex}'][currentPlayerIndex];
+        data['teams']['team$currentTeamIndex'][currentPlayerIndex];
 
     var nextTeamIndex = currentTeamIndex + 1;
     if (nextTeamIndex >= data['rules']['numTeams']) {
@@ -1157,9 +1156,9 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
-        stream: Firestore.instance
+        stream: FirebaseFirestore.instance
             .collection('sessions')
-            .document(widget.sessionId)
+            .doc(widget.sessionId)
             .snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
@@ -1174,7 +1173,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
           }
           // all data for all components
           DocumentSnapshot snapshotData = snapshot.data;
-          var data = snapshotData.data;
+          var data = snapshotData.data();
           if (data == null) {
             return Scaffold(
               appBar: AppBar(

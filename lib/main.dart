@@ -1,31 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 import 'services/authentication.dart';
 import 'screens/root_screen.dart';
 
-void main() => runApp(MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  runApp(MyApp());
+}
 
 // done:
-// clashes are still occuring.... new attempt ready for show & tell! (will have to have new functions for all dangerous writes)
-// add room code to show & tell
-// add developer page
 
 // next up:
 // big: voice command for the scoreboard (+/- team, +/- score)
-// big: team selector chwazy
-// create method to use transactions for updating firestore, use with 'wordSelection', then everywhere
-// use updates where clashes could occur to avoid overwrites (if confirmed working, plot twist next (for chat))
 
 // TODO:
+// flesh out team selector (a few slight bugs remaining with rapid touches)
+// ensure everything is using transacts in the whole project
 // show & tell: shimmer for high round scores
 // add LEGAL donations link for ios/android
 // charades: add everything to a log?
 // BIG: update lobby to allow team switching?
-// PLOT TWIST: (formerly Chit Chat and Hear Me Out):
-// - add ability to click a chat to see the character description
-// - add final scoreboard screen with "winners" who guessed correctly
 // general: show arrow for scrollable!!
+// three crowns: better font for stealable tiles (holy letters)
 // check if working: undo button not working in bananaphone 2nd+ drawings
+// plot twist: add ability to click a chat to see the character description
+// plot twist: add final scoreboard screen with "winners" who guessed correctly
 // plot twist: capability for narrator to cast poll, and for players to vote
 // plot twist: add "narrator silence" so narrators can only say something every X chats
 // plot twist: add ability to delete chats?
@@ -57,6 +58,14 @@ void main() => runApp(MyApp());
 // maggie@g.com  h4BrcG93XgYsBcGpH7q2WySK8rd2
 // vanessa@g.com  z5SqbMUvLVb7CfSxQz4OEk9VyDE3
 // greg@gmail.com  djawU3QzVCXkLq32mlmd6W81CqK2
+// abr
+// m@g.com markus
+// c@g.com cassie
+// v@g.com vanessa
+// h@g.com henry
+// g@g.com greg
+// p@g.com pyka
+// q@g.com quentin
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.

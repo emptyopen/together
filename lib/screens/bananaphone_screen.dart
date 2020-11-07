@@ -54,11 +54,11 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
 
   setUpGame() async {
     // get session info for locations
-    var data = (await Firestore.instance
+    var data = (await FirebaseFirestore.instance
             .collection('sessions')
-            .document(widget.sessionId)
+            .doc(widget.sessionId)
             .get())
-        .data;
+        .data();
     setState(() {
       isSpectator = data['spectatorIds'].contains(widget.userId);
     });
@@ -71,10 +71,10 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
       Navigator.of(context).pop();
     } else if (data['state'] == 'lobby') {
       // I DON'T KNOW WHY WE NEED THIS BUT OTHERWISE WE GET DEBUG LOCKED ISSUES
-      await Firestore.instance
+      await FirebaseFirestore.instance
           .collection('sessions')
-          .document(widget.sessionId)
-          .setData(data);
+          .doc(widget.sessionId)
+          .set(data);
       // navigate to lobby
       Navigator.of(context).pop();
       slideTransition(
@@ -115,6 +115,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
     } else {
       nextPhase = 'vote';
     }
+    data['phase'] = nextPhase;
     T.transact(data);
   }
 
@@ -1347,9 +1348,9 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
 
     sortedPlayerScores.forEach((playerId, score) {
       scores.add(FutureBuilder(
-          future: Firestore.instance
+          future: FirebaseFirestore.instance
               .collection('users')
-              .document(playerId.toString())
+              .doc(playerId.toString())
               .get(),
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
@@ -1417,9 +1418,9 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
-        stream: Firestore.instance
+        stream: FirebaseFirestore.instance
             .collection('sessions')
-            .document(widget.sessionId)
+            .doc(widget.sessionId)
             .snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {

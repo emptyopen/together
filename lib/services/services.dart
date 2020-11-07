@@ -42,37 +42,36 @@ closeKeyboardIfOpen(context) {
 checkUserInGame({String userId, String sessionId = ''}) async {
   // check if player has currentGame (that is not this game). if so, remove player from currentGame
   var userData =
-      (await Firestore.instance.collection('users').document(userId).get())
-          .data;
+      (await FirebaseFirestore.instance.collection('users').doc(userId).get())
+          .data();
   if (userData.containsKey('currentGame')) {
     print('user is still in game ${userData['currentGame']}, will remove');
-    var session = await Firestore.instance
+    var session = await FirebaseFirestore.instance
         .collection('sessions')
-        .document(userData['currentGame'])
+        .doc(userData['currentGame'])
         .get();
     var sessionData = session.data;
 
     // if old game still exists and is not this game
-    if (sessionData != null &&
-        (sessionId == '' || sessionId != session.documentID)) {
+    if (sessionData != null && (sessionId == '' || sessionId != session.id)) {
       // remove user from playerIds in old game
-      await Firestore.instance
+      await FirebaseFirestore.instance
           .collection('sessions')
-          .document(userData['currentGame'])
-          .updateData({
+          .doc(userData['currentGame'])
+          .update({
         'playerIds': FieldValue.arrayRemove([userId])
       });
       // check if room is empty, if so, delete session
-      var data = (await Firestore.instance
+      var data = (await FirebaseFirestore.instance
               .collection('sessions')
-              .document(userData['currentGame'])
+              .doc(userData['currentGame'])
               .get())
-          .data;
+          .data();
       if (data['playerIds'].length == 0) {
         print('no players remaining for room ${data['roomCode']}, will delete');
-        await Firestore.instance
+        await FirebaseFirestore.instance
             .collection('sessions')
-            .document(userData['currentGame'])
+            .doc(userData['currentGame'])
             .delete();
       }
     }
@@ -148,12 +147,12 @@ createGame(BuildContext context, String game, String password, bool pop,
   // check that room code doesn't exist
   bool roomCodeExists = true;
   while (roomCodeExists) {
-    await Firestore.instance
+    await FirebaseFirestore.instance
         .collection('sessions')
         .where('roomCode', isEqualTo: _roomCode)
-        .getDocuments()
+        .get()
         .then((event) async {
-      if (event.documents.isEmpty) {
+      if (event.docs.isEmpty) {
         roomCodeExists = false;
       } else {
         _roomCode = randRoomCode();
@@ -161,9 +160,8 @@ createGame(BuildContext context, String game, String password, bool pop,
     }).catchError((e) => print('error fetching data: $e'));
   }
 
+  final userId = (FirebaseAuth.instance.currentUser).uid;
   // remove user from old game
-  final userId = (await FirebaseAuth.instance.currentUser()).uid;
-  // TODO: should fix this downstream. neatly clean up olde lobbies
   // checkUserInGame(userId: userId);
 
   // define initial rules per game
@@ -200,14 +198,15 @@ createGame(BuildContext context, String game, String password, bool pop,
     default:
       break;
   }
-  var result =
-      await Firestore.instance.collection('sessions').add(sessionContents);
+  var result = await FirebaseFirestore.instance
+      .collection('sessions')
+      .add(sessionContents);
 
   // update user's current game
-  await Firestore.instance
+  await FirebaseFirestore.instance
       .collection('users')
-      .document(userId)
-      .updateData({'currentGame': result.documentID});
+      .doc(userId)
+      .update({'currentGame': result.id});
 
   // navigate to lobby
   if (pop) {
@@ -229,15 +228,15 @@ createGame(BuildContext context, String game, String password, bool pop,
 incrementPlayerScore(String gameName, String playerId) async {
   String gameNameScore = gameName + 'Score';
   var data =
-      (await Firestore.instance.collection('users').document(playerId).get())
-          .data;
+      (await FirebaseFirestore.instance.collection('users').doc(playerId).get())
+          .data();
   if (data.containsKey(gameNameScore)) {
     data[gameNameScore] += 1;
   } else {
     data[gameNameScore] = 1;
   }
-  await Firestore.instance
+  await FirebaseFirestore.instance
       .collection('users')
-      .document(playerId)
-      .updateData({gameNameScore: data[gameNameScore]});
+      .doc(playerId)
+      .update({gameNameScore: data[gameNameScore]});
 }

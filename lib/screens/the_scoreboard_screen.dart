@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:together/components/misc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:flutter/services.dart';
+import 'package:speech_to_text/speech_to_text.dart';
 
 class TheScoreboardScreen extends StatefulWidget {
   TheScoreboardScreen({this.userId});
@@ -410,6 +411,9 @@ class _TheScoreboardScreenState extends State<TheScoreboardScreen> {
       children: [
         getScores(),
         GestureDetector(
+          onTap: () {
+            print('wow');
+          },
           child: Container(
             width: 300,
             height: 60,

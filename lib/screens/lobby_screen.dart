@@ -178,16 +178,16 @@ class _LobbyScreenState extends State<LobbyScreen> {
   }
 
   initialize() async {
-    await Firestore.instance
+    await FirebaseFirestore.instance
         .collection('sessions')
         .where('roomCode', isEqualTo: widget.roomCode)
-        .getDocuments()
+        .get()
         .then((event) async {
-      if (event.documents.isNotEmpty) {
-        Map<String, dynamic> documentData = event.documents.single.data;
-        sessionId = event.documents.single.documentID;
-        userId = (await FirebaseAuth.instance.currentUser()).uid;
-        leaderId = event.documents.single.data['leader'];
+      if (event.docs.isNotEmpty) {
+        Map<String, dynamic> documentData = event.docs.single.data();
+        sessionId = event.docs.single.id;
+        userId = FirebaseAuth.instance.currentUser.uid;
+        leaderId = event.docs.single.data()['leader'];
         // check if current user is leader
         setState(() {
           gameName = documentData['game'];
@@ -199,32 +199,32 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
   kickPlayer(String playerId) async {
     // remove playerId from session
-    var data = (await Firestore.instance
+    var data = (await FirebaseFirestore.instance
             .collection('sessions')
-            .document(sessionId)
+            .doc(sessionId)
             .get())
-        .data;
+        .data();
     var currPlayers = data['playerIds'];
     currPlayers.removeWhere((item) => item == playerId);
-    await Firestore.instance
+    await FirebaseFirestore.instance
         .collection('sessions')
-        .document(sessionId)
-        .updateData({'playerIds': currPlayers});
+        .doc(sessionId)
+        .update({'playerIds': currPlayers});
   }
 
   kickSpectator(String spectatorId) async {
     // remove playerId from session
-    var data = (await Firestore.instance
+    var data = (await FirebaseFirestore.instance
             .collection('sessions')
-            .document(sessionId)
+            .doc(sessionId)
             .get())
-        .data;
+        .data();
     var currSpecators = data['spectatorIds'];
     currSpecators.removeWhere((item) => item == spectatorId);
-    await Firestore.instance
+    await FirebaseFirestore.instance
         .collection('sessions')
-        .document(sessionId)
-        .updateData({'spectatorIds': currSpecators});
+        .doc(sessionId)
+        .update({'spectatorIds': currSpecators});
   }
 
   setupTheHunt(data) async {
@@ -266,11 +266,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
     // add player names
     data['playerNames'] = {};
     for (int i = 0; i < playerIds.length; i++) {
-      data['playerNames'][playerIds[i]] = (await Firestore.instance
+      data['playerNames'][playerIds[i]] = (await FirebaseFirestore.instance
               .collection('users')
-              .document(playerIds[i])
+              .doc(playerIds[i])
               .get())
-          .data['name'];
+          .data()['name'];
     }
 
     // set player roles - mapping of playerId to role
@@ -283,11 +283,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
       i += 1;
     }
     // citizens
-    List<dynamic> possibleRoles = (await Firestore.instance
+    List<dynamic> possibleRoles = (await FirebaseFirestore.instance
             .collection('locations')
-            .document(location)
+            .doc(location)
             .get())
-        .data['roles'];
+        .data()['roles'];
     while (i < playerIds.length) {
       data['playerRoles'][playerIds[i]] =
           possibleRoles[_random.nextInt(possibleRoles.length)];
@@ -589,11 +589,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
     // add player names
     data['playerNames'] = {};
     for (int i = 0; i < playerIds.length; i++) {
-      data['playerNames'][playerIds[i]] = (await Firestore.instance
+      data['playerNames'][playerIds[i]] = (await FirebaseFirestore.instance
               .collection('users')
-              .document(playerIds[i])
+              .doc(playerIds[i])
               .get())
-          .data['name'];
+          .data()['name'];
     }
 
     data['log'] = ['', '', ''];
@@ -648,20 +648,20 @@ class _LobbyScreenState extends State<LobbyScreen> {
         data['player${i}Hand'].add(shuffledDeck[shuffledDeckIndex]);
         shuffledDeckIndex += 1;
       }
-      await Firestore.instance
+      await FirebaseFirestore.instance
           .collection('sessions')
-          .document(sessionId)
-          .updateData({'player${i}Hand': data['player${i}Hand']});
+          .doc(sessionId)
+          .update({'player${i}Hand': data['player${i}Hand']});
     });
 
     // add player names
     data['playerNames'] = {};
     for (int i = 0; i < playerIds.length; i++) {
-      data['playerNames'][playerIds[i]] = (await Firestore.instance
+      data['playerNames'][playerIds[i]] = (await FirebaseFirestore.instance
               .collection('users')
-              .document(playerIds[i])
+              .doc(playerIds[i])
               .get())
-          .data['name'];
+          .data()['name'];
     }
 
     data['log'] = ['', '', ''];
@@ -716,11 +716,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
     // add player names
     data['playerNames'] = {};
     for (int i = 0; i < playerIds.length; i++) {
-      data['playerNames'][playerIds[i]] = (await Firestore.instance
+      data['playerNames'][playerIds[i]] = (await FirebaseFirestore.instance
               .collection('users')
-              .document(playerIds[i])
+              .doc(playerIds[i])
               .get())
-          .data['name'];
+          .data()['name'];
     }
 
     // add player colors randomly
@@ -813,11 +813,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
     // add player names
     data['playerNames'] = {};
     for (int i = 0; i < playerIds.length; i++) {
-      data['playerNames'][playerIds[i]] = (await Firestore.instance
+      data['playerNames'][playerIds[i]] = (await FirebaseFirestore.instance
               .collection('users')
-              .document(playerIds[i])
+              .doc(playerIds[i])
               .get())
-          .data['name'];
+          .data()['name'];
     }
 
     // separate into two teams - captains of each team will be first player in each array
@@ -933,10 +933,10 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
       // player.play('reveal.wav');
 
-      await Firestore.instance
+      await FirebaseFirestore.instance
           .collection('sessions')
-          .document(sessionId)
-          .setData(data);
+          .doc(sessionId)
+          .set(data);
     }
   }
 
@@ -1284,9 +1284,9 @@ class _LobbyScreenState extends State<LobbyScreen> {
             itemCount: playerIds.length,
             itemBuilder: (context, index) {
               return FutureBuilder(
-                  future: Firestore.instance
+                  future: FirebaseFirestore.instance
                       .collection('users')
-                      .document(playerIds[index])
+                      .doc(playerIds[index])
                       .get(),
                   builder: (context, snapshot) {
                     if (!snapshot.hasData) {
@@ -1348,10 +1348,10 @@ class _LobbyScreenState extends State<LobbyScreen> {
   shufflePlayers(data) async {
     var playerOrder = data['playerIds'];
     playerOrder.shuffle();
-    await Firestore.instance
+    await FirebaseFirestore.instance
         .collection('sessions')
-        .document(sessionId)
-        .updateData({'playerIds': playerOrder, 'turn': playerOrder[0]});
+        .doc(sessionId)
+        .update({'playerIds': playerOrder, 'turn': playerOrder[0]});
   }
 
   addTheGang(data) async {
@@ -1360,10 +1360,10 @@ class _LobbyScreenState extends State<LobbyScreen> {
     data['playerIds'].add('h4BrcG93XgYsBcGpH7q2WySK8rd2');
     data['playerIds'].add('z5SqbMUvLVb7CfSxQz4OEk9VyDE3');
     data['playerIds'].add('djawU3QzVCXkLq32mlmd6W81CqK2');
-    await Firestore.instance
+    await FirebaseFirestore.instance
         .collection('sessions')
-        .document(sessionId)
-        .setData(data);
+        .doc(sessionId)
+        .set(data);
   }
 
   Widget _getSpectators(data) {
@@ -1374,9 +1374,9 @@ class _LobbyScreenState extends State<LobbyScreen> {
           itemCount: spectatorIds.length,
           itemBuilder: (context, index) {
             return FutureBuilder(
-                future: Firestore.instance
+                future: FirebaseFirestore.instance
                     .collection('users')
-                    .document(spectatorIds[index])
+                    .doc(spectatorIds[index])
                     .get(),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
@@ -1439,10 +1439,10 @@ class _LobbyScreenState extends State<LobbyScreen> {
       data['playerIds'].add(userId);
       data['spectatorIds'].remove(userId);
     }
-    await Firestore.instance
+    await FirebaseFirestore.instance
         .collection('sessions')
-        .document(sessionId)
-        .setData(data);
+        .doc(sessionId)
+        .set(data);
   }
 
   _getSwitchSpectatorButton(data) {
@@ -1491,9 +1491,9 @@ class _LobbyScreenState extends State<LobbyScreen> {
       );
     }
     return StreamBuilder(
-        stream: Firestore.instance
+        stream: FirebaseFirestore.instance
             .collection('sessions')
-            .document(sessionId)
+            .doc(sessionId)
             .snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
@@ -1506,7 +1506,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                 body: Container());
           }
           // all data for all components
-          var data = snapshot.data.data;
+          var data = snapshot.data.data();
           return Scaffold(
             key: _scaffoldKey,
             appBar: AppBar(
@@ -1542,6 +1542,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                               return PlotTwistScreenHelp();
                               break;
                           }
+                          return Text('tell Matt you got here: 1');
                         },
                       ),
                     );
@@ -1774,22 +1775,22 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
   getCurrentRules() async {
     if (widget.game == 'The Hunt') {
       // get possible locations
-      var locationData = (await Firestore.instance
+      var locationData = (await FirebaseFirestore.instance
               .collection('locations')
-              .document('possible')
+              .doc('possible')
               .get())
-          .data;
+          .data();
       setState(() {
         possibleLocations = locationData['locations'];
         subList2 = possibleLocations.sublist(0, possibleLocations.length ~/ 2);
         subList1 = possibleLocations.sublist(possibleLocations.length ~/ 2);
       });
     }
-    var sessionData = (await Firestore.instance
+    var sessionData = (await FirebaseFirestore.instance
             .collection('sessions')
-            .document(widget.sessionId)
+            .doc(widget.sessionId)
             .get())
-        .data;
+        .data();
     switch (widget.game) {
       case 'The Hunt':
         rules['numSpies'] = sessionData['rules']['numSpies'];
@@ -1841,10 +1842,10 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
   }
 
   updateRules() async {
-    await Firestore.instance
+    await FirebaseFirestore.instance
         .collection('sessions')
-        .document(widget.sessionId)
-        .updateData({'rules': rules});
+        .doc(widget.sessionId)
+        .update({'rules': rules});
     Navigator.of(context).pop();
   }
 
