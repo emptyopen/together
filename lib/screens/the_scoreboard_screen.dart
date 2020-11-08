@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:together/components/misc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:flutter/services.dart';
-import 'package:together/services/speech_recognition_service.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:shimmer/shimmer.dart';
 
 class TheScoreboardScreen extends StatefulWidget {
   TheScoreboardScreen({this.userId});
@@ -20,13 +21,10 @@ class _TheScoreboardScreenState extends State<TheScoreboardScreen> {
     [0],
     [0],
   ];
-  SpeechRecognitionService speechRecognitionService;
+  stt.SpeechToText _speech = stt.SpeechToText();
   bool listening = false;
-
-  @override
-  initState() {
-    super.initState();
-  }
+  bool speechAvailable = false;
+  String transcription;
 
   addScoreToTeam(teamIndex, scoreString) {
     HapticFeedback.vibrate();
@@ -75,7 +73,7 @@ class _TheScoreboardScreenState extends State<TheScoreboardScreen> {
     List<Widget> scores = [];
     var screenWidth = MediaQuery.of(context).size.width;
     var containerWidth =
-        (screenWidth - 8 * teamNames.length) / (teamNames.length + 1);
+        (screenWidth - 5 * teamNames.length - 30) / (teamNames.length + 1);
     for (int i = 0; i < teamNames.length; i++) {
       List<Widget> teamScores = [
         Container(
@@ -367,10 +365,25 @@ class _TheScoreboardScreenState extends State<TheScoreboardScreen> {
 
   toggleListen() async {
     if (!listening) {
-      speechRecognitionService.startListening();
       listening = true;
+      bool available = await _speech.initialize(
+        onStatus: (val) => print('onStatus: $val'),
+        onError: (val) => print('onError: $val'),
+      );
+      if (available) {
+        print('hey');
+        _speech.listen(
+          onResult: (val) => setState(() {
+            transcription = val.recognizedWords;
+            print(val.recognizedWords);
+          }),
+        );
+        print('yo');
+      } else {
+        print("The user has denied the use of speech recognition.");
+      }
     } else {
-      speechRecognitionService.stopListening();
+      _speech.stop();
       listening = false;
     }
     print('listening: $listening');
@@ -378,51 +391,87 @@ class _TheScoreboardScreenState extends State<TheScoreboardScreen> {
   }
 
   getGenieBar() {
-    final Shader linearGradient = LinearGradient(
-      colors: <Color>[
-        Colors.white,
-        Colors.white,
-      ],
-    ).createShader(Rect.fromLTWH(0.0, 0.0, 200.0, 200.0));
-    return GestureDetector(
-      onTap: () {
-        toggleListen();
-      },
-      child: Container(
-        width: 300,
-        height: 60,
-        decoration: BoxDecoration(
-          border: Border.all(color: Theme.of(context).highlightColor),
-          borderRadius: BorderRadius.circular(15),
-          gradient: LinearGradient(
-            colors: [
-              Colors.cyan[500].withAlpha(100),
-              Colors.cyan[500].withAlpha(200),
-              Colors.cyan[500].withAlpha(100),
-            ],
-          ),
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('$listening', style: TextStyle(color: Colors.red)),
+            Text(transcription != null ? transcription : 'nothing'),
+          ],
         ),
-        child: Center(
+        GestureDetector(
+          onTap: () {
+            toggleListen();
+          },
           child: Container(
-            width: 290,
-            height: 50,
+            width: 300,
+            height: 60,
             decoration: BoxDecoration(
-              border: Border.all(color: Theme.of(context).canvasColor),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(15),
+              gradient: LinearGradient(
+                colors: [
+                  listening ? Colors.cyan[200] : Colors.cyan[200],
+                  listening ? Colors.cyan[500] : Colors.cyan[500],
+                  listening ? Colors.cyan[200] : Colors.cyan[200],
+                ],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.4),
+                  spreadRadius: listening ? 0 : 1,
+                  blurRadius: listening ? 2 : 4,
+                  offset: listening ? Offset(1, 1) : Offset(3, 3),
+                ),
+              ],
             ),
             child: Center(
-              child: Text(
-                'your wish is my command',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontFamily: 'SyneMono',
-                  foreground: Paint()..shader = linearGradient,
+              child: Shimmer.fromColors(
+                period: Duration(seconds: 3),
+                baseColor: Colors.white,
+                highlightColor:
+                    listening ? Colors.black.withAlpha(10) : Colors.white,
+                child: Container(
+                  width: 290,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Theme.of(context).canvasColor),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Center(
+                    child: listening
+                        ? Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                MdiIcons.chevronDoubleRight,
+                                color: Colors.white.withAlpha(200),
+                                size: 30,
+                              ),
+                              Icon(
+                                MdiIcons.microphone,
+                                color: Colors.white.withAlpha(200),
+                                size: 30,
+                              ),
+                              Icon(
+                                MdiIcons.chevronDoubleLeft,
+                                color: Colors.white.withAlpha(200),
+                                size: 30,
+                              ),
+                            ],
+                          )
+                        : Icon(
+                            MdiIcons.microphone,
+                            color: Colors.white,
+                            size: 30,
+                          ),
+                  ),
                 ),
               ),
             ),
           ),
         ),
-      ),
+      ],
     );
   }
 
