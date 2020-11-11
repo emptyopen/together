@@ -36,6 +36,9 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
+  # speech_to_text:
+  #   path: ../speech_to_text/speech_to_text/
+
 flutter_icons:
   android: true
   ios: false

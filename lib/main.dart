@@ -14,9 +14,7 @@ void main() async {
 
 // next up:
 // big: voice command for the scoreboard (+/- team, +/- score)
-// add app link share (android/ios specific)
-// https://apps.apple.com/app/id1514995376
-// https://play.google.com/store/apps/details?id=com.takaomatt.together
+// general: show arrow for scrollable!!
 
 // TODO:
 // flesh out team selector (a few slight bugs remaining with rapid touches)
@@ -25,7 +23,6 @@ void main() async {
 // add LEGAL donations link for ios/android
 // charades: add everything to a log?
 // BIG: update lobby to allow team switching?
-// general: show arrow for scrollable!!
 // three crowns: better font for stealable tiles (holy letters)
 // check if working: undo button not working in bananaphone 2nd+ drawings
 // plot twist: add ability to click a chat to see the character description

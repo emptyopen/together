@@ -13,6 +13,7 @@ import '../components/buttons.dart';
 import '../components/layouts.dart';
 import '../components/misc.dart';
 import 'package:together/components/info_box.dart';
+import 'package:together/components/scroll_view.dart';
 import '../models/models.dart';
 import '../services/three_crowns_services.dart';
 import '../services/plot_twist_services.dart';
@@ -1552,7 +1553,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
             ),
             body: Stack(
               children: [
-                SingleChildScrollView(
+                TogetherScrollView(
                   child: Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
