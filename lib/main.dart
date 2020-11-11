@@ -11,9 +11,9 @@ void main() async {
 }
 
 // done:
+// big: voice command for the scoreboard (+/- team, +/- score)
 
 // next up:
-// big: voice command for the scoreboard (+/- team, +/- score)
 // general: show arrow for scrollable!!
 
 // TODO:
