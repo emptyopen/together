@@ -16,18 +16,18 @@ import 'package:together/screens/show_and_tell/show_and_tell_services.dart';
 import 'package:together/services/firestore.dart';
 import 'package:together/components/scroll_view.dart';
 
-class ShowAndTellScreen extends StatefulWidget {
-  ShowAndTellScreen({this.sessionId, this.userId, this.roomCode});
+class CharadeATroisScreen extends StatefulWidget {
+  CharadeATroisScreen({this.sessionId, this.userId, this.roomCode});
 
   final String sessionId;
   final String userId;
   final String roomCode;
 
   @override
-  _ShowAndTellScreenState createState() => _ShowAndTellScreenState();
+  _CharadeATroisScreenState createState() => _CharadeATroisScreenState();
 }
 
-class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
+class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   bool isSpectator = false;
   TextEditingController wordController;
@@ -138,9 +138,9 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
             data['words'].length >= data['rules']['collectionWordLimit']) {
           // supplement words randomly until full
           var words = [
-            showAndTellWords,
-            showAndTellExpressions,
-            showAndTellPeople
+            charadeATroisWords,
+            charadeATroisExpressions,
+            charadeATroisPeople
           ].expand((x) => x).toList();
           words.shuffle();
           int i = 0;
@@ -217,7 +217,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
       }
     });
     if (!wordAlreadyExists) {
-      T.transactShowAndTellWords(wordController.text);
+      T.transactCharadeATroisWords(wordController.text);
       setState(() {
         wordController.text = '';
         errorMessage = null;

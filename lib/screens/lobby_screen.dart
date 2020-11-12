@@ -17,7 +17,7 @@ import 'package:together/components/scroll_view.dart';
 import '../models/models.dart';
 import 'three_crowns/three_crowns_services.dart';
 import 'plot_twist/plot_twist_services.dart';
-import 'show_and_tell/show_and_tell_services.dart';
+import 'package:together/screens/charade_a_trois/charade_a_trois_services.dart';
 import 'package:together/help_screens/help_screens.dart';
 import 'package:together/constants/values.dart';
 import 'package:together/services/services.dart';
@@ -27,7 +27,7 @@ import 'package:together/screens/bananaphone/bananaphone_screen.dart';
 import 'package:together/screens/three_crowns/three_crowns_screen.dart';
 import 'package:together/screens/rivers/rivers_screen.dart';
 import 'package:together/screens/plot_twist/plot_twist_screen.dart';
-import 'package:together/screens/show_and_tell/show_and_tell_screen.dart';
+import 'package:together/screens/charade_a_trois/charade_a_trois_screen.dart';
 
 class LobbyScreen extends StatefulWidget {
   LobbyScreen({Key key, this.roomCode}) : super(key: key);
@@ -158,7 +158,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
             case 'Charáde à Trois':
               slideTransition(
                 context,
-                ShowAndTellScreen(
+                CharadeATroisScreen(
                   sessionId: sessionId,
                   userId: userId,
                   roomCode: widget.roomCode,
@@ -795,7 +795,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
     return data;
   }
 
-  setupShowAndTell(data) async {
+  setupCharadeATrois(data) async {
     // verify that there are sufficient number of players
     if (data['playerIds'].length < 2 * data['rules']['numTeams']) {
       setState(() {
@@ -845,9 +845,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
     data['internalState'] = 'wordSelection';
     if (!data['rules']['playerWords']) {
       // random words
-      var words = [showAndTellWords, showAndTellExpressions, showAndTellPeople]
-          .expand((x) => x)
-          .toList();
+      var words = [
+        charadeATroisWords,
+        charadeATroisExpressions,
+        charadeATroisPeople
+      ].expand((x) => x).toList();
       words.shuffle();
       int i = 0;
       while (data['words'].length < data['rules']['collectionWordLimit']) {
@@ -923,7 +925,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
         break;
 
       case 'Charáde à Trois':
-        data = await setupShowAndTell(data);
+        data = await setupCharadeATrois(data);
         break;
     }
 

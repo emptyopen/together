@@ -15,7 +15,7 @@ class Transactor {
     });
   }
 
-  transactShowAndTellWords(newWord) async {
+  transactCharadeATroisWords(newWord) async {
     await _firestore.runTransaction((transaction) async {
       DocumentReference postRef =
           _firestore.collection('sessions').doc(sessionId);

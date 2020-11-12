@@ -1,4 +1,4 @@
-var showAndTellExpressions = [
+var charadeATroisExpressions = [
   '"piece of cake"',
   '"I\'ll be back"',
   '"blessing in disguise"',
@@ -24,7 +24,7 @@ var showAndTellExpressions = [
   '"takes two to tango"',
 ];
 
-var showAndTellPeople = [
+var charadeATroisPeople = [
   'Tiger Woods',
   'Brad Pitt',
   'Justin Bieber',
@@ -51,7 +51,7 @@ var showAndTellPeople = [
   'Pikachu',
 ];
 
-var showAndTellWords = [
+var charadeATroisWords = [
   'fishbowl',
   'hunter',
   'employee',

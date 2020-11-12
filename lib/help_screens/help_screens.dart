@@ -152,7 +152,7 @@ class PlotTwistScreenHelp extends StatelessWidget {
   }
 }
 
-class ShowAndTellScreenHelp extends StatelessWidget {
+class CharadeATroisScreenHelp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return HelpScreen(

@@ -71,7 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
     Color colorThreeCrowns = Colors.amber;
     Color colorRivers = Colors.lightBlue;
     Color colorPlotTwist = Colors.pink;
-    Color colorShowAndTell = Colors.indigoAccent;
+    Color colorCharadeATrois = Colors.indigoAccent;
     double intervalLength = 25.0;
     return Container(
       child: Column(
@@ -107,7 +107,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 subtitle: '3 round charades!',
                 icon: Icon(
                   MdiIcons.dramaMasks,
-                  color: colorShowAndTell,
+                  color: colorCharadeATrois,
                   size: 30,
                 ),
                 minPlayers: 4,
