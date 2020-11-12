@@ -9,7 +9,6 @@ import 'package:auto_size_text/auto_size_text.dart';
 
 import 'package:together/services/services.dart';
 import 'package:together/help_screens/help_screens.dart';
-import '../lobby_screen.dart';
 import 'package:together/components/misc.dart';
 import 'package:together/components/end_game.dart';
 import 'package:together/components/scroll_view.dart';

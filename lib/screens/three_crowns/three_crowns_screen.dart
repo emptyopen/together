@@ -9,7 +9,6 @@ import 'package:together/services/firestore.dart';
 import 'package:together/screens/three_crowns/three_crowns_services.dart';
 import 'package:together/screens/three_crowns/three_crowns_components.dart';
 import 'package:together/help_screens/help_screens.dart';
-import '../lobby_screen.dart';
 import 'package:together/components/log.dart';
 import 'package:together/components/end_game.dart';
 import 'package:together/components/scroll_view.dart';
@@ -733,6 +732,11 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     data['state'] = 'roundEnd';
 
     HapticFeedback.heavyImpact();
+
+    // check if game is over, if so increment player score
+    if (data['player${playerIndex}Crowns'] == 3) {
+      incrementPlayerScore('threeCrowns', data['playerIds'][playerIndex]);
+    }
 
     T.transact(data);
   }

@@ -581,8 +581,7 @@ class _RiversScreenState extends State<RiversScreen> {
 
     // if score is zero, increment player scores for game mode
     for (int i = 0; i < data['playerIds'].length; i++) {
-      incrementPlayerScore(
-          'rivers${data['rules']['handSize']}', data['playerIds'][i]);
+      incrementPlayerScore('rivers', data['playerIds'][i]);
     }
 
     T.transact(data);

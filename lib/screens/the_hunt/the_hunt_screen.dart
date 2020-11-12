@@ -99,107 +99,85 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
     var players = data['playerIds'];
     var activePlayer = data['turn'];
     List<Widget> names = [];
-    players.forEach((val) {
-      names.add(
-        FutureBuilder(
-            future:
-                FirebaseFirestore.instance.collection('users').doc(val).get(),
-            builder: (context, snapshot) {
-              if (!snapshot.hasData) {
-                return Container();
-              }
-              return Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Text(
-                    snapshot.data['name'],
+    players.forEach((v) {
+      names.add(Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          Text(
+            data['playerNames'][v],
+            style: TextStyle(
+              color: v == activePlayer
+                  ? Theme.of(context).primaryColor
+                  : Theme.of(context).highlightColor,
+            ),
+          ),
+          Text(widget.userId == v ? ' (you)' : '',
+              style: TextStyle(fontSize: 12, color: Colors.grey))
+        ],
+      ));
+    });
+    return Container(
+      width: 250,
+      decoration: BoxDecoration(
+          border: Border.all(color: Theme.of(context).highlightColor),
+          borderRadius: BorderRadius.circular(20)),
+      padding: EdgeInsets.all(10),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          widget.userId == activePlayer
+              ? Text(
+                  'It is your turn!',
+                  style: TextStyle(
+                      fontSize: 20, color: Theme.of(context).primaryColor),
+                  textAlign: TextAlign.center,
+                )
+              : Text(
+                  'It is ${data['playerNames'][activePlayer]}\'s turn!',
+                  style: TextStyle(fontSize: 20),
+                  textAlign: TextAlign.center,
+                ),
+          PageBreak(width: 80),
+          Column(children: names),
+          SizedBox(height: 10),
+          widget.userId == activePlayer
+              ? RaisedGradientButton(
+                  child: Text(
+                    'End my turn',
                     style: TextStyle(
-                      color: val == activePlayer
-                          ? Theme.of(context).primaryColor
-                          : Theme.of(context).highlightColor,
+                      fontSize: 18,
+                      color: Colors.white,
                     ),
                   ),
-                  Text(widget.userId == val ? ' (you)' : '',
-                      style: TextStyle(fontSize: 12, color: Colors.grey))
-                ],
-              );
-            }),
-      );
-    });
-    return FutureBuilder(
-      future: FirebaseFirestore.instance
-          .collection('users')
-          .doc(activePlayer)
-          .get(),
-      builder: (context, snapshot) {
-        if (snapshot.hasData && snapshot.data.data == null) {
-          return Container();
-        }
-        return Container(
-          width: 250,
-          decoration: BoxDecoration(
-              border: Border.all(color: Theme.of(context).highlightColor),
-              borderRadius: BorderRadius.circular(20)),
-          padding: EdgeInsets.all(10),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              widget.userId == activePlayer
-                  ? Text(
-                      'It is your turn!',
-                      style: TextStyle(
-                          fontSize: 20, color: Theme.of(context).primaryColor),
-                      textAlign: TextAlign.center,
-                    )
-                  : Text(
-                      'It is ${snapshot.data['name']}\'s turn!',
-                      style: TextStyle(fontSize: 20),
-                      textAlign: TextAlign.center,
-                    ),
-              PageBreak(width: 80),
-              Column(children: names),
-              SizedBox(height: 10),
-              widget.userId == activePlayer
-                  ? RaisedGradientButton(
-                      child: Text(
-                        'End my turn',
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.white,
+                  onPressed: () {
+                    if (data['accusation']['accuser'] == null) {
+                      updateTurn();
+                    } else {
+                      _scaffoldKey.currentState.showSnackBar(SnackBar(
+                        content: Text('Can\'t end turn during an accusation!'),
+                        duration: Duration(seconds: 3),
+                      ));
+                    }
+                  },
+                  height: 40,
+                  width: 180,
+                  gradient: data['accusation']['accuser'] == null
+                      ? LinearGradient(
+                          colors: <Color>[
+                            Theme.of(context).primaryColor,
+                            Theme.of(context).accentColor,
+                          ],
+                        )
+                      : LinearGradient(
+                          colors: <Color>[
+                            Colors.grey[600],
+                            Colors.grey[500],
+                          ],
                         ),
-                      ),
-                      onPressed: () {
-                        if (data['accusation']['accuser'] == null) {
-                          updateTurn();
-                        } else {
-                          _scaffoldKey.currentState.showSnackBar(SnackBar(
-                            content:
-                                Text('Can\'t end turn during an accusation!'),
-                            duration: Duration(seconds: 3),
-                          ));
-                        }
-                      },
-                      height: 40,
-                      width: 180,
-                      gradient: data['accusation']['accuser'] == null
-                          ? LinearGradient(
-                              colors: <Color>[
-                                Theme.of(context).primaryColor,
-                                Theme.of(context).accentColor,
-                              ],
-                            )
-                          : LinearGradient(
-                              colors: <Color>[
-                                Colors.grey[600],
-                                Colors.grey[500],
-                              ],
-                            ),
-                    )
-                  : Container(),
-            ],
-          ),
-        );
-      },
+                )
+              : Container(),
+        ],
+      ),
     );
   }
 
@@ -309,7 +287,6 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
   }
 
   addVoteToAccusation(data, vote) async {
-    data = data.data;
     String playerName = data['playerNames'][widget.userId];
     data['log'].add('$playerName votes $vote!');
     var accusation = data['accusation'];
@@ -545,7 +522,7 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
                       ),
                     ),
                     Text(
-                      '${data.data['spyRevealed']}',
+                      '${data['spyRevealed']}',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 18,
@@ -591,7 +568,7 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
                           ),
                   ],
                 )
-              : !data.data['accusation'].containsKey('charged')
+              : !data['accusation'].containsKey('charged')
                   ? Column(
                       children: <Widget>[
                         Row(
@@ -759,8 +736,9 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
                 body: Container());
           }
           // all data for all components
-          DocumentSnapshot data = snapshot.data;
-          if (data.data == null) {
+          DocumentSnapshot snapshotData = snapshot.data;
+          var data = snapshotData.data();
+          if (data == null) {
             return Scaffold(
                 appBar: AppBar(
                   title: Text(

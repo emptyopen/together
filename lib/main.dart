@@ -13,10 +13,22 @@ void main() async {
 // done:
 // big: voice command for the scoreboard (+/- team, +/- score)
 // general: show arrow for scrollable!!
+// sanity check after big updates:
+// the hunt - good
+// rivers - good
+// abstract
+// bananaphone
+// charade
+// plot twist
+// three crowns - good
 
 // next up:
+// dice & coins vibrations
+// increment player scores for some games
 
 // TODO:
+// arrow for togetherScrollView bugged permanent on the hunt screen end game with incorrect guess
+// consolidation: move all "strings" and colors to constants, i.e. "charade a trois", Colors.cyan[700], etc.
 // team selector: a few annoying bugs remaining with rapid touches
 // ensure everything is using transacts in the whole project
 // show & tell: shimmer for high round scores

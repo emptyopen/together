@@ -4,6 +4,8 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 
 import 'package:together/components/misc.dart';
 
+import 'achievements_components.dart';
+
 class AchievementsScreen extends StatefulWidget {
   final userId;
 
@@ -18,8 +20,9 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
   int theHuntScore = 0;
   int riversScore = 0;
   int abstractScore = 0;
-  int bananaphoneScore = 0;
+  int bananaphoneScore = 0; // TODO: increment
   int threeCrownsScore = 0;
+  int charadeATroisScore = 0;
 
   @override
   initState() {
@@ -86,6 +89,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
       abstractScore = data['abstractScore'];
       bananaphoneScore = data['bananaphoneScore'];
       threeCrownsScore = data['threeCrownsScore'];
+      charadeATroisScore = data['charadeATroisScore'];
       isLoading = false;
     });
   }
@@ -175,69 +179,22 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                             size: 30,
                           ),
                         ),
+                        SizedBox(height: 10),
+                        Achievement(
+                          achievementName: 'Charáde à Trois',
+                          subHeading: '(games won)',
+                          value: charadeATroisScore,
+                          icon: Icon(
+                            MdiIcons.dramaMasks,
+                            color: Colors.indigoAccent,
+                            size: 30,
+                          ),
+                        ),
                       ],
                     ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class Achievement extends StatelessWidget {
-  final Icon icon;
-  final String achievementName;
-  final String subHeading;
-  final value;
-
-  Achievement({
-    this.icon,
-    this.achievementName,
-    this.subHeading = '',
-    this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        border: Border.all(color: Theme.of(context).highlightColor),
-        borderRadius: BorderRadius.circular(5),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          icon,
-          SizedBox(width: 10),
-          Column(
-            children: <Widget>[
-              Text(
-                achievementName,
-                style: TextStyle(
-                  fontSize: 16,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              Text(
-                subHeading,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-          SizedBox(width: 10),
-          Text(
-            ' =  $value',
-            style: TextStyle(
-              fontSize: 20,
-            ),
-          ),
-        ],
       ),
     );
   }

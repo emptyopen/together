@@ -14,11 +14,11 @@ import 'package:together/components/marquee.dart';
 import 'package:together/components/info_box.dart';
 
 import 'settings_screen.dart';
-import 'achievements_screen.dart';
+import 'achievements/achievements_screen.dart';
 import 'package:together/screens/game_tools/the_scoreboard_screen.dart';
 import 'package:together/screens/game_tools/dice_and_coins_screen.dart';
 import 'package:together/screens/game_tools/team_selector_screen.dart';
-import 'lobby_screen.dart';
+import 'lobby/lobby_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   HomeScreen({Key key, this.auth, this.userId, this.logoutCallback})
@@ -386,7 +386,6 @@ class _LobbyDialogState extends State<LobbyDialog> {
   TextEditingController _roomCodeController = new TextEditingController();
   // TODO: make default game choice in settings?
   String _dropDownGame = 'The Hunt';
-  String _roomCode = '';
   bool isFormError = false;
   String formError = '';
 
@@ -459,7 +458,13 @@ class _LobbyDialogState extends State<LobbyDialog> {
           formError = 'Room does not exist';
         });
       }
-    }).catchError((e) => print('error fetching data: $e'));
+    }).catchError((e) {
+      print('error fetching data: $e');
+      setState(() {
+        isFormError = true;
+        formError = 'Error: $e';
+      });
+    });
   }
 
   leaveGame() async {
@@ -952,7 +957,6 @@ class _QuickStartButtonState extends State<QuickStartButton> {
     return GestureDetector(
       onTap: () async {
         HapticFeedback.vibrate();
-        print('hey pressed');
         setState(() {
           pressed = true;
         });

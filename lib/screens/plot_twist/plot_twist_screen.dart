@@ -142,7 +142,7 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
             ),
           ),
           padding: EdgeInsets.all(10),
-          child: TogetherScrollView(
+          child: SingleChildScrollView(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: chatboxes,
@@ -697,7 +697,7 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
       }
     });
     return Center(
-      child: TogetherScrollView(
+      child: SingleChildScrollView(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

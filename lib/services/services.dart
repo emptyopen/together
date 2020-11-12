@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 // import 'package:audioplayers/audio_cache.dart';
 
-import '../screens/lobby_screen.dart';
+import '../screens/lobby/lobby_screen.dart';
 
 checkIfExit(data, context, sessionId, roomCode) async {
   // run async func to check if game is over, or back to lobby or deleted (main menu)
@@ -72,7 +72,7 @@ checkUserInGame({String userId, String sessionId = ''}) async {
         .collection('sessions')
         .doc(userData['currentGame'])
         .get();
-    var sessionData = session.data;
+    var sessionData = session.data();
 
     // if old game still exists and is not this game
     if (sessionData != null && (sessionId == '' || sessionId != session.id)) {

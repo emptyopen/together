@@ -8,13 +8,13 @@ import 'package:string_similarity/string_similarity.dart';
 
 import 'package:together/services/services.dart';
 import 'package:together/help_screens/help_screens.dart';
-import '../lobby_screen.dart';
 import 'package:together/components/end_game.dart';
 import 'package:together/components/buttons.dart';
 import 'package:together/components/misc.dart';
-import 'package:together/screens/show_and_tell/show_and_tell_services.dart';
 import 'package:together/services/firestore.dart';
 import 'package:together/components/scroll_view.dart';
+
+import 'charade_a_trois_services.dart';
 
 class CharadeATroisScreen extends StatefulWidget {
   CharadeATroisScreen({this.sessionId, this.userId, this.roomCode});
@@ -204,6 +204,20 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
     } else if (data['internalState'] == 'gesture') {
       data['internalState'] = 'oneWord';
     } else {
+      // increment scores of winners
+      int maxScore = 0;
+      data['scores'].forEach((v) {
+        if (v > maxScore) {
+          maxScore = v;
+        }
+      });
+      data['scores'].asMap().forEach((i, v) {
+        if (data['scores'][i] == maxScore) {
+          data['teams']['team$i'].forEach((v) {
+            incrementPlayerScore('charadeATrois', v);
+          });
+        }
+      });
       data['internalState'] = 'scoreBoard';
     }
   }
@@ -1029,18 +1043,18 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
 
   getScoreboard(data) {
     List<Widget> scores = [];
+    int maxScore = 0;
+    data['scores'].forEach((v) {
+      if (v > maxScore) {
+        maxScore = v;
+      }
+    });
     data['scores'].asMap().forEach((i, v) {
       List<Widget> members = [];
       data['teams']['team$i'].forEach((v) {
         members.add(Text(data['playerNames'][v]));
       });
       bool isWinner = false;
-      int maxScore = 0;
-      data['scores'].forEach((v) {
-        if (v > maxScore) {
-          maxScore = v;
-        }
-      });
       if (data['scores'][i] == maxScore) {
         isWinner = true;
       }

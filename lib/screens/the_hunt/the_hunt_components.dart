@@ -15,10 +15,11 @@ class RevealDialog extends StatefulWidget {
 
 class _RevealDialogState extends State<RevealDialog> {
   String _guessedLocation = '';
+  String error = '';
 
   reveal() async {
     // if spy guessed correct location, spies win. otherwise, citizens win
-    var data = widget.data.data;
+    var data = widget.data;
     if (_guessedLocation == data['location']) {
       for (int i = 0; i < data['playerIds'].length; i++) {
         if (data['playerRoles'][data['playerIds'][i]] == 'spy') {
@@ -46,38 +47,54 @@ class _RevealDialogState extends State<RevealDialog> {
     });
     return AlertDialog(
       title: Text('Reveal yourself and guess the location!'),
-      content: Container(
-        height: 60.0,
-        decoration: BoxDecoration(
-            border: Border.all(color: Theme.of(context).highlightColor)),
-        child: DropdownButtonHideUnderline(
-          child: DropdownButton<String>(
-            value: _guessedLocation,
-            iconSize: 24,
-            elevation: 16,
-            style: TextStyle(color: Theme.of(context).primaryColor),
-            underline: Container(
-              height: 2,
-              color: Theme.of(context).primaryColor,
-            ),
-            onChanged: (String newValue) {
-              setState(() {
-                _guessedLocation = newValue;
-              });
-            },
-            items:
-                possibleLocations.map<DropdownMenuItem<String>>((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(
-                  '   ' + value,
-                  style: TextStyle(
-                      fontSize: 18, color: Theme.of(context).highlightColor),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            height: 60.0,
+            decoration: BoxDecoration(
+                border: Border.all(color: Theme.of(context).highlightColor)),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _guessedLocation,
+                iconSize: 24,
+                elevation: 16,
+                style: TextStyle(color: Theme.of(context).primaryColor),
+                underline: Container(
+                  height: 2,
+                  color: Theme.of(context).primaryColor,
                 ),
-              );
-            }).toList(),
+                onChanged: (String newValue) {
+                  setState(() {
+                    _guessedLocation = newValue;
+                    error = '';
+                  });
+                },
+                items: possibleLocations
+                    .map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(
+                      '   ' + value,
+                      style: TextStyle(
+                          fontSize: 18,
+                          color: Theme.of(context).highlightColor),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
           ),
-        ),
+          SizedBox(height: 10),
+          error == ''
+              ? Container()
+              : Text(
+                  error,
+                  style: TextStyle(
+                    color: Colors.red,
+                  ),
+                ),
+        ],
       ),
       actions: <Widget>[
         FlatButton(
@@ -89,8 +106,9 @@ class _RevealDialogState extends State<RevealDialog> {
         FlatButton(
             onPressed: () {
               if (_guessedLocation == '') {
-                // TODO: add error for blank submission
-                print('error');
+                setState(() {
+                  error = 'You must guess a location!';
+                });
               } else {
                 reveal();
                 Navigator.of(context).pop();
@@ -115,9 +133,10 @@ class AccuseDialog extends StatefulWidget {
 
 class _AccuseDialogState extends State<AccuseDialog> {
   String _accusedPlayer = '';
+  String error = '';
 
-  submitAccusation(String accusedId, data) async {
-    data = data.data;
+  submitAccusation(String accusedId) async {
+    var data = widget.data;
     var accusation = {'accuser': widget.userId, 'accused': accusedId};
     data['playerIds'].forEach((val) {
       if (val != widget.userId && val != accusedId) {
@@ -161,40 +180,55 @@ class _AccuseDialogState extends State<AccuseDialog> {
     });
     return AlertDialog(
       title: Text('Accuse someone of being the spy!'),
-      content: Container(
-        height: 60.0,
-        decoration: BoxDecoration(
-            border: Border.all(color: Theme.of(context).highlightColor)),
-        child: DropdownButtonHideUnderline(
-          child: DropdownButton<String>(
-            value: _accusedPlayer,
-            iconSize: 24,
-            elevation: 16,
-            style: TextStyle(color: Theme.of(context).primaryColor),
-            underline: Container(
-              height: 2,
-              color: Theme.of(context).primaryColor,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            height: 60.0,
+            decoration: BoxDecoration(
+                border: Border.all(color: Theme.of(context).highlightColor)),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _accusedPlayer,
+                iconSize: 24,
+                elevation: 16,
+                style: TextStyle(color: Theme.of(context).primaryColor),
+                underline: Container(
+                  height: 2,
+                  color: Theme.of(context).primaryColor,
+                ),
+                onChanged: (String newValue) {
+                  setState(() {
+                    _accusedPlayer = newValue;
+                    error = '';
+                  });
+                },
+                items: accusablePlayers.map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: value == ''
+                        ? Text('')
+                        : Text(
+                            '   ' + widget.data['playerNames'][value],
+                            style: TextStyle(
+                                fontSize: 20,
+                                color: Theme.of(context).highlightColor),
+                          ),
+                  );
+                }).toList(),
+              ),
             ),
-            onChanged: (String newValue) {
-              setState(() {
-                _accusedPlayer = newValue;
-              });
-            },
-            items: accusablePlayers.map((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: value == ''
-                    ? Text('')
-                    : Text(
-                        '   ' + widget.data['playerNames'][value],
-                        style: TextStyle(
-                            fontSize: 20,
-                            color: Theme.of(context).highlightColor),
-                      ),
-              );
-            }).toList(),
           ),
-        ),
+          SizedBox(height: 10),
+          error == ''
+              ? Container()
+              : Text(
+                  error,
+                  style: TextStyle(
+                    color: Colors.red,
+                  ),
+                ),
+        ],
       ),
       actions: <Widget>[
         FlatButton(
@@ -205,10 +239,11 @@ class _AccuseDialogState extends State<AccuseDialog> {
         FlatButton(
             onPressed: () {
               if (_accusedPlayer == '') {
-                // TODO: add error for blank submission
-                print('error');
+                setState(() {
+                  error = 'You must accuse someone!';
+                });
               } else {
-                submitAccusation(_accusedPlayer, widget.data);
+                submitAccusation(_accusedPlayer);
                 Navigator.of(context).pop();
               }
             },
