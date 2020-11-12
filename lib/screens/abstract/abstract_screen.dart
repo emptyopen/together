@@ -61,31 +61,6 @@ class _AbstractScreenState extends State<AbstractScreen> {
     super.dispose();
   }
 
-  checkIfExit(data) async {
-    // run async func to check if game is over, or back to lobby or deleted (main menu)
-    if (data == null) {
-      print('game was deleted');
-
-      // navigate to main menu
-      Navigator.of(context).pop();
-    } else if (data['state'] == 'lobby') {
-      // reset first team to green
-      await FirebaseFirestore.instance
-          .collection('sessions')
-          .doc(widget.sessionId)
-          .update({'turn': 'green'});
-
-      // navigate to lobby
-      Navigator.of(context).pop();
-      slideTransition(
-        context,
-        LobbyScreen(
-          roomCode: widget.roomCode,
-        ),
-      );
-    }
-  }
-
   checkIfVibrate(data) {
     if (currTeam != data['turn']) {
       currTeam = data['turn'];
@@ -1076,7 +1051,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
                 ),
                 body: Container());
           }
-          checkIfExit(data);
+          checkIfExit(data, context, widget.sessionId, widget.roomCode);
           // check if vibrate
           checkIfVibrate(data);
           return Scaffold(
