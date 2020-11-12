@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:together/components/scroll_view.dart';
 
 getLog(data, context, double width) {
   var latestLog = data['log'].last;
@@ -43,7 +44,7 @@ getLog(data, context, double width) {
                       borderRadius: BorderRadius.circular(5),
                     ),
                     padding: EdgeInsets.all(10),
-                    child: SingleChildScrollView(
+                    child: TogetherScrollView(
                       child: Column(
                         children: fullLogs,
                       ),

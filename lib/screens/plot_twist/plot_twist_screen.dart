@@ -6,11 +6,12 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:together/services/services.dart';
 import 'package:together/services/firestore.dart';
 import 'package:together/help_screens/help_screens.dart';
-import 'lobby_screen.dart';
+import '../lobby_screen.dart';
 import 'package:together/components/end_game.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import '../services/plot_twist_services.dart';
+import 'plot_twist_services.dart';
 import 'package:together/components/buttons.dart';
+import 'package:together/components/scroll_view.dart';
 
 class PlotTwistScreen extends StatefulWidget {
   PlotTwistScreen({this.sessionId, this.userId, this.roomCode});
@@ -163,7 +164,7 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
             ),
           ),
           padding: EdgeInsets.all(10),
-          child: SingleChildScrollView(
+          child: TogetherScrollView(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: chatboxes,
@@ -718,7 +719,7 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
       }
     });
     return Center(
-      child: SingleChildScrollView(
+      child: TogetherScrollView(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

@@ -11,8 +11,9 @@ import 'package:together/components/misc.dart';
 import 'package:together/services/services.dart';
 import 'package:together/services/firestore.dart';
 import 'package:together/help_screens/help_screens.dart';
-import 'lobby_screen.dart';
+import '../lobby_screen.dart';
 import 'package:together/components/end_game.dart';
+import 'package:together/components/scroll_view.dart';
 
 class BananaphoneScreen extends StatefulWidget {
   BananaphoneScreen({this.sessionId, this.userId, this.roomCode});
@@ -1281,7 +1282,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
           child: Text('Waiting on the slowpokes...'));
     }
 
-    return SingleChildScrollView(
+    return TogetherScrollView(
       child: Column(
         children: <Widget>[
           Stack(
@@ -1482,7 +1483,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
                           SizedBox(height: 5),
                         ],
                       )
-                    : SingleChildScrollView(
+                    : TogetherScrollView(
                         child: data['phase'] == 'scoreboard'
                             ? getScoreboard(data)
                             : Column(

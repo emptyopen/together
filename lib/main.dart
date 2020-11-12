@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 import 'services/authentication.dart';
-import 'screens/root_screen.dart';
+import 'screens/auth/root_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,12 +12,12 @@ void main() async {
 
 // done:
 // big: voice command for the scoreboard (+/- team, +/- score)
-
-// next up:
 // general: show arrow for scrollable!!
 
+// next up:
+
 // TODO:
-// flesh out team selector (a few slight bugs remaining with rapid touches)
+// team selector: a few annoying bugs remaining with rapid touches
 // ensure everything is using transacts in the whole project
 // show & tell: shimmer for high round scores
 // add LEGAL donations link for ios/android

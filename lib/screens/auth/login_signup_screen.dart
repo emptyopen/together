@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../services/authentication.dart';
+import '../../services/authentication.dart';
+import 'package:together/components/scroll_view.dart';
 
 // https://medium.com/flutterpub/flutter-how-to-do-user-login-with-firebase-a6af760b14d5
 // https://github.com/tattwei46/flutter_login_demo/blob/master/lib/pages/home_page.dart
@@ -106,7 +107,7 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
         appBar: new AppBar(
           title: new Text('Together: Sign In'),
         ),
-        body: SingleChildScrollView(
+        body: TogetherScrollView(
           child: Center(
             child: Column(
               children: <Widget>[

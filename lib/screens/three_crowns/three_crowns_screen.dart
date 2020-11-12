@@ -6,11 +6,12 @@ import 'package:flutter/services.dart';
 
 import 'package:together/services/services.dart';
 import 'package:together/services/firestore.dart';
-import 'package:together/services/three_crowns_services.dart';
+import 'package:together/screens/three_crowns/three_crowns_services.dart';
 import 'package:together/help_screens/help_screens.dart';
-import 'lobby_screen.dart';
+import '../lobby_screen.dart';
 import 'package:together/components/log.dart';
 import 'package:together/components/end_game.dart';
+import 'package:together/components/scroll_view.dart';
 
 class ThreeCrownsScreen extends StatefulWidget {
   ThreeCrownsScreen({this.sessionId, this.userId, this.roomCode});
@@ -836,7 +837,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
             contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),
             content: Container(
               height: 400,
-              child: SingleChildScrollView(
+              child: TogetherScrollView(
                 child: Column(
                   children: players,
                 ),
@@ -2004,7 +2005,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
       everyone.add(SizedBox(height: 15));
     });
 
-    return SingleChildScrollView(
+    return TogetherScrollView(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [

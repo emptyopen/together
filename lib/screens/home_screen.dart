@@ -15,9 +15,9 @@ import 'package:together/components/info_box.dart';
 
 import 'settings_screen.dart';
 import 'achievements_screen.dart';
-import 'package:together/screens/the_scoreboard_screen.dart';
-import 'package:together/screens/dice_and_coins_screen.dart';
-import 'package:together/screens/team_selector_screen.dart';
+import 'package:together/screens/game_tools/the_scoreboard_screen.dart';
+import 'package:together/screens/game_tools/dice_and_coins_screen.dart';
+import 'package:together/screens/game_tools/team_selector_screen.dart';
 import 'lobby_screen.dart';
 
 class HomeScreen extends StatefulWidget {

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:simple_animations/simple_animations.dart';
-import 'package:flutter/services.dart';
 
 class TogetherScrollView extends StatefulWidget {
   final Widget child;
@@ -14,7 +13,7 @@ class TogetherScrollView extends StatefulWidget {
 
 class _TogetherScrollViewState extends State<TogetherScrollView> {
   ScrollController _controller;
-  double hysteresis = 50;
+  double hysteresis = 30;
 
   @override
   initState() {
@@ -30,15 +29,26 @@ class _TogetherScrollViewState extends State<TogetherScrollView> {
 
   @override
   Widget build(BuildContext context) {
+    bool showTop = _controller.hasClients &&
+        _controller.offset < _controller.position.maxScrollExtent - hysteresis;
+    bool showBottom = _controller.hasClients &&
+        _controller.offset > _controller.position.minScrollExtent + hysteresis;
+    if (showTop && showBottom) {
+      // choose closer
+      if (_controller.position.maxScrollExtent - _controller.offset >
+          _controller.offset - _controller.position.minScrollExtent) {
+        showBottom = false;
+      } else {
+        showTop = false;
+      }
+    }
     return Stack(
       children: [
         SingleChildScrollView(
           controller: _controller,
           child: widget.child,
         ),
-        _controller.hasClients &&
-                _controller.offset <
-                    _controller.position.maxScrollExtent - hysteresis
+        showTop
             ? Positioned(
                 bottom: 25,
                 right: 25,
@@ -47,9 +57,7 @@ class _TogetherScrollViewState extends State<TogetherScrollView> {
                 ),
               )
             : Container(),
-        _controller.hasClients &&
-                _controller.offset >
-                    _controller.position.minScrollExtent + hysteresis
+        showBottom
             ? Positioned(
                 top: 25,
                 right: 25,

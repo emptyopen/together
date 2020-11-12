@@ -7,9 +7,10 @@ import 'package:together/components/misc.dart';
 import 'package:together/components/layouts.dart';
 import 'package:together/services/services.dart';
 import 'package:together/help_screens/help_screens.dart';
-import 'lobby_screen.dart';
+import 'package:together/screens/lobby_screen.dart';
 import 'package:together/components/log.dart';
 import 'package:together/components/end_game.dart';
+import 'package:together/components/scroll_view.dart';
 
 class TheHuntScreen extends StatefulWidget {
   TheHuntScreen({this.sessionId, this.userId, this.roomCode});
@@ -816,7 +817,7 @@ class _TheHuntScreenState extends State<TheHuntScreen> {
               ),
               body: Stack(
                 children: <Widget>[
-                  SingleChildScrollView(
+                  TogetherScrollView(
                     child: Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,

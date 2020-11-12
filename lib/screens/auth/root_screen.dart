@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../services/authentication.dart';
+import '../../services/authentication.dart';
 import 'login_signup_screen.dart';
-import 'home_screen.dart';
+import '../home_screen.dart';
 
 enum AuthStatus {
   NOT_DETERMINED,

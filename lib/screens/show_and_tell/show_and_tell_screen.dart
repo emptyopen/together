@@ -8,12 +8,13 @@ import 'package:string_similarity/string_similarity.dart';
 
 import 'package:together/services/services.dart';
 import 'package:together/help_screens/help_screens.dart';
-import 'lobby_screen.dart';
+import '../lobby_screen.dart';
 import 'package:together/components/end_game.dart';
 import 'package:together/components/buttons.dart';
 import 'package:together/components/misc.dart';
-import 'package:together/services/show_and_tell_services.dart';
+import 'package:together/screens/show_and_tell/show_and_tell_services.dart';
 import 'package:together/services/firestore.dart';
+import 'package:together/components/scroll_view.dart';
 
 class ShowAndTellScreen extends StatefulWidget {
   ShowAndTellScreen({this.sessionId, this.userId, this.roomCode});
@@ -940,7 +941,7 @@ class _ShowAndTellScreenState extends State<ShowAndTellScreen> {
       previousWordsJudged = true;
     }
 
-    return SingleChildScrollView(
+    return TogetherScrollView(
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

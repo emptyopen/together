@@ -6,6 +6,28 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../screens/lobby_screen.dart';
 
+checkIfExit(data, context, sessionId, roomCode) async {
+  // run async func to check if game is over, or back to lobby or deleted (main menu)
+  if (data == null) {
+    // navigate to main menu
+    Navigator.of(context).pop();
+  } else if (data['state'] == 'lobby') {
+    // I DON'T KNOW WHY WE NEED THIS BUT OTHERWISE WE GET DEBUG LOCKED ISSUES
+    await FirebaseFirestore.instance
+        .collection('sessions')
+        .doc(sessionId) // TODO: check if it can be a generic await
+        .set(data);
+    // navigate to lobby
+    Navigator.of(context).pop();
+    slideTransition(
+      context,
+      LobbyScreen(
+        roomCode: roomCode,
+      ),
+    );
+  }
+}
+
 slideTransition(BuildContext context, Widget route) {
   Navigator.push(
     context,

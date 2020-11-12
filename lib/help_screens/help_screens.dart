@@ -3,6 +3,7 @@ import 'package:transformer_page_view/transformer_page_view.dart';
 
 import 'package:together/components/buttons.dart';
 import 'package:together/components/misc.dart';
+import 'package:together/components/scroll_view.dart';
 
 class TheHuntScreenHelp extends StatelessWidget {
   @override
@@ -290,7 +291,7 @@ class _HelpScreenState extends State<HelpScreen> {
               Center(
                 child: Padding(
                   padding: EdgeInsets.fromLTRB(20, 5, 20, 5),
-                  child: SingleChildScrollView(
+                  child: TogetherScrollView(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.center,

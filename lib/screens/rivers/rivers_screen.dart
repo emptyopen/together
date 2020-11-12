@@ -8,7 +8,7 @@ import 'package:together/services/services.dart';
 import 'package:together/services/firestore.dart';
 import 'package:together/components/buttons.dart';
 import 'package:together/help_screens/help_screens.dart';
-import 'lobby_screen.dart';
+import '../lobby_screen.dart';
 import 'package:together/components/misc.dart';
 import 'package:together/components/log.dart';
 import 'package:together/components/end_game.dart';
@@ -36,28 +36,6 @@ class _RiversScreenState extends State<RiversScreen> {
     super.initState();
     T = Transactor(sessionId: widget.sessionId);
     setUpGame();
-  }
-
-  checkIfExit(data) async {
-    // run async func to check if game is over, or back to lobby or deleted (main menu)
-    if (data == null) {
-      // navigate to main menu
-      Navigator.of(context).pop();
-    } else if (data['state'] == 'lobby') {
-      // I DON'T KNOW WHY WE NEED THIS BUT OTHERWISE WE GET DEBUG LOCKED ISSUES
-      await FirebaseFirestore.instance
-          .collection('sessions')
-          .doc(widget.sessionId)
-          .set(data);
-      // navigate to lobby
-      Navigator.of(context).pop();
-      slideTransition(
-        context,
-        LobbyScreen(
-          roomCode: widget.roomCode,
-        ),
-      );
-    }
   }
 
   checkIfVibrate(data) {
@@ -837,7 +815,7 @@ class _RiversScreenState extends State<RiversScreen> {
               body: Container(),
             );
           }
-          checkIfExit(data);
+          checkIfExit(data, context, widget.sessionId, widget.roomCode);
           checkIfVibrate(data);
           return Scaffold(
             key: _scaffoldKey,
