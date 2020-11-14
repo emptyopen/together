@@ -433,7 +433,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
     for (var i = 0; i < boardSize; i++) {
       serializedWords.add(words[i].toJson());
     }
-    rules['words'] = serializedWords;
+    data['words'] = serializedWords;
 
     // set greenAlreadyWon for ensuring rebuttal for orange/purple
     rules['greenAlreadyWon'] = false;
@@ -461,25 +461,16 @@ class _LobbyScreenState extends State<LobbyScreen> {
     }
 
     // initialize cumulative times
-    if (rules['numTeams'] == 2) {
-      data['greenTime'] = 0;
-      data['orangeTime'] = 0;
-      data['greenStart'] = DateTime.now();
-      data['orangeStart'] = DateTime.now();
-      data['timer'] = DateTime.now().add(
-        Duration(seconds: 9 * rules['turnTimer'] + 120),
-      );
-    } else {
-      data['greenTime'] = 0;
-      data['orangeTime'] = 0;
+    data['greenTime'] = 0;
+    data['orangeTime'] = 0;
+    data['roundStart'] = DateTime.now();
+    if (rules['numTeams'] == 3) {
       data['purpleTime'] = 0;
-      data['greenStart'] = DateTime.now();
-      data['orangeStart'] = DateTime.now();
-      data['purpleStart'] = DateTime.now();
-      data['timer'] = DateTime.now().add(
-        Duration(seconds: 8 * rules['turnTimer'] + 120),
-      );
     }
+
+    data['roundExpiration'] = DateTime.now().add(
+      Duration(seconds: 9 * rules['turnTimer'] + 120),
+    );
 
     // add player names
     data['playerNames'] = {};

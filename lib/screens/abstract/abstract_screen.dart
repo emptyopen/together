@@ -83,6 +83,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
       numTeams = data['rules']['numTeams'];
       isSpectator = data['spectatorIds'].contains(widget.userId);
 
+      // determine user team and isTeamLeader
       if (data['rules']['numTeams'] == 2) {
         userIsTeamLeader = data['rules']['greenLeader'] == widget.userId ||
             data['rules']['orangeLeader'] == widget.userId;
@@ -117,7 +118,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
     int unflippedGreen = 0;
     int unflippedOrange = 0;
     int unflippedPurple = 0;
-    for (var row in data['rules']['words']) {
+    for (var row in data['words']) {
       for (var m in row['rowWords']) {
         if (m['color'] == 'green') {
           if (!m['flipped']) {
@@ -142,47 +143,22 @@ class _AbstractScreenState extends State<AbstractScreen> {
     var nextActiveTeam = '';
     if (currActiveTeam == 'green') {
       nextActiveTeam = 'orange';
-      await FirebaseFirestore.instance
-          .collection('sessions')
-          .doc(widget.sessionId)
-          .update({
-        'greenTime': data['greenTime'] +
-            _now.difference(data['greenStart'].toDate()).inMilliseconds,
-        'orangeStart': DateTime.now(),
-      });
+      data['greenTime'] = data['greenTime'] +
+          _now.difference(data['roundStart'].toDate()).inMilliseconds;
     } else if (currActiveTeam == 'orange') {
       if (numTeams == 2) {
         nextActiveTeam = 'green';
-        await FirebaseFirestore.instance
-            .collection('sessions')
-            .doc(widget.sessionId)
-            .update({
-          'orangeTime': data['orangeTime'] +
-              _now.difference(data['orangeStart'].toDate()).inMilliseconds,
-          'greenStart': DateTime.now(),
-        });
       } else {
         nextActiveTeam = 'purple';
-        await FirebaseFirestore.instance
-            .collection('sessions')
-            .doc(widget.sessionId)
-            .update({
-          'orangeTime': data['orangeTime'] +
-              _now.difference(data['orangeStart'].toDate()).inMilliseconds,
-          'purpleStart': DateTime.now(),
-        });
       }
+      data['orangeTime'] = data['orangeTime'] +
+          _now.difference(data['roundStart'].toDate()).inMilliseconds;
     } else {
-      await FirebaseFirestore.instance
-          .collection('sessions')
-          .doc(widget.sessionId)
-          .update({
-        'purpleTime': data['purpleTime'] +
-            _now.difference(data['purpleStart'].toDate()).inMilliseconds,
-        'purpleStart': DateTime.now(),
-      });
       nextActiveTeam = 'green';
+      data['purpleTime'] = data['purpleTime'] +
+          _now.difference(data['roundStart'].toDate()).inMilliseconds;
     }
+    // count remaining unflipped for timer
     var numUnflipped = unflippedGreen;
     if (nextActiveTeam == 'orange') {
       numUnflipped = unflippedOrange;
@@ -191,15 +167,12 @@ class _AbstractScreenState extends State<AbstractScreen> {
       numUnflipped = unflippedPurple;
     }
 
-    // update timer
-    await FirebaseFirestore.instance
-        .collection('sessions')
-        .doc(widget.sessionId)
-        .update({
-      'turn': nextActiveTeam,
-      'timer':
-          DateTime.now().add(Duration(seconds: 10 + increment * numUnflipped))
-    });
+    data['turn'] = nextActiveTeam;
+    data['roundStart'] = DateTime.now();
+    data['roundExpiration'] =
+        DateTime.now().add(Duration(seconds: 10 + increment * numUnflipped));
+
+    T.transact(data);
 
     isUpdating = false;
   }
@@ -368,7 +341,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
     int flippedPurple = 0;
     bool deathCardFlipped = false;
     List<String> winningTeams = [];
-    for (var row in data['rules']['words']) {
+    for (var row in data['words']) {
       for (var m in row['rowWords']) {
         if (m['color'] == 'green') {
           totalGreen += 1;
@@ -426,6 +399,8 @@ class _AbstractScreenState extends State<AbstractScreen> {
 
     // end game if there is a winner and it is the last team's turn and it was a mistake OR if the black card was drawn
     if ((winningTeams.length > 0 && isLastTeamTurn && isBadCard) ||
+        (data['rules']['numTeams'] == 2 && orangeGotAll) ||
+        (data['rules']['numTeams'] == 3 && purpleGotAll) ||
         deathCardFlipped) {
       // determine winner if there is a tie
       if (winningTeams.length > 1) {
@@ -449,6 +424,14 @@ class _AbstractScreenState extends State<AbstractScreen> {
 
       await T.transact(data);
     }
+
+    // if card is bad or current team got all, update turn
+    if (isBadCard ||
+        (data['turn'] == 'green' && greenGotAll) ||
+        (data['turn'] == 'orange' && orangeGotAll)) {
+      print('bad card, switching turns');
+      updateTurn(data);
+    }
   }
 
   flipCard(data, int x, int y) async {
@@ -464,15 +447,17 @@ class _AbstractScreenState extends State<AbstractScreen> {
       return;
     }
 
+    HapticFeedback.vibrate();
+
     // flip card
-    data['rules']['words'][x]['rowWords'][y]['flipped'] = true;
-    data['rules']['words'][x]['rowWords'][y]['flippedTurns'] = 5;
+    data['words'][x]['rowWords'][y]['flipped'] = true;
+    data['words'][x]['rowWords'][y]['flippedTurns'] = 5;
 
     // reduce recently flipped cards
     for (var x = 0; x < (numTeams == 2 ? 5 : 6); x++) {
       for (var y = 0; y < (numTeams == 2 ? 5 : 6); y++) {
-        if (data['rules']['words'][x]['rowWords'][y]['flippedTurns'] > 0) {
-          data['rules']['words'][x]['rowWords'][y]['flippedTurns'] -= 1;
+        if (data['words'][x]['rowWords'][y]['flippedTurns'] > 0) {
+          data['words'][x]['rowWords'][y]['flippedTurns'] -= 1;
         }
       }
     }
@@ -481,23 +466,20 @@ class _AbstractScreenState extends State<AbstractScreen> {
         .doc(widget.sessionId)
         .update({'rules': data['rules']});
 
-    bool isBadCard =
-        data['rules']['words'][x]['rowWords'][y]['color'] != userTeam;
+    bool isBadCard = data['words'][x]['rowWords'][y]['color'] != userTeam;
     print('bad card $isBadCard');
 
     checkGameOver(data, isBadCard);
 
-    // if card is bad, update turn
-    if (isBadCard) {
-      print('bad card, switching turns');
-      updateTurn(data);
-    }
+    T.transact(data);
+
+    setState(() {});
   }
 
   getTeamIcon(x, y, data) {
     // alertDecagramOutline, magnifyPlusOutline
     var icon = MdiIcons.circleDouble;
-    switch (data['rules']['words'][x]['rowWords'][y]['color']) {
+    switch (data['words'][x]['rowWords'][y]['color']) {
       case 'green':
         icon = MdiIcons.sproutOutline;
         break;
@@ -512,7 +494,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
   }
 
   Widget _buildGridItems(BuildContext context, int index, dynamic data) {
-    var words = data['rules']['words'];
+    var words = data['words'];
     int gridStateLength = words.length;
     int x, y = 0;
     x = (index / gridStateLength).floor();
@@ -522,22 +504,22 @@ class _AbstractScreenState extends State<AbstractScreen> {
         data['state'] == 'complete';
     // update words here
     return GridTile(
-      child: Container(
-        decoration: BoxDecoration(
-          color: tileIsVisible
-              ? getColorFromString(
-                  words[x]['rowWords'][y]['color'],
-                  userIsTeamLeader && !words[x]['rowWords'][y]['flipped']
-                      ? true
-                      : false)
-              : Colors.white,
-          border: Border.all(color: Colors.grey, width: 0.5),
-        ),
-        child: Stack(
-          children: <Widget>[
-            Center(
-              child: FlatButton(
-                onPressed: () => flipCard(data, x, y),
+      child: GestureDetector(
+        onTap: () => flipCard(data, x, y),
+        child: Container(
+          decoration: BoxDecoration(
+            color: tileIsVisible
+                ? getColorFromString(
+                    words[x]['rowWords'][y]['color'],
+                    userIsTeamLeader && !words[x]['rowWords'][y]['flipped']
+                        ? true
+                        : false)
+                : Colors.white,
+            border: Border.all(color: Colors.grey, width: 0.5),
+          ),
+          child: Stack(
+            children: <Widget>[
+              Center(
                 child: words[x]['rowWords'][y]['color'] == 'black'
                     ? Stack(
                         children: <Widget>[
@@ -595,24 +577,24 @@ class _AbstractScreenState extends State<AbstractScreen> {
                                 : Colors.black),
                       ),
               ),
-            ),
-            words[x]['rowWords'][y]['flippedTurns'] > 0
-                ? Positioned(
-                    child: Icon(
-                      getTeamIcon(x, y, data),
-                      size: 18 +
-                          words[x]['rowWords'][y]['flippedTurns'].toDouble() *
-                              0.5,
-                      color: words[x]['rowWords'][y]['color'] == 'grey'
-                          ? Colors.black
-                          : Colors.black.withAlpha(255 -
-                              (5 - words[x]['rowWords'][y]['flippedTurns']) *
-                                  50),
-                    ),
-                    right: 5,
-                    bottom: 5)
-                : Container(),
-          ],
+              words[x]['rowWords'][y]['flippedTurns'] > 0
+                  ? Positioned(
+                      child: Icon(
+                        getTeamIcon(x, y, data),
+                        size: 18 +
+                            words[x]['rowWords'][y]['flippedTurns'].toDouble() *
+                                0.5,
+                        color: words[x]['rowWords'][y]['color'] == 'grey'
+                            ? Colors.black
+                            : Colors.black.withAlpha(255 -
+                                (5 - words[x]['rowWords'][y]['flippedTurns']) *
+                                    50),
+                      ),
+                      right: 5,
+                      bottom: 5)
+                  : Container(),
+            ],
+          ),
         ),
       ),
     );
@@ -750,7 +732,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
   }
 
   getScores(data) {
-    var words = data['rules']['words'];
+    var words = data['words'];
     int totalGreen = 0;
     int totalOrange = 0;
     int totalPurple = 0;
@@ -1002,9 +984,9 @@ class _AbstractScreenState extends State<AbstractScreen> {
   }
 
   getTimer(data) {
-    var seconds = data['timer'].toDate().difference(_now).inSeconds;
+    var seconds = data['roundExpiration'].toDate().difference(_now).inSeconds;
     // if seconds is negative, turn needs to switch and timer needs to be updated
-    if (seconds < 0 && widget.userId == data['leader'] && !isUpdating) {
+    if (seconds < 0 && !isUpdating) {
       isUpdating = true;
       updateTurn(data);
     }
