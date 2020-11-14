@@ -481,6 +481,16 @@ class _LobbyScreenState extends State<LobbyScreen> {
       );
     }
 
+    // add player names
+    data['playerNames'] = {};
+    for (int i = 0; i < players.length; i++) {
+      data['playerNames'][players[i]] = (await FirebaseFirestore.instance
+              .collection('users')
+              .doc(players[i])
+              .get())
+          .data()['name'];
+    }
+
     data['rules'] = rules;
     return data;
   }

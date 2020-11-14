@@ -1413,8 +1413,9 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
                 body: Container());
           }
           // all data for all components
-          DocumentSnapshot data = snapshot.data;
-          if (data.data == null) {
+          DocumentSnapshot snapshotData = snapshot.data;
+          var data = snapshotData.data();
+          if (data == null) {
             return Scaffold(
                 appBar: AppBar(
                   title: Text(

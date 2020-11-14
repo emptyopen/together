@@ -12,6 +12,7 @@ import 'package:together/help_screens/help_screens.dart';
 import 'package:together/components/misc.dart';
 import 'package:together/components/end_game.dart';
 import 'package:together/components/scroll_view.dart';
+import 'package:together/services/firestore.dart';
 
 class AbstractScreen extends StatefulWidget {
   AbstractScreen({this.sessionId, this.userId, this.roomCode});
@@ -34,6 +35,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
   bool isUpdating = false;
   String currTeam = '';
   bool isSpectator = false;
+  var T;
 
   @override
   void initState() {
@@ -42,6 +44,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
       DeviceOrientation.landscapeRight,
       DeviceOrientation.landscapeLeft,
     ]);
+    T = Transactor(sessionId: widget.sessionId);
     setUpGame();
     _timer = Timer.periodic(Duration(milliseconds: 100), (Timer t) {
       if (!mounted) return;
@@ -246,7 +249,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
         children: <Widget>[
           Text(
             '(You are a commoner on ',
-            style: TextStyle(fontSize: 12),
+            style: TextStyle(fontSize: 12, color: Colors.grey),
           ),
           Text(
             '$userTeam',
@@ -257,7 +260,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
           ),
           Text(
             ' team)',
-            style: TextStyle(fontSize: 12),
+            style: TextStyle(fontSize: 12, color: Colors.grey),
           ),
         ],
       );
@@ -266,7 +269,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
       children: <Widget>[
         Text(
           '(You are the glorious leader of ',
-          style: TextStyle(fontSize: 12),
+          style: TextStyle(fontSize: 12, color: Colors.grey),
         ),
         Text(
           '$userTeam',
@@ -277,7 +280,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
         ),
         Text(
           ' team)',
-          style: TextStyle(fontSize: 12),
+          style: TextStyle(fontSize: 12, color: Colors.grey),
         ),
       ],
     );
@@ -355,13 +358,100 @@ class _AbstractScreenState extends State<AbstractScreen> {
     }
   }
 
-  flipCard(int x, int y) async {
-    var data = (await FirebaseFirestore.instance
-            .collection('sessions')
-            .doc(widget.sessionId)
-            .get())
-        .data();
+  checkGameOver(data, isBadCard) async {
+    // check if any team is done, or if black card is flipped
+    int totalGreen = 0;
+    int totalOrange = 0;
+    int totalPurple = 0;
+    int flippedGreen = 0;
+    int flippedOrange = 0;
+    int flippedPurple = 0;
+    bool deathCardFlipped = false;
+    List<String> winningTeams = [];
+    for (var row in data['rules']['words']) {
+      for (var m in row['rowWords']) {
+        if (m['color'] == 'green') {
+          totalGreen += 1;
+          if (m['flipped']) {
+            flippedGreen += 1;
+          }
+        }
+        if (m['color'] == 'orange') {
+          totalOrange += 1;
+          if (m['flipped']) {
+            flippedOrange += 1;
+          }
+        }
+        if (m['color'] == 'purple') {
+          totalPurple += 1;
+          if (m['flipped']) {
+            flippedPurple += 1;
+          }
+        }
+        if (m['color'] == 'black' && m['flipped']) {
+          deathCardFlipped = true;
+        }
+      }
+    }
+    bool greenGotAll = totalGreen == flippedGreen;
+    bool orangeGotAll = totalOrange == flippedOrange;
+    bool purpleGotAll = totalPurple == flippedPurple && flippedPurple > 1;
+    if (greenGotAll) {
+      winningTeams.add('green');
+    }
+    if (orangeGotAll) {
+      winningTeams.add('orange');
+    }
+    if (purpleGotAll) {
+      winningTeams.add('purple');
+    }
 
+    // check if death card ends game
+    if (deathCardFlipped) {
+      winningTeams = ['green', 'orange'];
+      if (numTeams == 3) {
+        winningTeams.add('purple');
+      }
+      winningTeams.removeWhere((item) => item == userTeam);
+      print('winners by black card are: $winningTeams');
+      data['deathCard'] = true;
+    }
+
+    bool isLastTeamTurn = false;
+    if (numTeams == 2) {
+      isLastTeamTurn = data['turn'] == 'orange';
+    } else {
+      isLastTeamTurn = data['turn'] == 'purple';
+    }
+
+    // end game if there is a winner and it is the last team's turn and it was a mistake OR if the black card was drawn
+    if ((winningTeams.length > 0 && isLastTeamTurn && isBadCard) ||
+        deathCardFlipped) {
+      // determine winner if there is a tie
+      if (winningTeams.length > 1) {
+        // TODO: tiebreaker
+        print('resolving tie with amount of time spent');
+      } else {
+        print('not a tie');
+      }
+
+      // update winning players scores
+      for (String team in winningTeams) {
+        for (String playerId in data['playerIds']) {
+          if (data['rules']['${team}Team'].contains(playerId)) {
+            incrementPlayerScore('abstract', playerId);
+          }
+        }
+      }
+
+      data['state'] = 'complete';
+      data['winners'] = winningTeams;
+
+      await T.transact(data);
+    }
+  }
+
+  flipCard(data, int x, int y) async {
     // check if game is over
     if (data['state'] == 'complete') {
       print('game is over!');
@@ -391,127 +481,16 @@ class _AbstractScreenState extends State<AbstractScreen> {
         .doc(widget.sessionId)
         .update({'rules': data['rules']});
 
+    bool isBadCard =
+        data['rules']['words'][x]['rowWords'][y]['color'] != userTeam;
+    print('bad card $isBadCard');
+
+    checkGameOver(data, isBadCard);
+
     // if card is bad, update turn
-    if (data['rules']['words'][x]['rowWords'][y]['color'] != userTeam) {
+    if (isBadCard) {
       print('bad card, switching turns');
       updateTurn(data);
-    }
-
-    // check if any team is done
-    int totalGreen = 0;
-    int totalOrange = 0;
-    int totalPurple = 0;
-    int flippedGreen = 0;
-    int flippedOrange = 0;
-    int flippedPurple = 0;
-    for (var row in data['rules']['words']) {
-      for (var m in row['rowWords']) {
-        if (m['color'] == 'green') {
-          totalGreen += 1;
-          if (m['flipped']) {
-            flippedGreen += 1;
-          }
-        }
-        if (m['color'] == 'orange') {
-          totalOrange += 1;
-          if (m['flipped']) {
-            flippedOrange += 1;
-          }
-        }
-        if (m['color'] == 'purple') {
-          totalPurple += 1;
-          if (m['flipped']) {
-            flippedPurple += 1;
-          }
-        }
-      }
-    }
-
-    // end game check
-    bool thereIsWinner = false;
-    bool deathCardDrawn = false;
-    List<String> winningTeams = [];
-
-    // check for winners, if so end game (this will be run until it is orange/purple's turn)
-    bool greenGotAll = totalGreen == flippedGreen;
-    bool orangeGotAll = totalOrange == flippedOrange;
-    bool purpleGotAll = totalPurple == flippedPurple && flippedPurple > 1;
-    if (greenGotAll) {
-      thereIsWinner = true;
-      winningTeams.add('green');
-    }
-    if (orangeGotAll) {
-      thereIsWinner = true;
-      winningTeams.add('orange');
-    }
-    if (purpleGotAll) {
-      thereIsWinner = true;
-      winningTeams.add('purple');
-    }
-
-    // check if death card ends game
-    if (data['rules']['words'][x]['rowWords'][y]['color'] == 'black') {
-      winningTeams = ['green', 'orange'];
-      if (numTeams == 3) {
-        winningTeams.add('purple');
-      }
-      winningTeams.removeWhere((item) => item == userTeam);
-      print('winners by black card are: $winningTeams');
-      thereIsWinner = true;
-      deathCardDrawn = true;
-    }
-
-    // update turns if relevant (i.e. green has won and it is green's team)
-    bool freshTurnOnThisFlip = false;
-    if (greenGotAll && data['turn'] == 'green') {
-      await updateTurn(data);
-      freshTurnOnThisFlip = true;
-    } else if (orangeGotAll && data['turn'] == 'orange') {
-      await updateTurn(data);
-      freshTurnOnThisFlip = true;
-    } else if (purpleGotAll && data['turn'] == 'purple') {
-      await updateTurn(data);
-      freshTurnOnThisFlip = true;
-    }
-
-    data = (await FirebaseFirestore.instance
-            .collection('sessions')
-            .doc(widget.sessionId)
-            .get())
-        .data();
-
-    // end game if there is a winner and turn has just become green, OR if the black card was drawn, OR all teams have won
-    if ((thereIsWinner && data['turn'] == 'green' && freshTurnOnThisFlip) ||
-        deathCardDrawn ||
-        winningTeams.length == data['numTeams']) {
-      print('game has ended!');
-
-      // determine winner if there is a tie
-      if (winningTeams.length > 1) {
-        print('resolving tie with amount of time spent');
-      } else {
-        print('not a tie');
-      }
-
-      // update winning players scores
-      for (String team in winningTeams) {
-        for (String playerId in data['playerIds']) {
-          if (data['rules']['${team}Team'].contains(playerId)) {
-            incrementPlayerScore('abstract', playerId);
-          }
-        }
-      }
-
-      await FirebaseFirestore.instance
-          .collection('sessions')
-          .doc(widget.sessionId)
-          .update(deathCardDrawn
-              ? {
-                  'state': 'complete',
-                  'winners': winningTeams,
-                  'deathCard': true
-                }
-              : {'state': 'complete', 'winners': winningTeams});
     }
   }
 
@@ -558,7 +537,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
           children: <Widget>[
             Center(
               child: FlatButton(
-                onPressed: () => flipCard(x, y),
+                onPressed: () => flipCard(data, x, y),
                 child: words[x]['rowWords'][y]['color'] == 'black'
                     ? Stack(
                         children: <Widget>[
@@ -836,19 +815,22 @@ class _AbstractScreenState extends State<AbstractScreen> {
       Text(
         'Green Team:',
         style: TextStyle(color: Colors.green),
-      )
+      ),
+      SizedBox(height: 10),
     ];
     List<Widget> orangeTeam = [
       Text(
         'Orange Team',
         style: TextStyle(color: Colors.orange),
-      )
+      ),
+      SizedBox(height: 10),
     ];
     List<Widget> purpleTeam = [
       Text(
         'Purple Team',
         style: TextStyle(color: Colors.purple),
-      )
+      ),
+      SizedBox(height: 10),
     ];
 
     for (var playerId in data['rules']['greenTeam']) {
@@ -862,9 +844,24 @@ class _AbstractScreenState extends State<AbstractScreen> {
               return Container();
             }
             if (playerId == data['rules']['greenLeader']) {
-              return Text(snapshot.data['name'] + ' (leader)');
+              return Row(
+                children: [
+                  Text(
+                    snapshot.data['name'],
+                    style: TextStyle(fontSize: 18),
+                  ),
+                  Text(
+                    ' (leader)',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.grey,
+                    ),
+                  )
+                ],
+              );
             } else {
-              return Text(snapshot.data['name']);
+              return Text(snapshot.data['name'],
+                  style: TextStyle(fontSize: 18));
             }
           }));
     }
@@ -879,9 +876,24 @@ class _AbstractScreenState extends State<AbstractScreen> {
               return Container();
             }
             if (playerId == data['rules']['orangeLeader']) {
-              return Text(snapshot.data['name'] + ' (leader)');
+              return Row(
+                children: [
+                  Text(
+                    snapshot.data['name'],
+                    style: TextStyle(fontSize: 18),
+                  ),
+                  Text(
+                    ' (leader)',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.grey,
+                    ),
+                  )
+                ],
+              );
             } else {
-              return Text(snapshot.data['name']);
+              return Text(snapshot.data['name'],
+                  style: TextStyle(fontSize: 18));
             }
           }));
     }
@@ -897,9 +909,24 @@ class _AbstractScreenState extends State<AbstractScreen> {
                 return Container();
               }
               if (playerId == data['rules']['purpleLeader']) {
-                return Text(snapshot.data['name'] + ' (leader)');
+                return Row(
+                  children: [
+                    Text(
+                      snapshot.data['name'],
+                      style: TextStyle(fontSize: 18),
+                    ),
+                    Text(
+                      ' (leader)',
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.grey,
+                      ),
+                    )
+                  ],
+                );
               } else {
-                return Text(snapshot.data['name']);
+                return Text(snapshot.data['name'],
+                    style: TextStyle(fontSize: 18));
               }
             }));
       }
@@ -995,8 +1022,14 @@ class _AbstractScreenState extends State<AbstractScreen> {
               children: <Widget>[
                 seconds < 0
                     ? Text('')
+                    : Text(
+                        'Remaining: ',
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                seconds < 0
+                    ? Text('')
                     : AutoSizeText(
-                        'Remaining:   ${secondsToTimeString(seconds)}',
+                        '${secondsToTimeString(seconds)}',
                         style: TextStyle(
                             fontSize: 12,
                             color: seconds <= 30
@@ -1040,8 +1073,9 @@ class _AbstractScreenState extends State<AbstractScreen> {
                 body: Container());
           }
           // all data for all components
-          DocumentSnapshot data = snapshot.data;
-          if (data.data == null) {
+          DocumentSnapshot snapshotData = snapshot.data;
+          var data = snapshotData.data();
+          if (data == null) {
             return Scaffold(
                 appBar: AppBar(
                   title: Text(

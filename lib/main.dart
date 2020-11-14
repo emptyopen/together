@@ -27,6 +27,15 @@ void main() async {
 // increment player scores for some games
 
 // TODO:
+// abstract: it's all broken and i'm drunk and asya keeps talking about some miami story about a ...........;.
+
+// abstract: orange team needs to win when green wins for them
+// abstract games has funky behavior? - green wins then orange hits grey - should be over but timer glitches
+// abstract: ability to manually change teams (people can just join the team they want to be on?)
+// abstract should show leader view at end of game (not just solid blocks)
+// abstract: (might not need) add voting system for choosing abstract cards (all members of team must select it)
+// abstract: logic to ensure at least one group of words is selected
+// abstract, tiebreaker with total time used as second marker
 // arrow for togetherScrollView bugged permanent on the hunt screen end game with incorrect guess
 // consolidation: move all "strings" and colors to constants, i.e. "charade a trois", Colors.cyan[700], etc.
 // team selector: a few annoying bugs remaining with rapid touches
@@ -44,23 +53,16 @@ void main() async {
 // plot twist: add ability to delete chats?
 // plot twist: add ability to choose narrator in lobby?
 // the hunt: add timer to voting!!
-// abstract: logic to ensure at least one group of words is selected
 // rivers: show stacks history
 // other tools: random number generator?
-// abstract games has funky behavior? - green wins then orange hits grey - should be over but timer glitches
 // make all buttons disappear when they are clicked (especially when they cause an effect - there are double effects happening)
 // fine grained control of teams in lobby for abstract
 // bananaphone: add scores button to view scores
-// abstract: orange team needs to win when green wins for them
-// tiebreaker for abstract, with total time used as second marker
 // add timer to the hunt?
-// abstract: ability to manually change teams (people can just join the team they want to be on?)
-// abstract should show leader view at end of game (not just solid blocks)
 // if leader leaves a game, need to assign remaining player the leader position - ORRRRR, "claim leadership" button would be more fun and easier
 // add snackbar when auto exiting to lobby or main menu
 // add password reset option
 // ability to leave a game (might not need) (also delete session if last one out) - dialog on back button (leave game or just go to main menu)
-// abstract: (might not need) add voting system for choosing abstract cards (all members of team must select it)
 // attribute icon: Icons made by "https://www.flaticon.com/authors/freepik
 
 // fake users:
