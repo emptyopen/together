@@ -27,7 +27,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     'XMFwripPojYlcvagoiDEmyoxZyK2'
   ]; // markus
   List<String> reservedGames = ['001', '002', '003'];
-  int sessionDeletionDaysThreshold = 3;
+  int sessionDeletionDaysThreshold = 1;
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   TabController _tabController;
   final List<Tab> myTabs = <Tab>[
@@ -170,18 +170,24 @@ class _SettingsScreenState extends State<SettingsScreen>
               daysSince.compareTo(
                       Duration(days: sessionDeletionDaysThreshold)) >=
                   0) {
-            print('destroying ${f.data()["roomCode"]}');
+            print('adding ${f.data()["roomCode"]}');
             sessionsToDelete.add(f.reference);
           }
         }
       });
     });
+    var destroyedGamesCnt = 0;
     sessionsToDelete.forEach((v) {
       FirebaseFirestore.instance
           .runTransaction((Transaction myTransaction) async {
         myTransaction.delete(v);
       });
+      destroyedGamesCnt++;
     });
+    _scaffoldKey.currentState.showSnackBar(SnackBar(
+      content: Text('Destroyed $destroyedGamesCnt games.'),
+      duration: Duration(seconds: 3),
+    ));
   }
 
   getMattBox() {

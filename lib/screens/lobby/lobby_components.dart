@@ -90,6 +90,10 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
             sessionData['rules']['collectionTimeLimit'];
         rules['roundTimeLimit'] = sessionData['rules']['roundTimeLimit'];
         break;
+      case 'In Sync':
+        rules['numTeams'] = sessionData['rules']['numTeams'];
+        rules['roundTimer'] = sessionData['rules']['roundTimer'];
+        break;
     }
     if (widget.game == 'The Hunt') {
       getChosenLocations();
@@ -965,6 +969,95 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
                       });
                     },
                     items: <int>[60, 120, 180, 240, 300, 360, 420, 480]
+                        .map<DropdownMenuItem<int>>((int value) {
+                      return DropdownMenuItem<int>(
+                        value: value,
+                        child: Text(value.toString(),
+                            style: TextStyle(fontFamily: 'Balsamiq')),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            Container(
+              child: FlatButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('Cancel'),
+              ),
+            ),
+            FlatButton(
+              onPressed: () {
+                updateRules();
+              },
+              child: Text('Update'),
+            )
+          ],
+        );
+        break;
+      case 'In Sync':
+        return AlertDialog(
+          title: Text('Edit game rules:'),
+          contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),
+          content: Container(
+            // decoration: BoxDecoration(border: Border.all()),
+            height: 460,
+            width: width * 0.95,
+            child: ListView(
+              children: <Widget>[
+                SizedBox(height: 20),
+                Text('Number of teams:'),
+                Container(
+                  width: 80,
+                  child: DropdownButton<int>(
+                    isExpanded: true,
+                    value: rules['numTeams'],
+                    iconSize: 24,
+                    elevation: 16,
+                    style: TextStyle(color: Theme.of(context).primaryColor),
+                    underline: Container(
+                      height: 2,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    onChanged: (int newValue) {
+                      setState(() {
+                        rules['numTeams'] = newValue;
+                      });
+                    },
+                    items: <int>[1, 2, 3, 4, 5, 6]
+                        .map<DropdownMenuItem<int>>((int value) {
+                      return DropdownMenuItem<int>(
+                        value: value,
+                        child: Text(value.toString(),
+                            style: TextStyle(fontFamily: 'Balsamiq')),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                SizedBox(height: 20),
+                Text('Round time limit:'),
+                Container(
+                  width: 80,
+                  child: DropdownButton<int>(
+                    isExpanded: true,
+                    value: rules['roundTimeLimit'],
+                    iconSize: 24,
+                    elevation: 16,
+                    style: TextStyle(color: Theme.of(context).primaryColor),
+                    underline: Container(
+                      height: 2,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    onChanged: (int newValue) {
+                      setState(() {
+                        rules['roundTimeLimit'] = newValue;
+                      });
+                    },
+                    items: <int>[120, 140, 180, 220, 260, 300]
                         .map<DropdownMenuItem<int>>((int value) {
                       return DropdownMenuItem<int>(
                         value: value,

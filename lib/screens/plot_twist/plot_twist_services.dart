@@ -10,6 +10,18 @@ var storyBeginnings = {
       'It\'s another regular day in LA traffic, with nothing foreshadowing the events to come. '
           'Autonomous cars are not yet widespread, but those that have them are bored out of their minds. '
           '\n\nSeveral commuters have downloaded an app to communicate with strangers while in traffic, and they begin to filter into a random lobby.',
+  'South Beach, Miami':
+      'A gorgeous group of beach-goers and tourists are strolling and jogging along the emerald Atlantic coast. All of a sudden, there is some '
+          'commotion in the distance, and the lifeguard starts blowing his whistle frantically.',
+  'The Nightclub':
+      'The music is pounding at an upscale venue. Everyone is having fun on the rooftop, some dancing, some jumping in the pool. Some, mysteriously gazing '
+          'at the city views. \n\nAt the entrace, out of sight from almost everyone one undercover FBI agent briefly flashes his badge at the bouncer.',
+  'The Heist':
+      'They have spent months preparing for this. Several members are crawling through the vents, other trudging through the sewers. All determined - several '
+          'million dollars are at stake. As they near their target, a blinking light on their comms indicate that text communication is a go.',
+  'The Island':
+      'Rubbing the sleep from their eyes, a group of people wake up on a beach. A cursory glance across the perimeter indicates they are on a medium-sized island '
+          'with a mountain in the middle. No one remembers how they got there, but one thing is certain...'
 };
 
 var exampleCharacters = {

@@ -269,6 +269,9 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
             ),
           ),
           SizedBox(height: 20),
+          Text(
+              '${data['words'].length}/${data['rules']['collectionWordLimit']} submitted'),
+          SizedBox(height: 20),
           Container(
             height: 80,
             width: 240,
@@ -633,7 +636,13 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
       words.add(
         Container(
           height: 30,
-          child: Center(child: Text(v)),
+          width: 100,
+          child: Center(
+            child: AutoSizeText(
+              v,
+              maxLines: 2,
+            ),
+          ),
         ),
       );
       reject.add(
@@ -739,7 +748,7 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
               turnString,
               maxLines: 1,
               style: TextStyle(
-                fontSize: 24,
+                fontSize: 20,
               ),
             ),
             subString == '' ? Container() : SizedBox(height: 10),

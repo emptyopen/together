@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:shimmer/shimmer.dart';
 
 class RaisedGradientButton extends StatelessWidget {
   final Widget child;
@@ -78,14 +79,19 @@ class MainMenuButton extends StatelessWidget {
             size: 30,
           ),
           SizedBox(width: 10),
-          Container(
-            width: 110,
-            child: AutoSizeText(
-              title,
-              maxLines: 1,
-              style: TextStyle(
-                fontSize: 20,
-                color: textColor,
+          Shimmer.fromColors(
+            period: Duration(seconds: 3),
+            baseColor: textColor.withAlpha(200),
+            highlightColor: textColor.withAlpha(250),
+            child: Container(
+              width: 110,
+              child: AutoSizeText(
+                title,
+                maxLines: 1,
+                style: TextStyle(
+                  fontSize: 20,
+                  color: textColor,
+                ),
               ),
             ),
           ),

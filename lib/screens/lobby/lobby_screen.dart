@@ -27,6 +27,7 @@ import 'package:together/screens/three_crowns/three_crowns_screen.dart';
 import 'package:together/screens/rivers/rivers_screen.dart';
 import 'package:together/screens/plot_twist/plot_twist_screen.dart';
 import 'package:together/screens/charade_a_trois/charade_a_trois_screen.dart';
+import 'package:together/screens/in_sync/in_sync_screen.dart';
 
 import 'lobby_components.dart';
 
@@ -159,6 +160,16 @@ class _LobbyScreenState extends State<LobbyScreen> {
               slideTransition(
                 context,
                 CharadeATroisScreen(
+                  sessionId: sessionId,
+                  userId: userId,
+                  roomCode: widget.roomCode,
+                ),
+              );
+              break;
+            case 'In Sync':
+              slideTransition(
+                context,
+                InSyncScreen(
                   sessionId: sessionId,
                   userId: userId,
                   roomCode: widget.roomCode,
@@ -482,6 +493,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
           .data()['name'];
     }
 
+    data['phase'] = 'draw1';
     data['rules'] = rules;
     return data;
   }
@@ -888,6 +900,55 @@ class _LobbyScreenState extends State<LobbyScreen> {
     return data;
   }
 
+  setupInSync(data) async {
+    // verify that there are sufficient number of players
+    // must be divisible by number of teams in group of at most 3.
+    // i.e. 6 players and 3 teams: OK. 10 players and 3 teams: insufficient
+    // one team is: cooperative
+    if (data['playerIds'].length < 2 * data['rules']['numTeams']) {
+      setState(() {
+        startError = 'Need at least ${2 * data['rules']['numTeams']} players';
+      });
+      return;
+    }
+
+    // clear error if we are good to start
+    setState(() {
+      startError = '';
+    });
+
+    var playerIds = List.from(data['playerIds']);
+
+    // add player names
+    data['playerNames'] = {};
+    for (int i = 0; i < playerIds.length; i++) {
+      data['playerNames'][playerIds[i]] = (await FirebaseFirestore.instance
+              .collection('users')
+              .doc(playerIds[i])
+              .get())
+          .data()['name'];
+    }
+
+    // separate into two teams - captains of each team will be first player in each array
+    var teams = {};
+    for (int i = 0; i < data['rules']['numTeams']; i++) {
+      teams['team$i'] = [];
+    }
+    playerIds.shuffle();
+    while (playerIds.length > 0) {
+      for (int i = 0; i < data['rules']['numTeams']; i++) {
+        if (playerIds.length <= 0) {
+          break;
+        }
+        teams['team$i'].add(playerIds.last);
+        playerIds.removeLast();
+      }
+    }
+    data['teams'] = teams;
+
+    return data;
+  }
+
   startGame(data) async {
     // initialize final values/rules for games
     switch (gameName) {
@@ -917,6 +978,10 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
       case 'Charáde à Trois':
         data = await setupCharadeATrois(data);
+        break;
+
+      case 'In Sync':
+        data = await setupInSync(data);
         break;
     }
 
@@ -1263,6 +1328,33 @@ class _LobbyScreenState extends State<LobbyScreen> {
           ],
         );
         break;
+      case 'In Sync':
+        return Column(
+          children: <Widget>[
+            RulesContainer(rules: <Widget>[
+              Text(
+                'Number of Teams:',
+                style: TextStyle(fontSize: 14),
+              ),
+              Text(
+                rules['numTeams'].toString(),
+                style: TextStyle(fontSize: 18),
+              ),
+            ]),
+            SizedBox(height: 5),
+            RulesContainer(rules: <Widget>[
+              Text(
+                'Round Time Limit:',
+                style: TextStyle(fontSize: 14),
+              ),
+              Text(
+                rules['roundTimeLimit'].toString(),
+                style: TextStyle(fontSize: 18),
+              ),
+            ]),
+          ],
+        );
+        break;
       default:
         return Text('Unknown game');
     }
@@ -1535,6 +1627,12 @@ class _LobbyScreenState extends State<LobbyScreen> {
                             case 'Plot Twist':
                               return PlotTwistScreenHelp();
                               break;
+                            case 'Charáde à Trois':
+                              return CharadeATroisScreenHelp();
+                              break;
+                            case 'In Sync':
+                              return InSyncScreenHelp();
+                              break;
                           }
                           return Text('tell Matt you got here: 1');
                         },
@@ -1613,7 +1711,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                                     child: Text(
                                       'Add the gang',
                                       style: TextStyle(
-                                        color: Colors.white,
+                                        color: Colors.black,
                                         fontSize: 14,
                                       ),
                                     ),

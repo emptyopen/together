@@ -103,9 +103,11 @@ checkUserInGame({String userId, String sessionId = ''}) async {
 }
 
 getDefaultRules(String gameName) {
+  final userId = FirebaseAuth.instance.currentUser.uid;
   switch (gameName) {
     case 'The Hunt':
       return {
+        'turn': userId,
         'locations': ['Casino', 'Pirate Ship', 'Coal Mine', 'University'],
         'numSpies': 1,
         'accusationsPerTurn': 1, // accusations allowed per turn
@@ -115,6 +117,7 @@ getDefaultRules(String gameName) {
       break;
     case 'Abstract':
       return {
+        'turn': 'green',
         'numTeams': 2,
         'turnTimer': 30,
         'generalWordsOn': true,
@@ -124,17 +127,21 @@ getDefaultRules(String gameName) {
       break;
     case 'Bananaphone':
       return {
+        'phase': 'draw1',
+        'round': 0,
         'numRounds': 2,
         'numDrawDescribe': 2,
       };
       break;
     case 'Three Crowns':
       return {
+        'turn': userId,
         'minWordLength': 4,
         'maxWordLength': 7,
       };
     case 'Rivers':
       return {
+        'turn': userId,
         'cardRange': 100,
         'handSize': 7,
       };
@@ -152,6 +159,12 @@ getDefaultRules(String gameName) {
         'collectionWordLimit': 40,
         'collectionTimeLimit': 300,
         'roundTimeLimit': 60,
+      };
+      break;
+    case 'In Sync':
+      return {
+        'numTeams': 1,
+        'roundTimeLimit': 180,
       };
       break;
   }
@@ -200,26 +213,7 @@ createGame(BuildContext context, String game, String password, bool pop,
     'leader': userId,
     'dateCreated': DateTime.now(),
   };
-  switch (game) {
-    case 'The Hunt':
-      sessionContents['turn'] = userId;
-      break;
-    case 'Abstract':
-      sessionContents['turn'] = 'green';
-      break;
-    case 'Bananaphone':
-      sessionContents['phase'] = 'draw1';
-      sessionContents['round'] = 0;
-      break;
-    case 'Three Crowns':
-      sessionContents['turn'] = userId;
-      break;
-    case 'Rivers':
-      sessionContents['turn'] = userId;
-      break;
-    default:
-      break;
-  }
+
   var result = await FirebaseFirestore.instance
       .collection('sessions')
       .add(sessionContents);

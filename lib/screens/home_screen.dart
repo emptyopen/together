@@ -72,6 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
     Color colorRivers = Colors.lightBlue;
     Color colorPlotTwist = Colors.pink;
     Color colorCharadeATrois = Colors.indigoAccent;
+    Color colorInSync = Colors.orange;
     double intervalLength = 25.0;
     return Container(
       child: Column(
@@ -81,14 +82,14 @@ class _HomeScreenState extends State<HomeScreen> {
             children: <Widget>[
               SizedBox(width: intervalLength),
               QuickStartButton(
-                gameName: 'The Hunt',
-                subtitle: 'Spies vs. Citizens!',
+                gameName: 'In Sync',
+                subtitle: 'Coming soon!',
                 icon: Icon(
-                  MdiIcons.incognito,
-                  color: colorHunt,
+                  MdiIcons.headCheck,
+                  color: colorInSync,
                   size: 30,
                 ),
-                minPlayers: 3,
+                minPlayers: 2,
               ),
               SizedBox(width: intervalLength),
               QuickStartButton(
@@ -144,6 +145,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   size: 30,
                 ),
                 minPlayers: 4,
+              ),
+              SizedBox(width: intervalLength),
+              QuickStartButton(
+                gameName: 'The Hunt',
+                subtitle: 'Spies vs. Citizens!',
+                icon: Icon(
+                  MdiIcons.incognito,
+                  color: colorHunt,
+                  size: 30,
+                ),
+                minPlayers: 3,
               ),
               SizedBox(width: intervalLength),
               QuickStartButton(
@@ -500,6 +512,9 @@ class _LobbyDialogState extends State<LobbyDialog> {
         color = Colors.indigoAccent;
         icon = Icon(MdiIcons.dramaMasks, color: color);
         break;
+      case 'In Sync':
+        color = Colors.orange;
+        icon = Icon(MdiIcons.headCheck, color: color);
     }
     return Row(
       children: <Widget>[
@@ -546,6 +561,7 @@ class _LobbyDialogState extends State<LobbyDialog> {
                       'Rivers',
                       'Plot Twist',
                       'Charáde à Trois',
+                      'In Sync',
                     ].map<DropdownMenuItem<String>>((String value) {
                       return DropdownMenuItem<String>(
                         value: value,

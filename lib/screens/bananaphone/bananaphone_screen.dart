@@ -437,7 +437,6 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
   }
 
   submitDrawing(data) async {
-    data = data.data;
     // send pointsList to Firestore sessions collection
     var promptIndex = getPromptIndex(data);
     var jsonPointsList = listPointsToJson(pointsList); // to string
@@ -804,7 +803,6 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
   }
 
   submitDescription(data) async {
-    data = data.data;
     var promptIndex = getPromptIndex(data);
 
     // send pointsList to Firestore sessions collection
@@ -861,11 +859,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
 
     T.transact(data);
 
-    setState(() {
-      descriptionController.text = '';
-      // clear drawing
-      pointsList.clear();
-    });
+    print('pointslist $pointsList');
   }
 
   indexUpdateCallback(String phase, int promptIndex, data) {
@@ -1111,8 +1105,6 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
   }
 
   submitVotes(data) async {
-    data = data.data;
-
     // check if all phases were voted on
     if (votes.length < (data['rules']['numDrawDescribe'] == 2 ? 4 : 6)) {
       // iterate over phases, add missing phases to list
@@ -1164,12 +1156,12 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
     // update voted status
     var playerIndex = data['playerIds'].indexOf(widget.userId);
     data['votes'][playerIndex] = true;
-    print('hi');
 
     // check if all votes are in
     var sum = scores.reduce((a, b) => a + b);
     var expectedSum = data['playerIds'].length *
         (data['rules']['numDrawDescribe'] == 2 ? 4 : 6);
+    print('sum: $sum, expected sum: ${expectedSum * data['round']}');
     if (sum >= expectedSum * data['round']) {
       // if so, check if there is another round
       // new round = increment round and reset all submissions
@@ -1261,7 +1253,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
           child: Text('Waiting on the slowpokes...'));
     }
 
-    return TogetherScrollView(
+    return SingleChildScrollView(
       child: Column(
         children: <Widget>[
           Stack(
@@ -1453,20 +1445,23 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
                 child: data['phase'] == 'draw1' ||
                         data['phase'] == 'draw2' ||
                         data['phase'] == 'draw3'
-                    ? Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          SizedBox(height: 10),
-                          getStatus(data),
-                          SizedBox(height: 10),
-                          getUserAction(data),
-                          SizedBox(height: 5),
-                        ],
+                    ? SingleChildScrollView(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            SizedBox(height: 10),
+                            getStatus(data),
+                            SizedBox(height: 10),
+                            getUserAction(data),
+                            SizedBox(height: 5),
+                          ],
+                        ),
                       )
-                    : TogetherScrollView(
+                    : SingleChildScrollView(
                         child: data['phase'] == 'scoreboard'
                             ? getScoreboard(data)
                             : Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: <Widget>[
                                   SizedBox(height: 10),
                                   getStatus(data),

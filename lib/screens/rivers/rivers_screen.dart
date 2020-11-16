@@ -267,6 +267,96 @@ class _RiversScreenState extends State<RiversScreen> {
     T.transact(data);
   }
 
+  clickRiverCard(data, pileName) {
+    List<Widget> lastThreeRiverCards = [];
+    if (data[pileName].length >= 3) {
+      lastThreeRiverCards.add(
+        Positioned(
+          top: 120,
+          right: 120,
+          child: Opacity(
+            opacity: 0.4,
+            child: RiversCard(
+              value: data[pileName][data[pileName].length - 3].toString(),
+              clickable: false,
+              isCenter: true,
+              callback: () {},
+            ),
+          ),
+        ),
+      );
+    }
+    if (data[pileName].length >= 2) {
+      lastThreeRiverCards.add(
+        Positioned(
+          top: 60,
+          right: 60,
+          child: Opacity(
+            opacity: 0.7,
+            child: RiversCard(
+              value: data[pileName][data[pileName].length - 2].toString(),
+              clickable: false,
+              isCenter: true,
+              callback: () {},
+            ),
+          ),
+        ),
+      );
+    }
+    lastThreeRiverCards.add(
+      Positioned(
+        top: 0,
+        right: 0,
+        child: Opacity(
+          opacity: 1,
+          child: RiversCard(
+            value: data[pileName].last.toString(),
+            clickable: false,
+            isCenter: true,
+            callback: () {},
+          ),
+        ),
+      ),
+    );
+    if (clickedHandCard == -1) {
+      // show latest cards in dialogue
+      showDialog<Null>(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Last 3 cards:'),
+            content: Container(
+              height: 250,
+              width: 200,
+              child: Stack(
+                children: lastThreeRiverCards,
+              ),
+            ),
+            actions: <Widget>[
+              FlatButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
+    } else if (cardIsValidForPile(data, pileName, clickedHandCard)) {
+      playCard(
+        data,
+        pileName,
+        clickedHandCard,
+      );
+    } else {
+      _scaffoldKey.currentState.showSnackBar(SnackBar(
+        content: Text('Not a valid pile!'),
+        duration: Duration(seconds: 2),
+      ));
+    }
+  }
+
   getAscendPiles(data) {
     bool ascend1Clickable = false;
     bool ascend2Clickable = false;
@@ -307,24 +397,7 @@ class _RiversScreenState extends State<RiversScreen> {
               extraClickable: ascend1ExtraClickable,
               isCenter: true,
               callback: () {
-                if (clickedHandCard == -1) {
-                  _scaffoldKey.currentState.showSnackBar(SnackBar(
-                    content: Text('No card selected!'),
-                    duration: Duration(seconds: 2),
-                  ));
-                } else if (cardIsValidForPile(
-                    data, 'ascendPile1', clickedHandCard)) {
-                  playCard(
-                    data,
-                    'ascendPile1',
-                    clickedHandCard,
-                  );
-                } else {
-                  _scaffoldKey.currentState.showSnackBar(SnackBar(
-                    content: Text('Not a valid pile!'),
-                    duration: Duration(seconds: 2),
-                  ));
-                }
+                clickRiverCard(data, 'ascendPile1');
               },
             ),
             SizedBox(width: 40),
@@ -334,24 +407,7 @@ class _RiversScreenState extends State<RiversScreen> {
               extraClickable: ascend2ExtraClickable,
               isCenter: true,
               callback: () {
-                if (clickedHandCard == -1) {
-                  _scaffoldKey.currentState.showSnackBar(SnackBar(
-                    content: Text('No card selected!'),
-                    duration: Duration(seconds: 2),
-                  ));
-                } else if (cardIsValidForPile(
-                    data, 'ascendPile2', clickedHandCard)) {
-                  playCard(
-                    data,
-                    'ascendPile2',
-                    clickedHandCard,
-                  );
-                } else {
-                  _scaffoldKey.currentState.showSnackBar(SnackBar(
-                    content: Text('Not a valid pile!'),
-                    duration: Duration(seconds: 2),
-                  ));
-                }
+                clickRiverCard(data, 'ascendPile2');
               },
             ),
             SizedBox(width: 10),
@@ -405,24 +461,7 @@ class _RiversScreenState extends State<RiversScreen> {
               extraClickable: descend1ExtraClickable,
               isCenter: true,
               callback: () {
-                if (clickedHandCard == -1) {
-                  _scaffoldKey.currentState.showSnackBar(SnackBar(
-                    content: Text('No card selected!'),
-                    duration: Duration(seconds: 2),
-                  ));
-                } else if (cardIsValidForPile(
-                    data, 'descendPile1', clickedHandCard)) {
-                  playCard(
-                    data,
-                    'descendPile1',
-                    clickedHandCard,
-                  );
-                } else {
-                  _scaffoldKey.currentState.showSnackBar(SnackBar(
-                    content: Text('Not a valid pile!'),
-                    duration: Duration(seconds: 2),
-                  ));
-                }
+                clickRiverCard(data, 'descendPile1');
               },
             ),
             SizedBox(width: 40),
@@ -432,24 +471,7 @@ class _RiversScreenState extends State<RiversScreen> {
               extraClickable: descend2ExtraClickable,
               isCenter: true,
               callback: () {
-                if (clickedHandCard == -1) {
-                  _scaffoldKey.currentState.showSnackBar(SnackBar(
-                    content: Text('No card selected!'),
-                    duration: Duration(seconds: 2),
-                  ));
-                } else if (cardIsValidForPile(
-                    data, 'descendPile2', clickedHandCard)) {
-                  playCard(
-                    data,
-                    'descendPile2',
-                    clickedHandCard,
-                  );
-                } else {
-                  _scaffoldKey.currentState.showSnackBar(SnackBar(
-                    content: Text('Not a valid pile!'),
-                    duration: Duration(seconds: 2),
-                  ));
-                }
+                clickRiverCard(data, 'descendPile2');
               },
             ),
             SizedBox(width: 10),
