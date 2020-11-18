@@ -28,8 +28,10 @@ import 'package:together/screens/rivers/rivers_screen.dart';
 import 'package:together/screens/plot_twist/plot_twist_screen.dart';
 import 'package:together/screens/charade_a_trois/charade_a_trois_screen.dart';
 import 'package:together/screens/in_sync/in_sync_screen.dart';
+import 'package:together/services/firestore.dart';
 
 import 'lobby_components.dart';
+import 'lobby_services.dart';
 
 class LobbyScreen extends StatefulWidget {
   LobbyScreen({Key key, this.roomCode}) : super(key: key);
@@ -57,6 +59,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
   bool willVibrate3 = true;
   // final player = new AudioCache(prefix: 'sounds/');
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
+  var T;
 
   @override
   void initState() {
@@ -207,36 +210,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
         });
       }
     }).catchError((e) => print('error fetching data: $e'));
-  }
-
-  kickPlayer(String playerId) async {
-    // remove playerId from session
-    var data = (await FirebaseFirestore.instance
-            .collection('sessions')
-            .doc(sessionId)
-            .get())
-        .data();
-    var currPlayers = data['playerIds'];
-    currPlayers.removeWhere((item) => item == playerId);
-    await FirebaseFirestore.instance
-        .collection('sessions')
-        .doc(sessionId)
-        .update({'playerIds': currPlayers});
-  }
-
-  kickSpectator(String spectatorId) async {
-    // remove playerId from session
-    var data = (await FirebaseFirestore.instance
-            .collection('sessions')
-            .doc(sessionId)
-            .get())
-        .data();
-    var currSpecators = data['spectatorIds'];
-    currSpecators.removeWhere((item) => item == spectatorId);
-    await FirebaseFirestore.instance
-        .collection('sessions')
-        .doc(sessionId)
-        .update({'spectatorIds': currSpecators});
+    T = Transactor(sessionId: sessionId);
   }
 
   setupTheHunt(data) async {
@@ -676,6 +650,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
     data['ascendPile2'] = [1];
     data['descendPile1'] = [data['rules']['cardRange']];
     data['descendPile2'] = [data['rules']['cardRange']];
+    data['turn'] = data['teams'][0]['players'][0];
 
     return data;
   }
@@ -824,23 +799,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
           .data()['name'];
     }
 
-    // separate into two teams - captains of each team will be first player in each array
-    var teams = {};
-    for (int i = 0; i < data['rules']['numTeams']; i++) {
-      teams['team$i'] = [];
-    }
-    playerIds.shuffle();
-    while (playerIds.length > 0) {
-      for (int i = 0; i < data['rules']['numTeams']; i++) {
-        if (playerIds.length <= 0) {
-          break;
-        }
-        teams['team$i'].add(playerIds.last);
-        playerIds.removeLast();
-      }
-    }
-    data['teams'] = teams;
-
     // initialize words (generate if not user input)
     data['words'] = [];
     data['expirationTime'] = DateTime.now()
@@ -932,7 +890,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
     // separate into two teams - captains of each team will be first player in each array
     var teams = {};
     for (int i = 0; i < data['rules']['numTeams']; i++) {
-      teams['team$i'] = [];
+      teams[i] = [];
     }
     playerIds.shuffle();
     while (playerIds.length > 0) {
@@ -940,7 +898,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
         if (playerIds.length <= 0) {
           break;
         }
-        teams['team$i'].add(playerIds.last);
+        teams[i].add(playerIds.last);
         playerIds.removeLast();
       }
     }
@@ -1360,96 +1318,120 @@ class _LobbyScreenState extends State<LobbyScreen> {
     }
   }
 
-  Widget _getPlayers(data) {
-    var playerIds = data['playerIds'];
-    return Column(
-      children: [
-        ListView.builder(
-            physics: NeverScrollableScrollPhysics(),
-            shrinkWrap: true,
-            itemCount: playerIds.length,
-            itemBuilder: (context, index) {
-              return FutureBuilder(
-                  future: FirebaseFirestore.instance
-                      .collection('users')
-                      .doc(playerIds[index])
-                      .get(),
-                  builder: (context, snapshot) {
-                    if (!snapshot.hasData) {
-                      return Container();
-                    }
-                    return Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+  Widget _getTeams(data) {
+    var teams = data['teams'];
+
+    List<Widget> teamWidgets = [];
+    teams.asMap().forEach((i, v) {
+      List<Widget> playerWidgets = [];
+      v['players'].forEach((playerId) {
+        // print('adding future for $playerId');
+        playerWidgets.add(FutureBuilder(
+            future: FirebaseFirestore.instance
+                .collection('users')
+                .doc(playerId)
+                .get(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return Container();
+              }
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Text(
+                    snapshot.data['name'],
+                    style: TextStyle(
+                      fontSize: 20,
+                      color: userId == playerId
+                          ? Theme.of(context).primaryColor
+                          : Theme.of(context).highlightColor,
+                    ),
+                  ),
+                  Text(
+                    playerId == data['leader'] ? ' (leader) ' : '',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                  userId == data['leader'] && playerId == data['leader']
+                      ? SizedBox(height: 30)
+                      : Container(),
+                  userId == data['leader'] && playerId != data['leader']
+                      ? Row(
                           children: <Widget>[
-                            Text(
-                              snapshot.data['name'],
-                              style: TextStyle(
-                                fontSize: 20,
-                                color: userId == playerIds[index]
-                                    ? Theme.of(context).primaryColor
-                                    : Theme.of(context).highlightColor,
+                            SizedBox(width: 20),
+                            GestureDetector(
+                              child: Icon(
+                                MdiIcons.accountRemove,
+                                size: 20,
+                                color: Colors.redAccent,
                               ),
+                              onTap: () => kickPlayer(data, playerId, T),
                             ),
-                            Text(
-                              playerIds[index] == data['leader']
-                                  ? ' (glorious leader) '
-                                  : '',
-                              style: TextStyle(fontSize: 14),
-                            ),
-                            userId == data['leader'] &&
-                                    playerIds[index] == data['leader']
-                                ? SizedBox(height: 30)
-                                : Container(),
-                            userId == data['leader'] &&
-                                    playerIds[index] != data['leader']
-                                ? Row(
-                                    children: <Widget>[
-                                      SizedBox(width: 20),
-                                      GestureDetector(
-                                        child: Icon(
-                                          MdiIcons.accountRemove,
-                                          size: 20,
-                                          color: Colors.redAccent,
-                                        ),
-                                        onTap: () =>
-                                            kickPlayer(playerIds[index]),
-                                      ),
-                                    ],
-                                  )
-                                : Container(),
+                          ],
+                        )
+                      : Container(),
+                ],
+              );
+            }));
+      });
+
+      bool playerOnTeam = v['players'].contains(userId);
+      bool playerIsTeamLeader = false;
+      if (playerOnTeam) {
+        if (v['players'][0] == userId) {
+          playerIsTeamLeader = true;
+        }
+      }
+
+      teamWidgets.add(
+        Column(
+          children: [
+            Text(
+              'Team ${i + 1}',
+              style: TextStyle(
+                fontSize: 24,
+              ),
+            ),
+            PageBreak(width: 50),
+            Column(children: playerWidgets),
+            SizedBox(height: 10),
+            playerOnTeam
+                ? !playerIsTeamLeader
+                    ? RaisedGradientButton(
+                        height: 25,
+                        width: 110,
+                        child: Text('Claim throne'),
+                        onPressed: () {
+                          claimThrone(data, userId, T);
+                        },
+                        gradient: LinearGradient(
+                          colors: [
+                            Theme.of(context).primaryColor,
+                            Theme.of(context).accentColor,
                           ],
                         ),
+                      )
+                    : Container()
+                : RaisedGradientButton(
+                    height: 25,
+                    width: 100,
+                    child: Text('Join team'),
+                    onPressed: () {
+                      joinTeam(data, i, userId, T);
+                    },
+                    gradient: LinearGradient(
+                      colors: [
+                        Theme.of(context).primaryColor,
+                        Theme.of(context).accentColor,
                       ],
-                    );
-                  });
-            }),
-        SizedBox(height: 10),
-      ],
-    );
-  }
+                    ),
+                  ),
+            SizedBox(height: 30),
+          ],
+        ),
+      );
+    });
 
-  shufflePlayers(data) async {
-    var playerOrder = data['playerIds'];
-    playerOrder.shuffle();
-    await FirebaseFirestore.instance
-        .collection('sessions')
-        .doc(sessionId)
-        .update({'playerIds': playerOrder, 'turn': playerOrder[0]});
-  }
-
-  addTheGang(data) async {
-    data['playerIds'].add('F3cbzZifAqWWM2eyab6x6WvdkyL2');
-    data['playerIds'].add('LoTLbkqfQWcFMzjrYGEne1JhN7j2');
-    data['playerIds'].add('h4BrcG93XgYsBcGpH7q2WySK8rd2');
-    data['playerIds'].add('z5SqbMUvLVb7CfSxQz4OEk9VyDE3');
-    data['playerIds'].add('djawU3QzVCXkLq32mlmd6W81CqK2');
-    await FirebaseFirestore.instance
-        .collection('sessions')
-        .doc(sessionId)
-        .set(data);
+    return Column(children: teamWidgets);
   }
 
   Widget _getSpectators(data) {
@@ -1501,8 +1483,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
                                     size: 16,
                                     color: Colors.redAccent,
                                   ),
-                                  onTap: () =>
-                                      kickSpectator(spectatorIds[index]),
+                                  onTap: () => kickSpectator(
+                                      data, spectatorIds[index], T),
                                 ),
                               ],
                             )
@@ -1551,6 +1533,66 @@ class _LobbyScreenState extends State<LobbyScreen> {
         onPressed: () {
           toggleSpectator(data);
         });
+  }
+
+  _getLeaderButtons(data) {
+    return Column(
+      children: [
+        Text('Leader Buttons:'),
+        PageBreak(width: 50),
+        userId == data['leader'] && !isStarting
+            ? Column(
+                children: <Widget>[
+                  RaisedGradientButton(
+                    child: Text(
+                      'Shuffle Teams',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                      ),
+                    ),
+                    onPressed: () => shuffleTeams(data, T),
+                    height: 25,
+                    width: 120,
+                    gradient: LinearGradient(
+                      colors: <Color>[
+                        Theme.of(context).primaryColor,
+                        Theme.of(context).accentColor,
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                ],
+              )
+            : Container(),
+        // if markus, add the gang
+        userId == 'XMFwripPojYlcvagoiDEmyoxZyK2' && !isStarting
+            ? Column(
+                children: <Widget>[
+                  RaisedGradientButton(
+                    child: Text(
+                      'Add the gang',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 14,
+                      ),
+                    ),
+                    onPressed: () => addTheGang(data, T),
+                    height: 25,
+                    width: 120,
+                    gradient: LinearGradient(
+                      colors: <Color>[
+                        Colors.green[200],
+                        Colors.green[100],
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                ],
+              )
+            : Container(),
+      ],
+    );
   }
 
   @override
@@ -1654,7 +1696,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                         Text(
                           'Room Code:',
                           style: TextStyle(
-                            fontSize: 24,
+                            fontSize: 20,
                           ),
                         ),
                         PageBreak(
@@ -1663,72 +1705,15 @@ class _LobbyScreenState extends State<LobbyScreen> {
                         Text(
                           widget.roomCode,
                           style: TextStyle(
-                            fontSize: 34,
-                            color: Theme.of(context).primaryColor,
+                            fontSize: 64,
+                            color: Theme.of(context).highlightColor,
                           ),
                         ),
                         SizedBox(
                           height: 30,
                         ),
-                        Text(
-                          'Players:',
-                          style: TextStyle(
-                            fontSize: 24,
-                          ),
-                        ),
-                        PageBreak(width: 50),
-                        _getPlayers(data),
-                        userId == data['leader'] && !isStarting
-                            ? Column(
-                                children: <Widget>[
-                                  RaisedGradientButton(
-                                    child: Text(
-                                      'Shuffle Players',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                    onPressed: () => shufflePlayers(data),
-                                    height: 25,
-                                    width: 120,
-                                    gradient: LinearGradient(
-                                      colors: <Color>[
-                                        Theme.of(context).primaryColor,
-                                        Theme.of(context).accentColor,
-                                      ],
-                                    ),
-                                  ),
-                                  SizedBox(height: 20),
-                                ],
-                              )
-                            : Container(),
-                        // if markus, add the gang
-                        userId == 'XMFwripPojYlcvagoiDEmyoxZyK2' && !isStarting
-                            ? Column(
-                                children: <Widget>[
-                                  RaisedGradientButton(
-                                    child: Text(
-                                      'Add the gang',
-                                      style: TextStyle(
-                                        color: Colors.black,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                    onPressed: () => addTheGang(data),
-                                    height: 25,
-                                    width: 120,
-                                    gradient: LinearGradient(
-                                      colors: <Color>[
-                                        Colors.green[200],
-                                        Colors.green[100],
-                                      ],
-                                    ),
-                                  ),
-                                  SizedBox(height: 20),
-                                ],
-                              )
-                            : Container(),
+                        _getTeams(data),
+                        _getLeaderButtons(data),
                         Text(
                           'Spectators:',
                           style: TextStyle(

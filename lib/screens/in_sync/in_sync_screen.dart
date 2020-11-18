@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:together/services/services.dart';
 import 'package:together/services/firestore.dart';
 import 'package:together/help_screens/help_screens.dart';
+import 'package:together/components/end_game.dart';
 
 class InSyncScreen extends StatefulWidget {
   InSyncScreen({this.sessionId, this.userId, this.roomCode});
@@ -56,6 +57,23 @@ class _InSyncScreenState extends State<InSyncScreen> {
     setState(() {
       isSpectator = data['spectatorIds'].contains(widget.userId);
     });
+  }
+
+  getGameboard(data) {
+    return Column(
+      children: [
+        Text('in sync'),
+        SizedBox(height: 20),
+        widget.userId == data['leader']
+            ? EndGameButton(
+                sessionId: widget.sessionId,
+                fontSize: 14,
+                height: 30,
+                width: 100,
+              )
+            : Container(),
+      ],
+    );
   }
 
   @override
@@ -114,7 +132,7 @@ class _InSyncScreenState extends State<InSyncScreen> {
                 ),
               ],
             ),
-            body: Text('in sync'));
+            body: getGameboard(data));
       },
     );
   }

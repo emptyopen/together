@@ -102,11 +102,81 @@ checkUserInGame({String userId, String sessionId = ''}) async {
   }
 }
 
-getDefaultRules(String gameName) {
+getDefaultTeams(String gameName) {
   final userId = FirebaseAuth.instance.currentUser.uid;
   switch (gameName) {
     case 'The Hunt':
-      return {
+      return [
+        {
+          'players': [userId]
+        },
+      ];
+      break;
+    case 'Abstract':
+      return [
+        {
+          'players': [userId]
+        },
+        {'players': []},
+      ];
+      break;
+    case 'Bananaphone':
+      return [
+        {
+          'players': [userId]
+        },
+      ];
+      break;
+    case 'Three Crowns':
+      return [
+        {
+          'players': [userId]
+        },
+      ];
+      break;
+    case 'Rivers':
+      return [
+        {
+          'players': [userId]
+        },
+      ];
+      break;
+    case 'Plot Twist':
+      return [
+        {
+          'players': [userId]
+        },
+      ];
+      break;
+    case 'Charáde à Trois':
+      return [
+        {
+          'players': [userId]
+        },
+        {'players': []},
+      ];
+      break;
+    case 'In Sync':
+      return [
+        {
+          'players': [userId]
+        },
+      ];
+      break;
+  }
+}
+
+getDefaultRules(String gameName) {
+  final userId = FirebaseAuth.instance.currentUser.uid;
+  Map<String, dynamic> rules = {
+    'numTeams': 1,
+    'maxTeams': 1,
+    'maxTeamSize': 0,
+  };
+  Map<String, dynamic> addRules = {};
+  switch (gameName) {
+    case 'The Hunt':
+      addRules = {
         'turn': userId,
         'locations': ['Casino', 'Pirate Ship', 'Coal Mine', 'University'],
         'numSpies': 1,
@@ -116,9 +186,10 @@ getDefaultRules(String gameName) {
       };
       break;
     case 'Abstract':
-      return {
-        'turn': 'green',
+      addRules = {
         'numTeams': 2,
+        'maxTeams': 3,
+        'turn': 'green',
         'turnTimer': 30,
         'generalWordsOn': true,
         'locationsWordsOn': true,
@@ -126,7 +197,7 @@ getDefaultRules(String gameName) {
       };
       break;
     case 'Bananaphone':
-      return {
+      addRules = {
         'phase': 'draw1',
         'round': 0,
         'numRounds': 2,
@@ -134,27 +205,29 @@ getDefaultRules(String gameName) {
       };
       break;
     case 'Three Crowns':
-      return {
+      addRules = {
         'turn': userId,
         'minWordLength': 4,
         'maxWordLength': 7,
       };
+      break;
     case 'Rivers':
-      return {
+      addRules = {
         'turn': userId,
         'cardRange': 100,
         'handSize': 7,
       };
       break;
     case 'Plot Twist':
-      return {
+      addRules = {
         'location': 'The Elevator',
         'numNarrators': 1,
       };
       break;
     case 'Charáde à Trois':
-      return {
+      addRules = {
         'numTeams': 2,
+        'maxTeams': 0,
         'playerWords': true,
         'collectionWordLimit': 40,
         'collectionTimeLimit': 300,
@@ -162,12 +235,18 @@ getDefaultRules(String gameName) {
       };
       break;
     case 'In Sync':
-      return {
+      addRules = {
         'numTeams': 1,
+        'maxTeams': 0,
+        'maxTeamSize': 3,
         'roundTimeLimit': 180,
       };
       break;
   }
+  addRules.forEach((i, v) {
+    rules[i] = v;
+  });
+  return rules;
 }
 
 createGame(BuildContext context, String game, String password, bool pop,
@@ -202,11 +281,14 @@ createGame(BuildContext context, String game, String password, bool pop,
   // define initial rules per game
   Map<String, dynamic> defaultRules = getDefaultRules(game);
 
+  List defaultTeams = getDefaultTeams(game);
+
   var sessionContents = {
     'game': game,
     'rules': defaultRules,
     'password': password,
     'roomCode': _roomCode,
+    'teams': defaultTeams,
     'playerIds': [userId],
     'spectatorIds': [],
     'state': 'lobby',

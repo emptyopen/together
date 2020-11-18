@@ -103,7 +103,7 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
     var currentTeamIndex = data['turn']['teamTurn'];
     data['turn']['team${currentTeamIndex}Turn'] += 1;
     if (data['turn']['team${currentTeamIndex}Turn'] >=
-        data['teams']['team$currentTeamIndex'].length) {
+        data['teams'][currentTeamIndex]['players'].length) {
       data['turn']['team${currentTeamIndex}Turn'] = 0;
     }
 
@@ -213,7 +213,7 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
       });
       data['scores'].asMap().forEach((i, v) {
         if (data['scores'][i] == maxScore) {
-          data['teams']['team$i'].forEach((v) {
+          data['teams'][i]['players'].forEach((v) {
             incrementPlayerScore('charadeATrois', v);
           });
         }
@@ -590,10 +590,10 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
   getStatus(data) {
     var playerTeamIndex;
     var playerIndexForTeam;
-    data['teams'].forEach((k, v) {
-      if (v.contains(widget.userId)) {
-        playerTeamIndex = int.parse(k[k.length - 1]);
-        playerIndexForTeam = v.indexOf(widget.userId);
+    data['teams'].asMap().forEach((k, v) {
+      if (v['players'].contains(widget.userId)) {
+        playerTeamIndex = k;
+        playerIndexForTeam = v['players'].indexOf(widget.userId);
       }
     });
     String turnString = '';
@@ -616,7 +616,7 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
     var currentTeamIndex = data['turn']['teamTurn'];
     var currentPlayerIndex = data['turn']['team${currentTeamIndex}Turn'];
     var currentPlayerId =
-        data['teams']['team$currentTeamIndex'][currentPlayerIndex];
+        data['teams'][currentTeamIndex]['players'][currentPlayerIndex];
     String playerName = data['playerNames'][currentPlayerId];
     if (data['expirationTime'] == null && data['judgeList'].length != 0) {
       subString = '(waiting on judgement)';
@@ -852,14 +852,15 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
     var currentTeamIndex = data['turn']['teamTurn'];
     var currentPlayerIndex = data['turn']['team${currentTeamIndex}Turn'];
     var currentPlayerId =
-        data['teams']['team$currentTeamIndex'][currentPlayerIndex];
+        data['teams'][currentTeamIndex]['players'][currentPlayerIndex];
 
     var nextTeamIndex = currentTeamIndex + 1;
     if (nextTeamIndex >= data['rules']['numTeams']) {
       nextTeamIndex = 0;
     }
     var nextPlayerIndex = data['turn']['team${nextTeamIndex}Turn'];
-    var currentJudgeId = data['teams']['team$nextTeamIndex'][nextPlayerIndex];
+    var currentJudgeId =
+        data['teams'][nextTeamIndex]['players'][nextPlayerIndex];
 
     List<Widget> teams = [SizedBox(width: 15)];
     // iterate over teams, generate a column for each. indicate if current player or judge
@@ -871,7 +872,7 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
               color: currentTeamIndex == i ? Colors.blue : Colors.grey,
             ))
       ];
-      data['teams']['team$i'].forEach((v) {
+      data['teams'][i]['players'].forEach((v) {
         String playerName = data['playerNames'][v];
         if (widget.userId == v) {
           playerName = playerName + ' (you)';
@@ -922,10 +923,10 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
     }
     var playerTeamIndex;
     var playerIndexForTeam;
-    data['teams'].forEach((k, v) {
-      if (v.contains(widget.userId)) {
-        playerTeamIndex = int.parse(k[k.length - 1]);
-        playerIndexForTeam = v.indexOf(widget.userId);
+    data['teams'].asMap().forEach((k, v) {
+      if (v['players'].contains(widget.userId)) {
+        playerTeamIndex = k;
+        playerIndexForTeam = v['players'].indexOf(widget.userId);
       }
     });
     bool isPlayerTurn = false;
@@ -1060,7 +1061,7 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
     });
     data['scores'].asMap().forEach((i, v) {
       List<Widget> members = [];
-      data['teams']['team$i'].forEach((v) {
+      data['teams'][i]['players'].forEach((v) {
         members.add(Text(data['playerNames'][v]));
       });
       bool isWinner = false;
