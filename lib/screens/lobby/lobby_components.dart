@@ -5,6 +5,7 @@ import 'package:together/components/layouts.dart';
 
 import 'package:together/screens/plot_twist/plot_twist_services.dart';
 import 'lobby_services.dart';
+import 'package:together/services/firestore.dart';
 
 class EditRulesDialog extends StatefulWidget {
   EditRulesDialog({this.sessionId, this.game});
@@ -51,53 +52,6 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
             .doc(widget.sessionId)
             .get())
         .data();
-    // TODO: just pass in the data lol
-    // switch (widget.game) {
-    //   case 'The Hunt':
-    //     data['rules']['numSpies'] = sessionData['rules']['numSpies'];
-    //     data['rules']['locations'] = sessionData['rules']['locations'];
-    //     data['rules']['accusationsPerTurn'] =
-    //         sessionData['rules']['accusationsPerTurn'];
-    //     data['rules']['accusationCooldown'] =
-    //         sessionData['rules']['accusationCooldown'];
-    //     break;
-    //   case 'Abstract':
-    //     data['rules']['numTeams'] = sessionData['rules']['numTeams'];
-    //     data['rules']['turnTimer'] = sessionData['rules']['turnTimer'];
-    //     data['rules']['generalWordsOn'] = sessionData['rules']['generalWordsOn'];
-    //     data['rules']['peopleWordsOn'] = sessionData['rules']['peopleWordsOn'];
-    //     data['rules']['locationsWordsOn'] = sessionData['rules']['peopleWordsOn'];
-    //     break;
-    //   case 'Bananaphone':
-    //     data['rules']['numRounds'] = sessionData['rules']['numRounds'];
-    //     data['rules']['numDrawDescribe'] = sessionData['rules']['numDrawDescribe'];
-    //     break;
-    //   case 'Three Crowns':
-    //     data['rules']['minWordLength'] = sessionData['rules']['minWordLength'];
-    //     data['rules']['maxWordLength'] = sessionData['rules']['maxWordLength'];
-    //     break;
-    //   case 'Rivers':
-    //     data['rules']['cardRange'] = sessionData['rules']['cardRange'];
-    //     data['rules']['handSize'] = sessionData['rules']['handSize'];
-    //     break;
-    //   case 'Plot Twist':
-    //     data['rules']['location'] = sessionData['rules']['location'];
-    //     data['rules']['numNarrators'] = sessionData['rules']['numNarrators'];
-    //     break;
-    //   case 'Charáde à Trois':
-    //     data['rules']['numTeams'] = sessionData['rules']['numTeams'];
-    //     data['rules']['playerWords'] = sessionData['rules']['playerWords'];
-    //     data['rules']['collectionWordLimit'] =
-    //         sessionData['rules']['collectionWordLimit'];
-    //     data['rules']['collectionTimeLimit'] =
-    //         sessionData['rules']['collectionTimeLimit'];
-    //     data['rules']['roundTimeLimit'] = sessionData['rules']['roundTimeLimit'];
-    //     break;
-    //   case 'In Sync':
-    //     data['rules']['numTeams'] = sessionData['rules']['numTeams'];
-    //     data['rules']['roundTimer'] = sessionData['rules']['roundTimer'];
-    //     break;
-    // }
     if (widget.game == 'The Hunt') {
       getChosenLocations(sessionData);
     }
@@ -108,14 +62,26 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
 
   updateRules(data, rule, newValue) async {
     data['rules'][rule] = newValue;
+    var T = Transactor(sessionId: widget.sessionId);
 
-    if (data['teams'].length > data['rules']['numTeams']) {
+    // remove teams until existing teams equals numTeamsTeams, then distribute deleted players
+    List displacedPlayers = [];
+    while (data['teams'].length > data['rules']['numTeams']) {
       print('will redistribute');
+      displacedPlayers.addAll(data['teams'].last['players']);
+      data['teams'].removeLast();
     }
+    print('displaced $displacedPlayers');
+    displacedPlayers.forEach((v) {
+      data['playerIds'].remove(v);
+    });
+    addPlayers(data, displacedPlayers, T);
 
-    // if numTeams is bigger than existing teams, add teams
-    if (data['teams'].length < data['rules']['numTeams']) {
-      print('will add team');
+    // add teams until existing teams equals numTeams
+    while (data['teams'].length < data['rules']['numTeams']) {
+      data['teams'].add({
+        'players': [],
+      });
     }
 
     await FirebaseFirestore.instance
@@ -123,6 +89,7 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
         .doc(widget.sessionId)
         .update({
       'rules': data['rules'],
+      'teams': data['teams'],
     });
   }
 

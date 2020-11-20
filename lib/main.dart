@@ -16,12 +16,16 @@ void main() async {
 // rivers: show stacks history
 
 // next up:
+// sanity check after big updates: everything again
 // bananaphone: increment player score
-// sanity check after big updates:
 // BANANAPHONE BIG PROBLEM: one vote moves entire state to next round - should multiply, know the answer
 // also draw 2 seems to fail????
-// BIG: update lobby to allow exlicit team selection:
 // still need to make sure players joining lobby get added to the team correctly. in general, need to add/remove from teams as well as playerIds
+
+// BIG: update lobby to allow exlicit team selection - needs a couple more things:
+// - teams need to be added and deleted with rule changes
+// - players joining need to be added to teams
+// - when players are removed from the game they should be removed from teams as well. consolidate
 
 // MEDIUM: adjust abstract to use new team methodology
 
@@ -55,11 +59,11 @@ void main() async {
 // smash x x
 
 // TODO:
+// consolidation: move all "strings" and colors to constants, i.e. "charade a trois", Colors.cyan[700], etc.
 // big: consolidation of new game to simplified parameters
 // charade a trois: shimmer for high round scores
 // check if working: undo button not working in bananaphone 2nd+ drawings
 // arrow for togetherScrollView bugged permanent on the hunt screen end game with incorrect guess
-// consolidation: move all "strings" and colors to constants, i.e. "charade a trois", Colors.cyan[700], etc.
 // team selector: a few annoying bugs remaining with rapid touches
 // consolidate: single order of games for quick start and menu
 // abstract: ability to manually change teams (people can just join the team they want to be on?)

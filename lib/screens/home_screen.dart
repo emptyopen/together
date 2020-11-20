@@ -12,6 +12,7 @@ import '../services/authentication.dart';
 import 'package:together/components/buttons.dart';
 import 'package:together/components/marquee.dart';
 import 'package:together/components/info_box.dart';
+import 'package:together/services/firestore.dart';
 
 import 'settings_screen.dart';
 import 'achievements/achievements_screen.dart';
@@ -19,6 +20,7 @@ import 'package:together/screens/game_tools/the_scoreboard_screen.dart';
 import 'package:together/screens/game_tools/dice_and_coins_screen.dart';
 import 'package:together/screens/game_tools/team_selector_screen.dart';
 import 'lobby/lobby_screen.dart';
+import 'package:together/screens/lobby/lobby_services.dart';
 
 class HomeScreen extends StatefulWidget {
   HomeScreen({Key key, this.auth, this.userId, this.logoutCallback})
@@ -413,6 +415,7 @@ class _LobbyDialogState extends State<LobbyDialog> {
       if (event.docs.isNotEmpty) {
         var data = event.docs.single.data();
         String sessionId = event.docs.single.id;
+        var T = Transactor(sessionId: sessionId);
 
         // check password
         var correctPassword = data['password'];
@@ -434,7 +437,7 @@ class _LobbyDialogState extends State<LobbyDialog> {
         if (data['state'] == 'lobby') {
           if (!data['playerIds'].contains(userId) &&
               !data['spectatorIds'].contains(userId)) {
-            data['playerIds'].add(userId);
+            addPlayer(data, userId, T);
           }
         }
         // if game has started, either user is a player or will get added as a spectator
