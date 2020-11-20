@@ -5,6 +5,7 @@ import 'package:together/components/layouts.dart';
 
 import 'package:together/screens/plot_twist/plot_twist_services.dart';
 import 'lobby_services.dart';
+import 'package:together/services/firestore.dart';
 
 class EditRulesDialog extends StatefulWidget {
   EditRulesDialog({this.sessionId, this.game});
@@ -61,14 +62,26 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
 
   updateRules(data, rule, newValue) async {
     data['rules'][rule] = newValue;
+    var T = Transactor(sessionId: widget.sessionId);
 
-    if (data['teams'].length > data['rules']['numTeams']) {
+    // remove teams until existing teams equals numTeamsTeams, then distribute deleted players
+    List displacedPlayers = [];
+    while (data['teams'].length > data['rules']['numTeams']) {
       print('will redistribute');
+      displacedPlayers.addAll(data['teams'].last['players']);
+      data['teams'].removeLast();
     }
+    print('displaced $displacedPlayers');
+    displacedPlayers.forEach((v) {
+      data['playerIds'].remove(v);
+    });
+    addPlayers(data, displacedPlayers, T);
 
-    // if numTeams is bigger than existing teams, add teams
-    if (data['teams'].length < data['rules']['numTeams']) {
-      print('will add team');
+    // add teams until existing teams equals numTeams
+    while (data['teams'].length < data['rules']['numTeams']) {
+      data['teams'].add({
+        'players': [],
+      });
     }
 
     await FirebaseFirestore.instance
@@ -76,6 +89,7 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
         .doc(widget.sessionId)
         .update({
       'rules': data['rules'],
+      'teams': data['teams'],
     });
   }
 
