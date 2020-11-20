@@ -51,53 +51,6 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
             .doc(widget.sessionId)
             .get())
         .data();
-    // TODO: just pass in the data lol
-    // switch (widget.game) {
-    //   case 'The Hunt':
-    //     data['rules']['numSpies'] = sessionData['rules']['numSpies'];
-    //     data['rules']['locations'] = sessionData['rules']['locations'];
-    //     data['rules']['accusationsPerTurn'] =
-    //         sessionData['rules']['accusationsPerTurn'];
-    //     data['rules']['accusationCooldown'] =
-    //         sessionData['rules']['accusationCooldown'];
-    //     break;
-    //   case 'Abstract':
-    //     data['rules']['numTeams'] = sessionData['rules']['numTeams'];
-    //     data['rules']['turnTimer'] = sessionData['rules']['turnTimer'];
-    //     data['rules']['generalWordsOn'] = sessionData['rules']['generalWordsOn'];
-    //     data['rules']['peopleWordsOn'] = sessionData['rules']['peopleWordsOn'];
-    //     data['rules']['locationsWordsOn'] = sessionData['rules']['peopleWordsOn'];
-    //     break;
-    //   case 'Bananaphone':
-    //     data['rules']['numRounds'] = sessionData['rules']['numRounds'];
-    //     data['rules']['numDrawDescribe'] = sessionData['rules']['numDrawDescribe'];
-    //     break;
-    //   case 'Three Crowns':
-    //     data['rules']['minWordLength'] = sessionData['rules']['minWordLength'];
-    //     data['rules']['maxWordLength'] = sessionData['rules']['maxWordLength'];
-    //     break;
-    //   case 'Rivers':
-    //     data['rules']['cardRange'] = sessionData['rules']['cardRange'];
-    //     data['rules']['handSize'] = sessionData['rules']['handSize'];
-    //     break;
-    //   case 'Plot Twist':
-    //     data['rules']['location'] = sessionData['rules']['location'];
-    //     data['rules']['numNarrators'] = sessionData['rules']['numNarrators'];
-    //     break;
-    //   case 'Charáde à Trois':
-    //     data['rules']['numTeams'] = sessionData['rules']['numTeams'];
-    //     data['rules']['playerWords'] = sessionData['rules']['playerWords'];
-    //     data['rules']['collectionWordLimit'] =
-    //         sessionData['rules']['collectionWordLimit'];
-    //     data['rules']['collectionTimeLimit'] =
-    //         sessionData['rules']['collectionTimeLimit'];
-    //     data['rules']['roundTimeLimit'] = sessionData['rules']['roundTimeLimit'];
-    //     break;
-    //   case 'In Sync':
-    //     data['rules']['numTeams'] = sessionData['rules']['numTeams'];
-    //     data['rules']['roundTimer'] = sessionData['rules']['roundTimer'];
-    //     break;
-    // }
     if (widget.game == 'The Hunt') {
       getChosenLocations(sessionData);
     }
@@ -531,10 +484,10 @@ class EditRulesDropdown extends StatelessWidget {
             value: data['rules'][rule],
             iconSize: 24,
             elevation: 16,
-            style: TextStyle(color: Theme.of(context).primaryColor),
+            style: TextStyle(color: Theme.of(context).highlightColor),
             underline: Container(
               height: 2,
-              color: Theme.of(context).primaryColor,
+              color: Theme.of(context).highlightColor,
             ),
             onChanged: (newValue) {
               updateRules(data, rule, newValue);

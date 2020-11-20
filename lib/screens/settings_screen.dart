@@ -170,7 +170,6 @@ class _SettingsScreenState extends State<SettingsScreen>
               daysSince.compareTo(
                       Duration(days: sessionDeletionDaysThreshold)) >=
                   0) {
-            print('adding ${f.data()["roomCode"]}');
             sessionsToDelete.add(f.reference);
           }
         }
