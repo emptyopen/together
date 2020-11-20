@@ -56,10 +56,10 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
           //_showVerifyEmailSentDialog();
 
           // update users collection
-          FirebaseFirestore.instance
-              .collection('users')
-              .doc(userId)
-              .set({'name': _displayName});
+          FirebaseFirestore.instance.collection('users').doc(userId).set({
+            'name': _displayName,
+            'createdAt': DateTime.now(),
+          });
           print('Signed up user: $userId $_displayName');
           userId = await widget.auth.signIn(_email, _password);
         }
@@ -107,7 +107,7 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
         appBar: new AppBar(
           title: new Text('Together: Sign In'),
         ),
-        body: TogetherScrollView(
+        body: SingleChildScrollView(
           child: Center(
             child: Column(
               children: <Widget>[

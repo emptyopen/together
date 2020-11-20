@@ -8,6 +8,7 @@ import 'dart:math';
 import 'package:flutter/services.dart';
 // import 'package:audioplayers/audio_cache.dart';
 import 'package:string_similarity/string_similarity.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 
 import '../../components/buttons.dart';
 import '../../components/misc.dart';
@@ -17,6 +18,7 @@ import '../../models/models.dart';
 import '../three_crowns/three_crowns_services.dart';
 import '../plot_twist/plot_twist_services.dart';
 import 'package:together/screens/charade_a_trois/charade_a_trois_services.dart';
+import 'package:together/screens/in_sync/in_sync_services.dart';
 import 'package:together/help_screens/help_screens.dart';
 import 'package:together/constants/values.dart';
 import 'package:together/services/services.dart';
@@ -423,26 +425,14 @@ class _LobbyScreenState extends State<LobbyScreen> {
     // set greenAlreadyWon for ensuring rebuttal for orange/purple
     rules['greenAlreadyWon'] = false;
 
-    // initialize who is on which teams, and spymasters
-    var players = data['playerIds'];
-    players.shuffle();
-    if (rules['numTeams'] == 2) {
-      // divide playerIds into 2 teams
-      rules['greenTeam'] = players.sublist(0, players.length ~/ 2);
-      rules['greenLeader'] = players[0];
-      rules['orangeTeam'] =
-          players.sublist(players.length ~/ 2, players.length);
-      rules['orangeLeader'] = players[players.length ~/ 2];
-    } else {
-      // divide playerIds into 3 teams
-      rules['greenTeam'] = players.sublist(0, players.length ~/ 3);
-      rules['greenLeader'] = players[0];
-      rules['orangeTeam'] =
-          players.sublist(players.length ~/ 3, players.length ~/ 3 * 2);
-      rules['orangeLeader'] = players[players.length ~/ 3];
-      rules['purpleTeam'] =
-          players.sublist(players.length ~/ 3 * 2, players.length);
-      rules['purpleLeader'] = players[players.length ~/ 3 * 2];
+    // initialize who is on which teams, and leaders
+    data['greenTeam'] = data['teams'][0]['players'];
+    data['greenLeader'] = data['teams'][0]['players'][0];
+    data['orangeTeam'] = data['teams'][1]['players'];
+    data['orangeLeader'] = data['teams'][1]['players'][0];
+    if (rules['numTeams'] == 3) {
+      data['purpleTeam'] = data['teams'][2]['players'];
+      data['purpleLeader'] = data['teams'][2]['players'][0];
     }
 
     // initialize cumulative times
@@ -458,6 +448,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
     );
 
     // add player names
+    var players = data['playerIds'];
     data['playerNames'] = {};
     for (int i = 0; i < players.length; i++) {
       data['playerNames'][players[i]] = (await FirebaseFirestore.instance
@@ -469,6 +460,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
     data['phase'] = 'draw1';
     data['rules'] = rules;
+    data['turn'] = 'green';
+
     return data;
   }
 
@@ -859,27 +852,13 @@ class _LobbyScreenState extends State<LobbyScreen> {
   }
 
   setupInSync(data) async {
-    // verify that there are sufficient number of players
-    // must be divisible by number of teams in group of at most 3.
-    // i.e. 6 players and 3 teams: OK. 10 players and 3 teams: insufficient
-    // one team is: cooperative
-    if (data['playerIds'].length < 2 * data['rules']['numTeams']) {
-      setState(() {
-        startError = 'Need at least ${2 * data['rules']['numTeams']} players';
-      });
-      return;
-    }
-
-    // clear error if we are good to start
-    setState(() {
-      startError = '';
-    });
-
     var playerIds = List.from(data['playerIds']);
 
-    // add player names
+    // add player names and readiness
+    data['ready'] = {};
     data['playerNames'] = {};
     for (int i = 0; i < playerIds.length; i++) {
+      data['ready'][playerIds[i]] = false;
       data['playerNames'][playerIds[i]] = (await FirebaseFirestore.instance
               .collection('users')
               .doc(playerIds[i])
@@ -887,22 +866,34 @@ class _LobbyScreenState extends State<LobbyScreen> {
           .data()['name'];
     }
 
-    // separate into two teams - captains of each team will be first player in each array
-    var teams = {};
-    for (int i = 0; i < data['rules']['numTeams']; i++) {
-      teams[i] = [];
+    // if one team, high score. otherwise, it is competitive mode
+    data['mode'] = 'high score';
+    if (data['teams'].length > 1) {
+      data['mode'] = 'competitive';
     }
-    playerIds.shuffle();
-    while (playerIds.length > 0) {
-      for (int i = 0; i < data['rules']['numTeams']; i++) {
-        if (playerIds.length <= 0) {
-          break;
-        }
-        teams[i].add(playerIds.last);
-        playerIds.removeLast();
+
+    // determine all possible round words per team
+    List easyWords = inSyncWords['easy'];
+    List mediumWords = inSyncWords['medium'];
+    List hardWords = inSyncWords['hard'];
+    List expertWords = inSyncWords['expert'];
+    easyWords.shuffle();
+    mediumWords.shuffle();
+    hardWords.shuffle();
+    expertWords.shuffle();
+
+    data['teams'].asMap().forEach((i, v) {
+      data['teams'][i]['words'] = {};
+      for (int j = 0; j < 3; j++) {
+        data['teams'][i]['words']['easy$j'] = easyWords[j + i * 3];
+        data['teams'][i]['words']['medium$j'] = mediumWords[j + i * 3];
+        data['teams'][i]['words']['hard$j'] = hardWords[j + i * 3];
+        data['teams'][i]['words']['expert$j'] = expertWords[j + i * 3];
       }
-    }
-    data['teams'] = teams;
+    });
+
+    data['level'] = 'easy0';
+    data['expirationTime'] = null;
 
     return data;
   }
@@ -1299,10 +1290,9 @@ class _LobbyScreenState extends State<LobbyScreen> {
                 style: TextStyle(fontSize: 18),
               ),
             ]),
-            SizedBox(height: 5),
             RulesContainer(rules: <Widget>[
               Text(
-                'Round Time Limit:',
+                'Round time limit:',
                 style: TextStyle(fontSize: 14),
               ),
               Text(
@@ -1381,6 +1371,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
           playerIsTeamLeader = true;
         }
       }
+      bool teamisFull = v['players'].length >= data['rules']['maxTeamSize'];
+      bool playerIsSpectator = data['spectatorIds'].contains(userId);
 
       teamWidgets.add(
         Column(
@@ -1394,37 +1386,41 @@ class _LobbyScreenState extends State<LobbyScreen> {
             PageBreak(width: 50),
             Column(children: playerWidgets),
             SizedBox(height: 10),
-            playerOnTeam
-                ? !playerIsTeamLeader
-                    ? RaisedGradientButton(
-                        height: 25,
-                        width: 110,
-                        child: Text('Claim throne'),
-                        onPressed: () {
-                          claimThrone(data, userId, T);
-                        },
-                        gradient: LinearGradient(
-                          colors: [
-                            Theme.of(context).primaryColor,
-                            Theme.of(context).accentColor,
-                          ],
-                        ),
-                      )
-                    : Container()
-                : RaisedGradientButton(
-                    height: 25,
-                    width: 100,
-                    child: Text('Join team'),
-                    onPressed: () {
-                      joinTeam(data, i, userId, T);
-                    },
-                    gradient: LinearGradient(
-                      colors: [
-                        Theme.of(context).primaryColor,
-                        Theme.of(context).accentColor,
-                      ],
-                    ),
-                  ),
+            teamisFull
+                ? Container()
+                : playerOnTeam
+                    ? !playerIsTeamLeader
+                        ? RaisedGradientButton(
+                            height: 25,
+                            width: 110,
+                            child: Text('Claim throne'),
+                            onPressed: () {
+                              claimThrone(data, userId, T);
+                            },
+                            gradient: LinearGradient(
+                              colors: [
+                                Theme.of(context).primaryColor,
+                                Theme.of(context).accentColor,
+                              ],
+                            ),
+                          )
+                        : Container()
+                    : !playerIsSpectator
+                        ? RaisedGradientButton(
+                            height: 25,
+                            width: 100,
+                            child: Text('Join team'),
+                            onPressed: () {
+                              joinTeam(data, i, userId, T);
+                            },
+                            gradient: LinearGradient(
+                              colors: [
+                                Theme.of(context).primaryColor,
+                                Theme.of(context).accentColor,
+                              ],
+                            ),
+                          )
+                        : Container(),
             SizedBox(height: 30),
           ],
         ),
@@ -1500,11 +1496,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
     bool userIsPlayer = data['playerIds'].contains(userId);
     if (userIsPlayer) {
       // remove from playerIds and add to spectatorIds
-      data['playerIds'].remove(userId);
+      kickPlayer(data, userId, T);
       data['spectatorIds'].add(userId);
     } else {
       // remove from spectatorIds and add to playerIds
-      data['playerIds'].add(userId);
+      addPlayer(data, userId, T);
       data['spectatorIds'].remove(userId);
     }
     await FirebaseFirestore.instance
@@ -1538,8 +1534,12 @@ class _LobbyScreenState extends State<LobbyScreen> {
   _getLeaderButtons(data) {
     return Column(
       children: [
-        Text('Leader Buttons:'),
-        PageBreak(width: 50),
+        userId == data['leader'] && !isStarting
+            ? Text('Leader Buttons:')
+            : Container(),
+        userId == data['leader'] && !isStarting
+            ? PageBreak(width: 50)
+            : Container(),
         userId == data['leader'] && !isStarting
             ? Column(
                 children: <Widget>[
@@ -1710,10 +1710,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
                                 offset: Offset(-90, -10),
                                 child: Align(
                                   alignment: Alignment.center,
-                                  child: Text(
-                                    widget.roomCode,
+                                  child: AutoSizeText(
+                                    gameName,
+                                    maxLines: 1,
                                     style: TextStyle(
-                                      fontSize: 84,
+                                      fontSize: 64,
                                       color: Colors.pink.withAlpha(50),
                                     ),
                                   ),
@@ -1723,10 +1724,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
                                 offset: Offset(-45, 20),
                                 child: Align(
                                   alignment: Alignment.center,
-                                  child: Text(
-                                    widget.roomCode,
+                                  child: AutoSizeText(
+                                    gameName,
+                                    maxLines: 1,
                                     style: TextStyle(
-                                      fontSize: 84,
+                                      fontSize: 64,
                                       color: Colors.orange.withAlpha(50),
                                     ),
                                   ),
@@ -1736,10 +1738,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
                                 offset: Offset(45, -20),
                                 child: Align(
                                   alignment: Alignment.center,
-                                  child: Text(
-                                    widget.roomCode,
+                                  child: AutoSizeText(
+                                    gameName,
+                                    maxLines: 1,
                                     style: TextStyle(
-                                      fontSize: 84,
+                                      fontSize: 64,
                                       color: Colors.blue.withAlpha(50),
                                     ),
                                   ),
@@ -1749,10 +1752,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
                                 offset: Offset(90, 10),
                                 child: Align(
                                   alignment: Alignment.center,
-                                  child: Text(
-                                    widget.roomCode,
+                                  child: AutoSizeText(
+                                    gameName,
+                                    maxLines: 1,
                                     style: TextStyle(
-                                      fontSize: 84,
+                                      fontSize: 64,
                                       color: Colors.green.withAlpha(50),
                                     ),
                                   ),

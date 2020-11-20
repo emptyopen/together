@@ -85,18 +85,18 @@ class _AbstractScreenState extends State<AbstractScreen> {
 
       // determine user team and isTeamLeader
       if (data['rules']['numTeams'] == 2) {
-        userIsTeamLeader = data['rules']['greenLeader'] == widget.userId ||
-            data['rules']['orangeLeader'] == widget.userId;
-        if (data['rules']['greenTeam'].contains(widget.userId)) {
+        userIsTeamLeader = data['greenLeader'] == widget.userId ||
+            data['orangeLeader'] == widget.userId;
+        if (data['greenTeam'].contains(widget.userId)) {
           userTeam = 'green';
         } else {
           userTeam = 'orange';
         }
       } else {
-        userIsTeamLeader = data['rules']['greenLeader'] == widget.userId ||
-            data['rules']['orangeLeader'] == widget.userId ||
-            data['rules']['purpleLeader'] == widget.userId;
-        if (data['rules']['greenTeam'].contains(widget.userId)) {
+        userIsTeamLeader = data['greenLeader'] == widget.userId ||
+            data['orangeLeader'] == widget.userId ||
+            data['purpleLeader'] == widget.userId;
+        if (data['greenTeam'].contains(widget.userId)) {
           userTeam = 'green';
         } else if (data['rules']['orangeTeam'].contains(widget.userId)) {
           userTeam = 'orange';
@@ -282,7 +282,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
     );
   }
 
-  getColorFromString(String colorName, bool isLeaderAndNotFlipped) {
+  getColorFromString(data, String colorName, bool isLeaderAndNotFlipped) {
     if (isLeaderAndNotFlipped) {
       switch (colorName) {
         case 'white':
@@ -413,7 +413,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
       // update winning players scores
       for (String team in winningTeams) {
         for (String playerId in data['playerIds']) {
-          if (data['rules']['${team}Team'].contains(playerId)) {
+          if (data['${team}Team'].contains(playerId)) {
             incrementPlayerScore('abstract', playerId);
           }
         }
@@ -467,7 +467,6 @@ class _AbstractScreenState extends State<AbstractScreen> {
         .update({'rules': data['rules']});
 
     bool isBadCard = data['words'][x]['rowWords'][y]['color'] != userTeam;
-    print('bad card $isBadCard');
 
     checkGameOver(data, isBadCard);
 
@@ -510,8 +509,10 @@ class _AbstractScreenState extends State<AbstractScreen> {
           decoration: BoxDecoration(
             color: tileIsVisible
                 ? getColorFromString(
+                    data,
                     words[x]['rowWords'][y]['color'],
-                    userIsTeamLeader && !words[x]['rowWords'][y]['flipped']
+                    (userIsTeamLeader || data['state'] == 'complete') &&
+                            !words[x]['rowWords'][y]['flipped']
                         ? true
                         : false)
                 : Colors.white,
@@ -815,7 +816,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
       SizedBox(height: 10),
     ];
 
-    for (var playerId in data['rules']['greenTeam']) {
+    for (var playerId in data['greenTeam']) {
       greenTeam.add(FutureBuilder(
           future: FirebaseFirestore.instance
               .collection('users')
@@ -825,7 +826,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
             if (!snapshot.hasData) {
               return Container();
             }
-            if (playerId == data['rules']['greenLeader']) {
+            if (playerId == data['greenLeader']) {
               return Row(
                 children: [
                   Text(
@@ -847,7 +848,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
             }
           }));
     }
-    for (var playerId in data['rules']['orangeTeam']) {
+    for (var playerId in data['orangeTeam']) {
       orangeTeam.add(FutureBuilder(
           future: FirebaseFirestore.instance
               .collection('users')
@@ -857,7 +858,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
             if (!snapshot.hasData) {
               return Container();
             }
-            if (playerId == data['rules']['orangeLeader']) {
+            if (playerId == data['orangeLeader']) {
               return Row(
                 children: [
                   Text(
@@ -880,7 +881,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
           }));
     }
     if (numTeams == 3) {
-      for (var playerId in data['rules']['purpleTeam']) {
+      for (var playerId in data['purpleTeam']) {
         purpleTeam.add(FutureBuilder(
             future: FirebaseFirestore.instance
                 .collection('users')
@@ -890,7 +891,7 @@ class _AbstractScreenState extends State<AbstractScreen> {
               if (!snapshot.hasData) {
                 return Container();
               }
-              if (playerId == data['rules']['purpleLeader']) {
+              if (playerId == data['purpleLeader']) {
                 return Row(
                   children: [
                     Text(

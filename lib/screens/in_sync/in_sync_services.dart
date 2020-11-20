@@ -1,4 +1,4 @@
-var words = {
+var inSyncWords = {
   'easy': [
     'kitchen',
     'door',
@@ -12,7 +12,7 @@ var words = {
     'Christmas',
     'France',
     'Egypt',
-    'Australia'
+    'Australia',
   ],
   'medium': [
     'alarm',
@@ -27,6 +27,7 @@ var words = {
     'Japan',
     'Hawaii',
     'lion',
+    'cigar',
   ],
   'hard': [
     'water',
@@ -37,6 +38,10 @@ var words = {
     'parents',
     'phone',
     'wind',
+    'road',
+    'universe',
+    'table',
+    'painting',
   ],
   'expert': [
     'self-improvement',
@@ -47,5 +52,19 @@ var words = {
     'depths',
     'house',
     'light',
+    'smell',
+    'nothing',
+    'card',
+    'pass',
   ],
 };
+
+allPlayersAreReady(data) {
+  bool allReady = true;
+  data['ready'].forEach((i, v) {
+    if (!v) {
+      allReady = false;
+    }
+  });
+  return allReady;
+}

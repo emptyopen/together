@@ -10,29 +10,22 @@ void main() async {
   runApp(MyApp());
 }
 
-// done:
+// DONE:
 // big: voice command for the scoreboard (+/- team, +/- score)
 // general: show arrow for scrollable!!
 // rivers: show stacks history
+// BIG: update lobby to allow exlicit team selection:
 
 // next up:
-// sanity check after big updates: everything again
 // bananaphone: increment player score
+// sanity check after big updates:
 // BANANAPHONE BIG PROBLEM: one vote moves entire state to next round - should multiply, know the answer
+// drawing remains on the board when the final description is submitted...
 // also draw 2 seems to fail????
-// still need to make sure players joining lobby get added to the team correctly. in general, need to add/remove from teams as well as playerIds
-
-// BIG: update lobby to allow exlicit team selection - needs a couple more things:
-// - teams need to be added and deleted with rule changes
-// - players joining need to be added to teams
-// - when players are removed from the game they should be removed from teams as well. consolidate
-
-// MEDIUM: adjust abstract to use new team methodology
 
 // new:
 // inSync: orange
-// two modes: high score mode (one group of 2 or 3 people) vs competitive mode (min 4 people, 2v2). groups of 2 or 3
-// groups are either 2 or 3 people (need even rules for 2 or 3 people)
+// two modes, automatically chosen: high score mode (one group of 2 or 3 people) vs competitive mode (min 4 people, 2v2). groups of 2 or 3
 // everyone gets presented with the same word, and write down 10 words
 // input 10 (adjustable) words. score is calculated as the number of "similar" words
 // 2 people teams: each shared word is worth 2 points (max = 20 points)
@@ -58,19 +51,17 @@ void main() async {
 // x dance dance
 // smash x x
 
+// in sync: there should be an option for multiple teams if they want the same words or not (as each other)
+// in sync: add timer for round
+// in sync: add rule for round timer
+
 // TODO:
-// consolidation: move all "strings" and colors to constants, i.e. "charade a trois", Colors.cyan[700], etc.
-// big: consolidation of new game to simplified parameters
+// big: consolidation of new game to simplified parameters / per screen (init, scaffold, etc.)
 // charade a trois: shimmer for high round scores
-// check if working: undo button not working in bananaphone 2nd+ drawings
 // arrow for togetherScrollView bugged permanent on the hunt screen end game with incorrect guess
+// consolidation: move all "strings" and colors to constants, i.e. "charade a trois", Colors.cyan[700], etc.
 // team selector: a few annoying bugs remaining with rapid touches
 // consolidate: single order of games for quick start and menu
-// abstract: ability to manually change teams (people can just join the team they want to be on?)
-// abstract should show leader view at end of game (not just solid blocks)
-// abstract: (might not need) add voting system for choosing abstract cards (all members of team must select it)
-// abstract: logic to ensure at least one group of words is selected
-// abstract: tiebreaker with total time used as second marker
 // ensure everything is using transacts in the whole project
 // add LEGAL donations link for ios/android
 // charades: add everything to a log?
@@ -83,11 +74,11 @@ void main() async {
 // plot twist: add ability to choose narrator in lobby?
 // the hunt: add timer to voting!!
 // other tools: random number generator?
-// make all buttons disappear when they are clicked (especially when they cause an effect - there are double effects happening)
-// bananaphone: add scores button to view scores
+// abstract: (might not need) add voting system for choosing abstract cards (all members of team must select it)
+// abstract: tiebreaker with total time used as second marker
 // if leader leaves a game, need to assign remaining player the leader position - ORRRRR, "claim leadership" button would be more fun and easier
-// add snackbar when auto exiting to lobby or main menu
 // add password reset option
+// add snackbar when auto exiting to lobby or main menu
 // ability to leave a game (might not need) (also delete session if last one out) - dialog on back button (leave game or just go to main menu)
 // attribute icon: Icons made by "https://www.flaticon.com/authors/freepik
 
@@ -98,6 +89,7 @@ void main() async {
 // maggie@g.com  h4BrcG93XgYsBcGpH7q2WySK8rd2
 // vanessa@g.com  z5SqbMUvLVb7CfSxQz4OEk9VyDE3
 // greg@gmail.com  djawU3QzVCXkLq32mlmd6W81CqK2
+// a@g.com alex V7YrOSWEDdTTrTRt6UlSFDZdgZN2
 // m@g.com markus
 // c@g.com cassie
 // v@g.com vanessa

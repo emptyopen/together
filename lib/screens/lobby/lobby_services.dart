@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 joinTeam(data, teamIndex, userId, T) async {
   // remove player from current team
   data['teams'].asMap().forEach((i, v) {
@@ -47,7 +45,7 @@ kickSpectator(data, String spectatorId, T) async {
 List distributePlayers(data, playerIds) {
   var teams = data['teams'];
 
-  int teamCounter = 0; // TODO: identify team with least members, or else 0
+  int teamCounter = 0;
   int currLength = data['teams'][0]['players'].length;
   data['teams'].asMap().forEach((i, v) {
     if (data['teams'][i]['players'].length < currLength) {
@@ -82,17 +80,34 @@ shuffleTeams(data, T) async {
 }
 
 addPlayer(data, playerId, T) async {
+  // check if max number of players has been reached. if so, add a team
+  bool isFull = false;
+  if (data['rules']['maxPlayers'] != 0) {
+    isFull = true;
+    data['teams'].forEach((v) {
+      if (v['players'].length + 1 <= data['rules']['maxTeamSize']) {
+        isFull = false;
+      }
+    });
+  }
+  if (isFull) {
+    print('was full, adding team');
+    data['teams'].add({
+      'players': [playerId]
+    });
+    data['rules']['numTeams'] += 1;
+  } else {
+    data['teams'] = distributePlayers(data, [playerId]);
+  }
   data['playerIds'].add(playerId);
-  data['teams'] = distributePlayers(data, [playerId]);
 
   T.transact(data);
 }
 
 addPlayers(data, playerIds, T) async {
-  playerIds.forEach((v) {
-    data['playerIds'].add(v);
+  playerIds.forEach((playerId) {
+    addPlayer(data, playerId, T);
   });
-  data['teams'] = distributePlayers(data, playerIds);
 
   T.transact(data);
 }

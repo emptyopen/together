@@ -61,6 +61,12 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
   }
 
   updateRules(data, rule, newValue) async {
+    // if the requested team size doesn't allow for current number of players, revert it
+    // if (data['playerIds'].length >
+    //     data['rules']['numTeams'] * data['rules']['maxTeamSize']) {
+    //   return;
+    // }
+
     data['rules'][rule] = newValue;
     var T = Transactor(sessionId: widget.sessionId);
 
@@ -268,7 +274,7 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
                       GestureDetector(
                         onTap: () {
                           updateRules(data, 'locationsWordsOn',
-                              !data['rules']['locationWordsOn']);
+                              !data['rules']['locationsWordsOn']);
                         },
                         child: Container(
                           decoration: BoxDecoration(
@@ -445,10 +451,10 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
                 SizedBox(height: 20),
                 EditRulesDropdown(
                   data: data,
-                  title: 'Round time limits:',
+                  title: 'Round time limit:',
                   rule: 'roundTimeLimit',
                   updateRules: updateRules,
-                  choices: [120, 140, 180, 220, 260, 300],
+                  choices: [80, 100, 120, 140, 160, 180, 200, 220, 240],
                 ),
               ];
               break;

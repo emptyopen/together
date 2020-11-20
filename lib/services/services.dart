@@ -239,7 +239,7 @@ getDefaultRules(String gameName) {
         'numTeams': 1,
         'maxTeams': 0,
         'maxTeamSize': 3,
-        'roundTimeLimit': 180,
+        'roundTimeLimit': 120,
       };
       break;
   }
