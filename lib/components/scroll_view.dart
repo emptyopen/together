@@ -4,8 +4,11 @@ import 'package:simple_animations/simple_animations.dart';
 
 class TogetherScrollView extends StatefulWidget {
   final Widget child;
+  final double cornerDistance;
+  final double iconSize;
 
-  TogetherScrollView({this.child});
+  TogetherScrollView(
+      {this.child, this.cornerDistance = 25, this.iconSize = 24});
 
   @override
   _TogetherScrollViewState createState() => _TogetherScrollViewState();
@@ -50,19 +53,21 @@ class _TogetherScrollViewState extends State<TogetherScrollView> {
         ),
         showTop
             ? Positioned(
-                bottom: 25,
-                right: 25,
+                bottom: widget.cornerDistance,
+                right: widget.cornerDistance,
                 child: BouncingScrollWidget(
                   isUp: false,
+                  size: widget.iconSize,
                 ),
               )
             : Container(),
         showBottom
             ? Positioned(
-                top: 25,
-                right: 25,
+                top: widget.cornerDistance,
+                right: widget.cornerDistance,
                 child: BouncingScrollWidget(
                   isUp: true,
+                  size: widget.iconSize,
                 ),
               )
             : Container(),
@@ -73,9 +78,11 @@ class _TogetherScrollViewState extends State<TogetherScrollView> {
 
 class BouncingScrollWidget extends StatelessWidget {
   final bool isUp;
+  final double size;
 
   BouncingScrollWidget({
     this.isUp,
+    this.size = 24,
   });
 
   @override
@@ -87,11 +94,6 @@ class BouncingScrollWidget extends StatelessWidget {
       ),
       builder: (context, child, value) {
         return Container(
-          // decoration: BoxDecoration(
-          //   border: Border.all(
-          //     color: Colors.red,
-          //   ),
-          // ),
           padding: EdgeInsets.fromLTRB(
             5,
             value,
@@ -101,6 +103,7 @@ class BouncingScrollWidget extends StatelessWidget {
           child: Icon(
             isUp ? MdiIcons.chevronDoubleUp : MdiIcons.chevronDoubleDown,
             color: Theme.of(context).highlightColor.withAlpha(150),
+            size: size,
           ),
         );
       },

@@ -68,3 +68,7 @@ allPlayersAreReady(data) {
   });
   return allReady;
 }
+
+playerIsDoneSubmitting(playerId, data) {
+  return data['playerWords'][playerId] != '';
+}

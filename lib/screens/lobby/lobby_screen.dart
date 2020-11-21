@@ -852,13 +852,34 @@ class _LobbyScreenState extends State<LobbyScreen> {
   }
 
   setupInSync(data) async {
+    // must be at least two people per team
+    bool allTeamsHaveAtLeastTwoPlayers = true;
+    data['teams'].forEach((v) {
+      if (v['players'].length < 2) {
+        allTeamsHaveAtLeastTwoPlayers = false;
+      }
+    });
+    if (!allTeamsHaveAtLeastTwoPlayers) {
+      setState(() {
+        startError = 'Need at least 2 players per team';
+      });
+      return;
+    }
+
+    // clear error if we are good to start
+    setState(() {
+      startError = '';
+    });
+
     var playerIds = List.from(data['playerIds']);
 
-    // add player names and readiness
+    // add player names, words, and readiness
     data['ready'] = {};
+    data['playerWords'] = {};
     data['playerNames'] = {};
     for (int i = 0; i < playerIds.length; i++) {
       data['ready'][playerIds[i]] = false;
+      data['playerWords'][playerIds[i]] = null;
       data['playerNames'][playerIds[i]] = (await FirebaseFirestore.instance
               .collection('users')
               .doc(playerIds[i])
@@ -971,8 +992,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
         SizedBox(height: 5),
         Text(startTime.difference(_now).inSeconds.toString(),
             style: TextStyle(
-              fontSize: 40,
-              color: Theme.of(context).primaryColor,
+              fontSize: 60,
+              color: Theme.of(context).highlightColor,
             )),
         SizedBox(
           height: 30,

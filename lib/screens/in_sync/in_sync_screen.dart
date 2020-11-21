@@ -103,19 +103,73 @@ class _InSyncScreenState extends State<InSyncScreen> {
     return [m, s];
   }
 
+  levelToEnglish(data) {
+    int level = 0;
+    switch (data['level']) {
+      case 'easy0':
+        level = 1;
+        break;
+      case 'easy1':
+        level = 2;
+        break;
+      case 'easy2':
+        level = 3;
+        break;
+      case 'medium0':
+        level = 4;
+        break;
+      case 'medium1':
+        level = 5;
+        break;
+      case 'medium2':
+        level = 6;
+        break;
+      case 'hard0':
+        level = 7;
+        break;
+      case 'hard1':
+        level = 8;
+        break;
+      case 'hard2':
+        level = 9;
+        break;
+      case 'expert0':
+        level = 10;
+        break;
+      case 'expert1':
+        level = 11;
+        break;
+      case 'expert2':
+        level = 12;
+        break;
+    }
+    return 'Level $level';
+  }
+
   getStatus(data) {
-    var title = 'Easy 1';
+    // can either be
+    // title: waiting to start
+    // title: playing
+    bool isRunning = data['expirationTime'] != null;
+    String word = '';
+    data['teams'].asMap().forEach((i, v) {
+      if (data['teams'][i]['players'].contains(widget.userId)) {
+        word = data['teams'][i]['words'][data['level']];
+      }
+    });
+    var level = levelToEnglish(data);
+    var title = isRunning ? word.toUpperCase() : 'Waiting';
     var ms = [0, 0];
-    if (data['expirationTime'] != null && _now != null) {
+    if (isRunning && _now != null) {
       ms = getMinutesSeconds(
           -_now.difference(data['expirationTime'].toDate()).inSeconds);
     }
-    var subtitle = data['expirationTime'] == null
-        ? 'Awaiting players'
+    var subtitle = !isRunning
+        ? 'Waiting...'
         : '${intToString(ms[0], pad: 2)}:${intToString(ms[1], pad: 2)}';
     return Container(
       width: 200,
-      height: 80,
+      height: 100,
       decoration: BoxDecoration(
         border: Border.all(color: Theme.of(context).highlightColor),
         borderRadius: BorderRadius.circular(15),
@@ -125,11 +179,20 @@ class _InSyncScreenState extends State<InSyncScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
+            level,
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey,
+            ),
+          ),
+          SizedBox(height: 5),
+          Text(
             title,
             style: TextStyle(
               fontSize: 24,
             ),
           ),
+          SizedBox(height: 5),
           Text(subtitle,
               style: TextStyle(
                 fontSize: 18,
@@ -142,10 +205,12 @@ class _InSyncScreenState extends State<InSyncScreen> {
 
   getTimerBar(data) {
     var width = MediaQuery.of(context).size.width;
-    var remainingPercentage =
-        -_now.difference(data['expirationTime'].toDate()).inSeconds /
-            data['rules']['roundTimeLimit'];
-    // print(remainingPercentage);
+    double remainingPercentage = 0;
+    if (data['expirationTime'] != null && _now != null) {
+      remainingPercentage =
+          -_now.difference(data['expirationTime'].toDate()).inSeconds /
+              data['rules']['roundTimeLimit'];
+    }
     return Stack(children: [
       Container(
         height: 5,
@@ -170,12 +235,43 @@ class _InSyncScreenState extends State<InSyncScreen> {
     ]);
   }
 
+  getSubmissionProgress(data) {
+    List<Widget> submissionWidgets = [SizedBox(width: 10)];
+    for (int i = 0; i < 10; i++) {
+      bool submissionComplete = _controllers[i].text != '';
+      submissionWidgets.add(Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: Theme.of(context).highlightColor),
+          borderRadius: BorderRadius.circular(15),
+          color: submissionComplete
+              ? Theme.of(context).highlightColor
+              : Theme.of(context).highlightColor.withAlpha(5),
+        ),
+        height: 20,
+        width: 20,
+      ));
+      submissionWidgets.add(SizedBox(width: 10));
+    }
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: submissionWidgets,
+    );
+  }
+
   playerReady(data) async {
     data['ready'][widget.userId] = true;
 
     // if all players are ready, start the timer
-    data['expirationTime'] =
-        DateTime.now().add(Duration(seconds: data['rules']['roundTimeLimit']));
+    bool allReady = true;
+    data['ready'].forEach((i, v) {
+      if (!v) {
+        allReady = false;
+      }
+    });
+    if (allReady) {
+      data['expirationTime'] = DateTime.now()
+          .add(Duration(seconds: data['rules']['roundTimeLimit']));
+    }
     T.transact(data);
   }
 
@@ -246,26 +342,77 @@ class _InSyncScreenState extends State<InSyncScreen> {
     );
   }
 
+  submitWords(data) async {
+    var words = [];
+    for (int i = 0; i < 10; i++) {
+      words.add(_controllers[i].text);
+    }
+    data['playerWords'][widget.userId] = words;
+
+    T.transact(data);
+
+    for (int i = 0; i < 10; i++) {
+      _controllers[i].text = '';
+    }
+    setState(() {});
+  }
+
   getSubmit(data) {
+    var width = MediaQuery.of(context).size.width;
+
+    // if player is done, show awaiting
+    if (data['playerWords'][widget.userId] != null) {
+      // check if player is ready, show who is ready
+      List<Widget> playerStatuses = [
+        Text(
+          'Waiting for players...',
+          style: TextStyle(fontSize: 24),
+        ),
+        SizedBox(height: 20),
+      ];
+      data['playerIds'].forEach((v) {
+        playerStatuses.add(
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(data['playerNames'][v]),
+              SizedBox(width: 5),
+              data['playerWords'][v] != null
+                  ? Icon(MdiIcons.checkBoxOutline, color: Colors.green)
+                  : Icon(MdiIcons.checkboxBlank, color: Colors.grey),
+            ],
+          ),
+        );
+      });
+      return Container(
+        width: 0.8 * width,
+        decoration: BoxDecoration(
+          border: Border.all(color: Theme.of(context).highlightColor),
+          borderRadius: BorderRadius.circular(15),
+          color: Theme.of(context).dialogBackgroundColor,
+        ),
+        padding: EdgeInsets.all(15),
+        child: Column(
+          children: [
+            Column(children: playerStatuses),
+          ],
+        ),
+      );
+    }
+
     List<Widget> textInputForms = [];
-    // String word = '';
-    // data['teams'].forEach((v) {
-    //   if (v['players'].contains(widget.userId)) {
-    //     word = v['words'][data['level']];
-    //   }
-    // });
     for (int i = 0; i < 10; i++) {
       textInputForms.add(
         Container(
           decoration: BoxDecoration(
-            border: Border.all(color: Theme.of(context).highlightColor),
+            border: Border.all(color: Colors.grey),
             borderRadius: BorderRadius.circular(15),
           ),
           child: TextField(
             onTap: () {
               activeController = i;
             },
-            style: TextStyle(fontSize: 18),
+            style: TextStyle(fontSize: 16),
             controller: _controllers[i],
             textAlign: TextAlign.center,
             maxLines: null,
@@ -275,7 +422,7 @@ class _InSyncScreenState extends State<InSyncScreen> {
               enabledBorder: InputBorder.none,
               errorBorder: InputBorder.none,
               disabledBorder: InputBorder.none,
-              hintText: '$i...',
+              hintText: '${i + 1}...',
               isDense: true,
             ),
           ),
@@ -283,19 +430,62 @@ class _InSyncScreenState extends State<InSyncScreen> {
       );
       textInputForms.add(SizedBox(height: 5));
     }
-    var height = MediaQuery.of(context).size.height;
+
+    bool allFormsComplete = true;
+    for (int i = 0; i < 10; i++) {
+      if (_controllers[i].text == '') {
+        allFormsComplete = false;
+      }
+    }
     return Container(
-      height: 0.5 * height,
+      height: 300,
+      width: 0.8 * width,
       decoration: BoxDecoration(
         border: Border.all(color: Theme.of(context).highlightColor),
         borderRadius: BorderRadius.circular(15),
         color: Theme.of(context).dialogBackgroundColor,
       ),
       padding: EdgeInsets.all(15),
-      child: TogetherScrollView(
-        child: Column(
-          children: textInputForms,
-        ),
+      child: Column(
+        children: [
+          Container(
+            height: 210,
+            padding: EdgeInsets.all(5),
+            decoration: BoxDecoration(
+              border: Border.all(color: Theme.of(context).highlightColor),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: TogetherScrollView(
+              cornerDistance: 5,
+              iconSize: 40,
+              child: Column(
+                children: textInputForms,
+              ),
+            ),
+          ),
+          SizedBox(height: 10),
+          RaisedGradientButton(
+            height: 40,
+            width: 120,
+            onPressed: allFormsComplete
+                ? () {
+                    submitWords(data);
+                  }
+                : null,
+            child: Text('Submit'),
+            gradient: LinearGradient(
+              colors: allFormsComplete
+                  ? [
+                      Theme.of(context).primaryColor,
+                      Theme.of(context).accentColor
+                    ]
+                  : [
+                      Colors.grey,
+                      Colors.grey,
+                    ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -312,7 +502,13 @@ class _InSyncScreenState extends State<InSyncScreen> {
               getStatus(data),
               SizedBox(height: 20),
               getTimerBar(data),
-              SizedBox(height: 10),
+              !playerIsDoneSubmitting(widget.userId, data)
+                  ? SizedBox(height: 10)
+                  : Container(),
+              !playerIsDoneSubmitting(widget.userId, data)
+                  ? getSubmissionProgress(data)
+                  : Container(),
+              SizedBox(height: 20),
               !allPlayersAreReady(data) ? getPrepare(data) : getSubmit(data),
               SizedBox(height: 20),
               widget.userId == data['leader']

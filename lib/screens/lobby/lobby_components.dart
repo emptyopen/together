@@ -454,7 +454,7 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
                   title: 'Round time limit:',
                   rule: 'roundTimeLimit',
                   updateRules: updateRules,
-                  choices: [80, 100, 120, 140, 160, 180, 200, 220, 240],
+                  choices: [80, 100, 120, 140, 160, 180, 200, 220, 240, 2400],
                 ),
               ];
               break;
