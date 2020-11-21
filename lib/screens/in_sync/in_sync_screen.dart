@@ -342,6 +342,12 @@ class _InSyncScreenState extends State<InSyncScreen> {
     );
   }
 
+  incrementLevel(data) async {
+    if () {
+      
+    }
+  }
+
   submitWords(data) async {
     var words = [];
     for (int i = 0; i < 10; i++) {
@@ -349,12 +355,24 @@ class _InSyncScreenState extends State<InSyncScreen> {
     }
     data['playerWords'][widget.userId] = words;
 
-    T.transact(data);
-
-    for (int i = 0; i < 10; i++) {
-      _controllers[i].text = '';
+    // if all players are done, move to "comparison" page
+    bool allPlayersSubmitted = true;
+    data['playerIds'].forEach((v) {
+      if (data['playerWords'][v] == null) {
+        allPlayersSubmitted = false;
+      }
+    });
+    if (allPlayersSubmitted) {
+      incrementLevel(data);
     }
-    setState(() {});
+
+    print(data);
+
+    // T.transact(data);
+    // for (int i = 0; i < 10; i++) {
+    //   _controllers[i].text = '';
+    // }
+    // setState(() {});
   }
 
   getSubmit(data) {

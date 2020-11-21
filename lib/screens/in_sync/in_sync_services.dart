@@ -70,5 +70,6 @@ allPlayersAreReady(data) {
 }
 
 playerIsDoneSubmitting(playerId, data) {
-  return data['playerWords'][playerId] != '';
+  // player words are not empty
+  return data['playerWords'][playerId] != null;
 }

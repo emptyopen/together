@@ -56,6 +56,7 @@ void main() async {
 // in sync: add rule for round timer
 
 // TODO:
+// in sync: avoid duplicates for submissions
 // big: consolidation of new game to simplified parameters / per screen (init, scaffold, etc.)
 // charade a trois: shimmer for high round scores
 // arrow for togetherScrollView bugged permanent on the hunt screen end game with incorrect guess
