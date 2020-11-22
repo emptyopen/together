@@ -85,7 +85,8 @@ addPlayer(data, playerId, T) async {
   if (data['rules']['maxPlayers'] != 0) {
     isFull = true;
     data['teams'].forEach((v) {
-      if (v['players'].length + 1 <= data['rules']['maxTeamSize']) {
+      if (v['players'].length + 1 <= data['rules']['maxTeamSize'] ||
+          data['rules']['maxTeamSize'] == 0) {
         isFull = false;
       }
     });

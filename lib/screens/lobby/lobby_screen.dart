@@ -18,7 +18,7 @@ import '../../models/models.dart';
 import '../three_crowns/three_crowns_services.dart';
 import '../plot_twist/plot_twist_services.dart';
 import 'package:together/screens/charade_a_trois/charade_a_trois_services.dart';
-import 'package:together/screens/in_sync/in_sync_services.dart';
+import 'package:together/screens/samesies/samesies_services.dart';
 import 'package:together/help_screens/help_screens.dart';
 import 'package:together/constants/values.dart';
 import 'package:together/services/services.dart';
@@ -29,7 +29,7 @@ import 'package:together/screens/three_crowns/three_crowns_screen.dart';
 import 'package:together/screens/rivers/rivers_screen.dart';
 import 'package:together/screens/plot_twist/plot_twist_screen.dart';
 import 'package:together/screens/charade_a_trois/charade_a_trois_screen.dart';
-import 'package:together/screens/in_sync/in_sync_screen.dart';
+import 'package:together/screens/samesies/samesies_screen.dart';
 import 'package:together/services/firestore.dart';
 
 import 'lobby_components.dart';
@@ -171,10 +171,10 @@ class _LobbyScreenState extends State<LobbyScreen> {
                 ),
               );
               break;
-            case 'In Sync':
+            case 'Samesies':
               slideTransition(
                 context,
-                InSyncScreen(
+                SamesiesScreen(
                   sessionId: sessionId,
                   userId: userId,
                   roomCode: widget.roomCode,
@@ -518,6 +518,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
     }
 
     data['rules']['prompts'] = prompts;
+    data['round'] = 0;
+    data['phase'] = 'draw1';
 
     return data;
   }
@@ -851,7 +853,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
     return data;
   }
 
-  setupInSync(data) async {
+  setupSamesies(data) async {
     // must be at least two people per team
     bool allTeamsHaveAtLeastTwoPlayers = true;
     data['teams'].forEach((v) {
@@ -950,8 +952,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
         data = await setupCharadeATrois(data);
         break;
 
-      case 'In Sync':
-        data = await setupInSync(data);
+      case 'Samesies':
+        data = await setupSamesies(data);
         break;
     }
 
@@ -1298,7 +1300,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
           ],
         );
         break;
-      case 'In Sync':
+      case 'Samesies':
         return Column(
           children: <Widget>[
             RulesContainer(rules: <Widget>[
@@ -1392,7 +1394,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
           playerIsTeamLeader = true;
         }
       }
-      bool teamisFull = v['players'].length >= data['rules']['maxTeamSize'];
+      bool teamisFull = v['players'].length >= data['rules']['maxTeamSize'] &&
+          data['rules']['maxTeamSize'] != 0;
       bool playerIsSpectator = data['spectatorIds'].contains(userId);
 
       teamWidgets.add(
@@ -1693,8 +1696,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
                             case 'Charáde à Trois':
                               return CharadeATroisScreenHelp();
                               break;
-                            case 'In Sync':
-                              return InSyncScreenHelp();
+                            case 'Samesies':
+                              return SamesiesScreenHelp();
                               break;
                           }
                           return Text('tell Matt you got here: 1');

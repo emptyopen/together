@@ -8,7 +8,7 @@ import 'package:clipboard/clipboard.dart';
 
 import '../services/services.dart';
 import '../services/authentication.dart';
-
+import 'package:together/constants/values.dart';
 import 'package:together/components/buttons.dart';
 import 'package:together/components/marquee.dart';
 import 'package:together/components/info_box.dart';
@@ -67,112 +67,39 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   getGamesMarquee(BuildContext context) {
-    Color colorHunt = Colors.black;
-    Color colorAbstract = Colors.green;
-    Color colorBananaphone = Colors.blue;
-    Color colorThreeCrowns = Colors.amber;
-    Color colorRivers = Colors.lightBlue;
-    Color colorPlotTwist = Colors.pink;
-    Color colorCharadeATrois = Colors.indigoAccent;
-    Color colorInSync = Colors.orange;
     double intervalLength = 25.0;
+    List<Widget> quickStartWidgets = [SizedBox(width: intervalLength)];
+    [
+      riversString,
+      samesiesString,
+      bananaphoneString,
+      plotTwistString,
+      charadeATroisString,
+      threeCrownsString,
+      abstractString,
+      theHuntString,
+    ].forEach((v) {
+      quickStartWidgets.add(
+        QuickStartButton(
+          gameName: v,
+          subtitle: gameSubtitles[v],
+          icon: Icon(
+            gameIcons[v],
+            color: gameColors[v],
+            size: 30,
+          ),
+          minPlayers: gameMinPlayers[v],
+        ),
+      );
+      quickStartWidgets.add(
+        SizedBox(width: intervalLength),
+      );
+    });
     return Container(
       child: Column(
         children: <Widget>[
           SizedBox(height: 5),
-          Row(
-            children: <Widget>[
-              SizedBox(width: intervalLength),
-              QuickStartButton(
-                gameName: 'In Sync',
-                subtitle: 'Coming soon!',
-                icon: Icon(
-                  MdiIcons.headCheck,
-                  color: colorInSync,
-                  size: 30,
-                ),
-                minPlayers: 2,
-              ),
-              SizedBox(width: intervalLength),
-              QuickStartButton(
-                gameName: 'Rivers',
-                subtitle: 'Up and down!',
-                icon: Icon(
-                  MdiIcons.waves,
-                  color: colorRivers,
-                  size: 30,
-                ),
-                minPlayers: 2,
-              ),
-              SizedBox(width: intervalLength),
-              QuickStartButton(
-                gameName: 'Charáde à Trois',
-                subtitle: '3 round charades!',
-                icon: Icon(
-                  MdiIcons.dramaMasks,
-                  color: colorCharadeATrois,
-                  size: 30,
-                ),
-                minPlayers: 4,
-              ),
-              SizedBox(width: intervalLength),
-              QuickStartButton(
-                gameName: 'Plot Twist',
-                subtitle: 'Chit & chat!',
-                icon: Icon(
-                  MdiIcons.chatProcessingOutline,
-                  color: colorPlotTwist,
-                  size: 30,
-                ),
-                minPlayers: 4,
-              ),
-              SizedBox(width: intervalLength),
-              QuickStartButton(
-                gameName: 'Three Crowns',
-                subtitle: 'Rise, peasants!',
-                icon: Icon(
-                  MdiIcons.crown,
-                  color: colorThreeCrowns,
-                  size: 30,
-                ),
-                minPlayers: 2,
-              ),
-              SizedBox(width: intervalLength),
-              QuickStartButton(
-                gameName: 'Abstract',
-                subtitle: 'Connect concepts!',
-                icon: Icon(
-                  MdiIcons.resistorNodes,
-                  color: colorAbstract,
-                  size: 30,
-                ),
-                minPlayers: 4,
-              ),
-              SizedBox(width: intervalLength),
-              QuickStartButton(
-                gameName: 'The Hunt',
-                subtitle: 'Spies vs. Citizens!',
-                icon: Icon(
-                  MdiIcons.incognito,
-                  color: colorHunt,
-                  size: 30,
-                ),
-                minPlayers: 3,
-              ),
-              SizedBox(width: intervalLength),
-              QuickStartButton(
-                gameName: 'Bananaphone',
-                subtitle: 'Draw and pass it on!',
-                icon: Icon(
-                  MdiIcons.phoneSettings,
-                  color: colorBananaphone,
-                  size: 30,
-                ),
-                minPlayers: 4,
-              ),
-              SizedBox(width: intervalLength),
-            ],
-          ),
+          Row(children: quickStartWidgets),
           SizedBox(height: 5),
         ],
       ),
@@ -490,35 +417,8 @@ class _LobbyDialogState extends State<LobbyDialog> {
   getDropdownWithIcon(value) {
     var icon = Icon(MdiIcons.incognito); // default hunt
     Color color = Theme.of(context).highlightColor;
-    switch (value) {
-      case 'Abstract':
-        color = Colors.green;
-        icon = Icon(MdiIcons.resistorNodes, color: color);
-        break;
-      case 'Bananaphone':
-        color = Colors.blue;
-        icon = Icon(MdiIcons.phoneSettings, color: color);
-        break;
-      case 'Three Crowns':
-        color = Colors.amber;
-        icon = Icon(MdiIcons.crown, color: color);
-        break;
-      case 'Rivers':
-        color = Colors.lightBlue;
-        icon = Icon(MdiIcons.waves, color: color);
-        break;
-      case 'Plot Twist':
-        color = Colors.pink;
-        icon = Icon(MdiIcons.chatProcessingOutline, color: color);
-        break;
-      case 'Charáde à Trois':
-        color = Colors.indigoAccent;
-        icon = Icon(MdiIcons.dramaMasks, color: color);
-        break;
-      case 'In Sync':
-        color = Colors.orange;
-        icon = Icon(MdiIcons.headCheck, color: color);
-    }
+    color = gameColors[value];
+    icon = Icon(gameIcons[value], color: color);
     return Row(
       children: <Widget>[
         icon,
@@ -564,7 +464,7 @@ class _LobbyDialogState extends State<LobbyDialog> {
                       'Rivers',
                       'Plot Twist',
                       'Charáde à Trois',
-                      'In Sync',
+                      'Samesies',
                     ].map<DropdownMenuItem<String>>((String value) {
                       return DropdownMenuItem<String>(
                         value: value,

@@ -617,10 +617,11 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
       onTap: () {
         closeKeyboardIfOpen(context);
       },
-      child: Center(
+      child: TogetherScrollView(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            SizedBox(height: 20),
             Text(
               'Character Selection',
               style: TextStyle(
@@ -677,6 +678,7 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
                     width: 100,
                   )
                 : Container(),
+            SizedBox(height: 20),
           ],
         ),
       ),

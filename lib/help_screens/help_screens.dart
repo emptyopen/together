@@ -152,13 +152,13 @@ class PlotTwistScreenHelp extends StatelessWidget {
   }
 }
 
-class InSyncScreenHelp extends StatelessWidget {
+class SamesiesScreenHelp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return HelpScreen(
       title: 'Plot Twist: Rules',
       information: [
-        '    In Sync help: TBD! lol',
+        '    Samesies help: TBD! lol',
       ],
       buttonColor: Theme.of(context).primaryColor,
     );

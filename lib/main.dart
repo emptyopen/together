@@ -11,20 +11,18 @@ void main() async {
 }
 
 // DONE:
-// big: voice command for the scoreboard (+/- team, +/- score)
-// general: show arrow for scrollable!!
-// rivers: show stacks history
-// BIG: update lobby to allow exlicit team selection:
 
 // next up:
-// bananaphone: increment player score
-// sanity check after big updates:
 // BANANAPHONE BIG PROBLEM: one vote moves entire state to next round - should multiply, know the answer
 // drawing remains on the board when the final description is submitted...
 // also draw 2 seems to fail????
+// bananaphone: increment player score
 
-// new:
-// inSync: orange
+// charade: go button grey, stuck
+// charade: show crossed out words for judge
+// charade: skip button seemed to freeze?
+
+// Samesies:
 // two modes, automatically chosen: high score mode (one group of 2 or 3 people) vs competitive mode (min 4 people, 2v2). groups of 2 or 3
 // everyone gets presented with the same word, and write down 10 words
 // input 10 (adjustable) words. score is calculated as the number of "similar" words
@@ -51,21 +49,20 @@ void main() async {
 // x dance dance
 // smash x x
 
-// in sync: there should be an option for multiple teams if they want the same words or not (as each other)
-// in sync: add timer for round
-// in sync: add rule for round timer
+// samesies: there should be an option for multiple teams if they want the same words or not (as each other)
+// samesies: add timer for round
+// samesies: add rule for round timer
+// samesies: avoid duplicates for submissions by same person
 
 // TODO:
-// in sync: avoid duplicates for submissions
 // big: consolidation of new game to simplified parameters / per screen (init, scaffold, etc.)
-// charade a trois: shimmer for high round scores
+// charades: shimmer for high round scores
+// charades: add everything to a log?
 // arrow for togetherScrollView bugged permanent on the hunt screen end game with incorrect guess
 // consolidation: move all "strings" and colors to constants, i.e. "charade a trois", Colors.cyan[700], etc.
 // team selector: a few annoying bugs remaining with rapid touches
-// consolidate: single order of games for quick start and menu
 // ensure everything is using transacts in the whole project
 // add LEGAL donations link for ios/android
-// charades: add everything to a log?
 // three crowns: better font for stealable tiles (holy letters)
 // plot twist: add ability to click a chat to see the character description
 // plot twist: add final scoreboard screen with "winners" who guessed correctly

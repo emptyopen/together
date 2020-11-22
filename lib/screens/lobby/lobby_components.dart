@@ -438,7 +438,7 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
                 ),
               ];
               break;
-            case 'In Sync':
+            case 'Samesies':
               ruleWidgets = [
                 SizedBox(height: 20),
                 EditRulesDropdown(

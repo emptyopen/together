@@ -1,3 +1,59 @@
+import 'package:flutter/material.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+
+String theHuntString = 'The Hunt';
+String abstractString = 'Abstract';
+String bananaphoneString = 'Bananaphone';
+String riversString = 'Rivers';
+String threeCrownsString = 'Three Crowns';
+String plotTwistString = 'Plot Twist';
+String charadeATroisString = 'Charáde à Trois';
+String samesiesString = 'Samesies';
+
+Map gameColors = {
+  theHuntString: Colors.black,
+  abstractString: Colors.green,
+  bananaphoneString: Colors.blue,
+  riversString: Colors.lightBlue,
+  threeCrownsString: Colors.amber,
+  plotTwistString: Colors.orange,
+  charadeATroisString: Colors.indigoAccent,
+  samesiesString: Colors.pink,
+};
+
+Map gameIcons = {
+  theHuntString: MdiIcons.incognito,
+  abstractString: MdiIcons.resistorNodes,
+  bananaphoneString: MdiIcons.phoneSettings,
+  riversString: MdiIcons.waves,
+  threeCrownsString: MdiIcons.crown,
+  plotTwistString: MdiIcons.chatProcessingOutline,
+  charadeATroisString: MdiIcons.dramaMasks,
+  samesiesString: MdiIcons.heartMultipleOutline,
+};
+
+Map gameSubtitles = {
+  theHuntString: 'Spies vs. Citizens!',
+  abstractString: 'Connect concepts!',
+  bananaphoneString: 'Draw and pass it on!',
+  riversString: 'Up and down!',
+  threeCrownsString: 'Rise, peasants!',
+  plotTwistString: 'Chit & chat!',
+  charadeATroisString: '3 round charades!',
+  samesiesString: 'Coming soon!',
+};
+
+Map gameMinPlayers = {
+  theHuntString: 3,
+  abstractString: 4,
+  bananaphoneString: 4,
+  riversString: 2,
+  threeCrownsString: 2,
+  plotTwistString: 3,
+  charadeATroisString: 4,
+  samesiesString: 2,
+};
+
 Map phoneticAlphabet = {
   'a': 'alpha',
   'b': 'bravo',

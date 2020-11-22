@@ -156,7 +156,7 @@ getDefaultTeams(String gameName) {
         {'players': []},
       ];
       break;
-    case 'In Sync':
+    case 'Samesies':
       return [
         {
           'players': [userId]
@@ -234,7 +234,7 @@ getDefaultRules(String gameName) {
         'roundTimeLimit': 60,
       };
       break;
-    case 'In Sync':
+    case 'Samesies':
       addRules = {
         'numTeams': 1,
         'maxTeams': 0,

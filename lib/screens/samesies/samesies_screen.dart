@@ -12,20 +12,20 @@ import 'package:together/help_screens/help_screens.dart';
 import 'package:together/components/end_game.dart';
 import 'package:together/components/scroll_view.dart';
 
-import 'in_sync_services.dart';
+import 'samesies_services.dart';
 
-class InSyncScreen extends StatefulWidget {
-  InSyncScreen({this.sessionId, this.userId, this.roomCode});
+class SamesiesScreen extends StatefulWidget {
+  SamesiesScreen({this.sessionId, this.userId, this.roomCode});
 
   final String sessionId;
   final String userId;
   final String roomCode;
 
   @override
-  _InSyncScreenState createState() => _InSyncScreenState();
+  _SamesiesScreenState createState() => _SamesiesScreenState();
 }
 
-class _InSyncScreenState extends State<InSyncScreen> {
+class _SamesiesScreenState extends State<SamesiesScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   bool isSpectator = false;
   Timer _timer;
@@ -343,9 +343,7 @@ class _InSyncScreenState extends State<InSyncScreen> {
   }
 
   incrementLevel(data) async {
-    if () {
-      
-    }
+    // switch case increment
   }
 
   submitWords(data) async {
@@ -591,7 +589,7 @@ class _InSyncScreenState extends State<InSyncScreen> {
           return Scaffold(
             appBar: AppBar(
               title: Text(
-                'In Sync',
+                'Samesies',
               ),
             ),
             body: Container(),
@@ -604,7 +602,7 @@ class _InSyncScreenState extends State<InSyncScreen> {
           return Scaffold(
             appBar: AppBar(
               title: Text(
-                'In Sync',
+                'Samesies',
               ),
             ),
             body: Container(),
@@ -617,7 +615,7 @@ class _InSyncScreenState extends State<InSyncScreen> {
             resizeToAvoidBottomInset: false,
             appBar: AppBar(
               title: Text(
-                'In Sync',
+                'Samesies',
               ),
               actions: <Widget>[
                 IconButton(
@@ -627,7 +625,7 @@ class _InSyncScreenState extends State<InSyncScreen> {
                       PageRouteBuilder(
                         opaque: false,
                         pageBuilder: (BuildContext context, _, __) {
-                          return InSyncScreenHelp();
+                          return SamesiesScreenHelp();
                         },
                       ),
                     );
