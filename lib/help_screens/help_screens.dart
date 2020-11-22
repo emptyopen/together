@@ -156,9 +156,9 @@ class SamesiesScreenHelp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return HelpScreen(
-      title: 'Plot Twist: Rules',
+      title: 'Samesies: Rules',
       information: [
-        '    Samesies help: TBD! lol',
+        '    This is a word association game, great for couples to compete ;)',
       ],
       buttonColor: Theme.of(context).primaryColor,
     );

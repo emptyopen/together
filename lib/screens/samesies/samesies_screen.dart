@@ -3,14 +3,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'dart:async';
-import 'package:auto_size_text/auto_size_text.dart';
+import 'package:string_similarity/string_similarity.dart';
 
 import 'package:together/components/buttons.dart';
 import 'package:together/services/services.dart';
 import 'package:together/services/firestore.dart';
 import 'package:together/help_screens/help_screens.dart';
 import 'package:together/components/end_game.dart';
-import 'package:together/components/scroll_view.dart';
+import 'package:together/constants/values.dart';
 
 import 'samesies_services.dart';
 
@@ -28,31 +28,22 @@ class SamesiesScreen extends StatefulWidget {
 class _SamesiesScreenState extends State<SamesiesScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   bool isSpectator = false;
-  Timer _timer;
   TextEditingController messageController;
   DateTime _now;
   var T;
-  final _controllers = [
-    TextEditingController(),
-    TextEditingController(),
-    TextEditingController(),
-    TextEditingController(),
-    TextEditingController(),
-    TextEditingController(),
-    TextEditingController(),
-    TextEditingController(),
-    TextEditingController(),
-    TextEditingController(),
-  ];
+  final _controller = TextEditingController();
   int activeController;
+  FocusNode myFocusNode;
+  double matchFactor = 0.8;
 
   @override
   void initState() {
     super.initState();
     messageController = TextEditingController();
+    myFocusNode = FocusNode();
     T = Transactor(sessionId: widget.sessionId);
     setUpGame();
-    _timer = Timer.periodic(Duration(milliseconds: 200), (Timer t) {
+    Timer.periodic(Duration(milliseconds: 300), (Timer t) {
       if (!mounted) return;
       setState(() {
         _now = DateTime.now();
@@ -63,9 +54,8 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
   @override
   void dispose() {
     messageController.dispose();
-    _controllers.forEach((v) {
-      v.dispose();
-    });
+    _controller.dispose();
+    myFocusNode.dispose();
     super.dispose();
   }
 
@@ -203,6 +193,35 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
     );
   }
 
+  getRoomCode(data) {
+    return Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(5),
+          border: Border.all(
+            color: Theme.of(context).highlightColor,
+          ),
+        ),
+        padding: EdgeInsets.all(5),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Room code:',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey,
+              ),
+            ),
+            Text(
+              widget.roomCode,
+              style: TextStyle(
+                fontSize: 22,
+              ),
+            ),
+          ],
+        ));
+  }
+
   getTimerBar(data) {
     var width = MediaQuery.of(context).size.width;
     double remainingPercentage = 0;
@@ -211,40 +230,29 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
           -_now.difference(data['expirationTime'].toDate()).inSeconds /
               data['rules']['roundTimeLimit'];
     }
-    return Stack(children: [
-      Container(
-        height: 5,
-        width: width,
-        decoration: BoxDecoration(
-          border: Border.all(color: Theme.of(context).highlightColor),
-        ),
-      ),
-      remainingPercentage > 0
-          ? Positioned(
-              left: 0,
-              child: Container(
-                height: 5,
-                width: remainingPercentage * width,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.blue),
-                  color: Colors.blue,
-                ),
+    return remainingPercentage > 0
+        ? Align(
+            alignment: Alignment.centerLeft,
+            child: Container(
+              height: 5,
+              width: remainingPercentage * width,
+              decoration: BoxDecoration(
+                color: gameColors[samesiesString],
               ),
-            )
-          : Container(),
-    ]);
+            ),
+          )
+        : Container(height: 5);
   }
 
   getSubmissionProgress(data) {
     List<Widget> submissionWidgets = [SizedBox(width: 10)];
     for (int i = 0; i < 10; i++) {
-      bool submissionComplete = _controllers[i].text != '';
       submissionWidgets.add(Container(
         decoration: BoxDecoration(
-          border: Border.all(color: Theme.of(context).highlightColor),
+          border: Border.all(color: Colors.grey),
           borderRadius: BorderRadius.circular(15),
-          color: submissionComplete
-              ? Theme.of(context).highlightColor
+          color: data['playerWords'][widget.userId].length > i
+              ? gameColors[samesiesString]
               : Theme.of(context).highlightColor.withAlpha(5),
         ),
         height: 20,
@@ -322,8 +330,8 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
               gradient: LinearGradient(
                 colors: !data['ready'][widget.userId]
                     ? [
-                        Colors.blue,
-                        Colors.blueAccent,
+                        gameColors[samesiesString],
+                        gameColors[samesiesString].withAlpha(100),
                       ]
                     : [
                         Colors.grey,
@@ -342,43 +350,129 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
     );
   }
 
-  incrementLevel(data) async {
-    // switch case increment
+  teamResults(teamIndex, data) {
+    int twoPlayerPairScore = 2;
+    int threePlayerPairScore = 1;
+    int threePlayerTripletScore = 3;
+    int teamSize = data['teams'][teamIndex]['players'].length;
+
+    List results = [];
+
+    // if team has 2 players
+    if (teamSize == 2) {
+      // iterate over one players score, check if it exists in the other one
+      var player1Id = data['teams'][teamIndex]['players'][0];
+      var player2Id = data['teams'][teamIndex]['players'][1];
+      List player1Words = List.of(data['playerWords'][player1Id]);
+      List player2Words = List.of(data['playerWords'][player2Id]);
+      List unmatchedPlayer1Words = [];
+      List matchedPlayer2Words = [];
+      player1Words.forEach((player1Word) {
+        bool matchFound = false;
+        player2Words.forEach((player2Word) {
+          if (StringSimilarity.compareTwoStrings(
+                  player1Word.toLowerCase(), player2Word.toLowerCase()) >
+              matchFactor) {
+            results.add([
+              player1Word,
+              player2Word,
+              StringSimilarity.compareTwoStrings(player1Word, player2Word),
+              twoPlayerPairScore
+            ]);
+            matchFound = true;
+          }
+        });
+        if (!matchFound) {
+          unmatchedPlayer1Words.add(player1Word);
+        }
+      });
+      player2Words
+          .removeWhere((element) => matchedPlayer2Words.contains(element));
+      for (int i = 0; i < unmatchedPlayer1Words.length; i++) {
+        results.add([
+          unmatchedPlayer1Words[i],
+          player2Words[i],
+          StringSimilarity.compareTwoStrings(
+              unmatchedPlayer1Words[i], player2Words[i]),
+          0
+        ]);
+      }
+
+      print(results);
+    }
+
+    // if team has 3 players
+    else {}
+
+    // returns words lined up, with scores:
+    // [knife, knife, 2]
+    // [counter, counter, 2]
+    // [food, food, 2]
+    // [tile, microwave, 0]
+    // ...
+    return results;
   }
 
-  submitWords(data) async {
-    var words = [];
-    for (int i = 0; i < 10; i++) {
-      words.add(_controllers[i].text);
+  teamsAllPass(data) {
+    // for each team, check if all teams pass
+    bool allTeamsPass = true;
+    data['teams'].asMap().forEach((i, v) {
+      var results = teamResults(i, data);
+      int score = 0;
+      results.forEach((result) {
+        score += result.last;
+      });
+      if (scorePassesLevel(score, data)) {
+        print('$score passes level');
+      } else {
+        allTeamsPass = false;
+      }
+    });
+
+    if (allTeamsPass) {
+      return true;
     }
-    data['playerWords'][widget.userId] = words;
+    return false;
+  }
+
+  submitWord(data) async {
+    HapticFeedback.vibrate();
+
+    data['playerWords'][widget.userId].add(_controller.text);
 
     // if all players are done, move to "comparison" page
     bool allPlayersSubmitted = true;
     data['playerIds'].forEach((v) {
-      if (data['playerWords'][v] == null) {
+      if (data['playerWords'][v].length < 10) {
         allPlayersSubmitted = false;
       }
     });
     if (allPlayersSubmitted) {
-      incrementLevel(data);
+      // check if all teams match sufficiently
+      if (teamsAllPass(data)) {
+        incrementLevel(data);
+        // reset playerWords and ready states
+        data['playerIds'].forEach((v) {
+          data['playerWords'][v] = [];
+          data['ready'][v] = false;
+        });
+      } else {
+        data['state'] = 'scoreboard';
+      }
     }
 
-    print(data);
-
-    // T.transact(data);
-    // for (int i = 0; i < 10; i++) {
-    //   _controllers[i].text = '';
-    // }
-    // setState(() {});
+    T.transact(data);
+    setState(() {
+      _controller.text = '';
+    });
+    myFocusNode.requestFocus();
   }
 
   getSubmit(data) {
     var width = MediaQuery.of(context).size.width;
 
     // if player is done, show awaiting
-    if (data['playerWords'][widget.userId] != null) {
-      // check if player is ready, show who is ready
+    if (data['playerWords'][widget.userId].length >= 10) {
       List<Widget> playerStatuses = [
         Text(
           'Waiting for players...',
@@ -393,7 +487,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
             children: [
               Text(data['playerNames'][v]),
               SizedBox(width: 5),
-              data['playerWords'][v] != null
+              data['playerWords'][v].length >= 10
                   ? Icon(MdiIcons.checkBoxOutline, color: Colors.green)
                   : Icon(MdiIcons.checkboxBlank, color: Colors.grey),
             ],
@@ -416,45 +510,8 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
       );
     }
 
-    List<Widget> textInputForms = [];
-    for (int i = 0; i < 10; i++) {
-      textInputForms.add(
-        Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey),
-            borderRadius: BorderRadius.circular(15),
-          ),
-          child: TextField(
-            onTap: () {
-              activeController = i;
-            },
-            style: TextStyle(fontSize: 16),
-            controller: _controllers[i],
-            textAlign: TextAlign.center,
-            maxLines: null,
-            decoration: InputDecoration(
-              border: InputBorder.none,
-              focusedBorder: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              errorBorder: InputBorder.none,
-              disabledBorder: InputBorder.none,
-              hintText: '${i + 1}...',
-              isDense: true,
-            ),
-          ),
-        ),
-      );
-      textInputForms.add(SizedBox(height: 5));
-    }
-
-    bool allFormsComplete = true;
-    for (int i = 0; i < 10; i++) {
-      if (_controllers[i].text == '') {
-        allFormsComplete = false;
-      }
-    }
+    // otherwise, get submit
     return Container(
-      height: 300,
       width: 0.8 * width,
       decoration: BoxDecoration(
         border: Border.all(color: Theme.of(context).highlightColor),
@@ -465,17 +522,29 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
       child: Column(
         children: [
           Container(
-            height: 210,
             padding: EdgeInsets.all(5),
             decoration: BoxDecoration(
               border: Border.all(color: Theme.of(context).highlightColor),
               borderRadius: BorderRadius.circular(15),
             ),
-            child: TogetherScrollView(
-              cornerDistance: 5,
-              iconSize: 40,
-              child: Column(
-                children: textInputForms,
+            child: TextField(
+              textInputAction: TextInputAction.send,
+              onSubmitted: (s) {
+                submitWord(data);
+              },
+              autofocus: true,
+              focusNode: myFocusNode,
+              style: TextStyle(fontSize: 16),
+              controller: _controller,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
+                isDense: true,
               ),
             ),
           ),
@@ -483,23 +552,14 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
           RaisedGradientButton(
             height: 40,
             width: 120,
-            onPressed: allFormsComplete
-                ? () {
-                    submitWords(data);
-                  }
-                : null,
+            onPressed: () {
+              submitWord(data);
+            },
             child: Text('Submit'),
-            gradient: LinearGradient(
-              colors: allFormsComplete
-                  ? [
-                      Theme.of(context).primaryColor,
-                      Theme.of(context).accentColor
-                    ]
-                  : [
-                      Colors.grey,
-                      Colors.grey,
-                    ],
-            ),
+            gradient: LinearGradient(colors: [
+              Theme.of(context).primaryColor,
+              Theme.of(context).accentColor
+            ]),
           ),
         ],
       ),
@@ -507,70 +567,35 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
   }
 
   getGameboard(data) {
-    var width = MediaQuery.of(context).size.width;
-    var height = MediaQuery.of(context).size.height;
-    return Stack(
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.start,
       children: [
-        Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              getStatus(data),
-              SizedBox(height: 20),
-              getTimerBar(data),
-              !playerIsDoneSubmitting(widget.userId, data)
-                  ? SizedBox(height: 10)
-                  : Container(),
-              !playerIsDoneSubmitting(widget.userId, data)
-                  ? getSubmissionProgress(data)
-                  : Container(),
-              SizedBox(height: 20),
-              !allPlayersAreReady(data) ? getPrepare(data) : getSubmit(data),
-              SizedBox(height: 20),
-              widget.userId == data['leader']
-                  ? EndGameButton(
-                      sessionId: widget.sessionId,
-                      fontSize: 14,
-                      height: 30,
-                      width: 100,
-                    )
-                  : Container(),
-            ],
-          ),
+        SizedBox(height: 50),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            getStatus(data),
+            SizedBox(width: 10),
+            getRoomCode(data),
+          ],
         ),
-        activeController != null
-            ? Container(
-                width: width,
-                height: height,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).dialogBackgroundColor.withAlpha(230),
-                ),
-                padding: EdgeInsets.all(15),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    SizedBox(height: 30),
-                    AutoSizeText(
-                      _controllers[activeController].text,
-                      maxLines: 1,
-                      style: TextStyle(fontSize: 28),
-                      textAlign: TextAlign.center,
-                    ),
-                    SizedBox(height: 20),
-                    RaisedGradientButton(
-                        child: Text('Done', style: TextStyle(fontSize: 24)),
-                        height: 50,
-                        width: 150,
-                        onPressed: () {
-                          activeController = null;
-                          FocusScope.of(context).unfocus();
-                        },
-                        gradient: LinearGradient(colors: [
-                          Colors.blue.withAlpha(100),
-                          Colors.blue[100].withAlpha(100)
-                        ])),
-                  ],
-                ),
+        SizedBox(height: 20),
+        getTimerBar(data),
+        !playerIsDoneSubmitting(widget.userId, data)
+            ? SizedBox(height: 10)
+            : Container(),
+        !playerIsDoneSubmitting(widget.userId, data) && allPlayersAreReady(data)
+            ? getSubmissionProgress(data)
+            : Container(),
+        SizedBox(height: 20),
+        !allPlayersAreReady(data) ? getPrepare(data) : getSubmit(data),
+        SizedBox(height: 20),
+        widget.userId == data['leader']
+            ? EndGameButton(
+                sessionId: widget.sessionId,
+                fontSize: 14,
+                height: 30,
+                width: 100,
               )
             : Container(),
       ],

@@ -253,6 +253,13 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
       child: Column(
         children: [
           SizedBox(height: 40),
+          Text(
+            'Submit words or phrases\nto describe & act out!',
+            style: TextStyle(
+              fontSize: 24,
+            ),
+          ),
+          SizedBox(height: 20),
           t < 0
               ? Text(
                   '${intToString(ms[0], pad: 2)}:${intToString(ms[1], pad: 2)}',
@@ -290,7 +297,7 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
                   enabledBorder: InputBorder.none,
                   errorBorder: InputBorder.none,
                   disabledBorder: InputBorder.none,
-                  hintText: 'description here',
+                  hintText: 'write here',
                   isDense: true,
                 ),
                 controller: wordController,

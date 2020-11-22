@@ -881,7 +881,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
     data['playerNames'] = {};
     for (int i = 0; i < playerIds.length; i++) {
       data['ready'][playerIds[i]] = false;
-      data['playerWords'][playerIds[i]] = null;
+      data['playerWords'][playerIds[i]] = [];
       data['playerNames'][playerIds[i]] = (await FirebaseFirestore.instance
               .collection('users')
               .doc(playerIds[i])
