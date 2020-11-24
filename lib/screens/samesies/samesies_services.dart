@@ -156,3 +156,46 @@ incrementLevel(data) async {
       break;
   }
 }
+
+levelToNumber(data) {
+  int level = 0;
+  switch (data['level']) {
+    case 'easy0':
+      level = 1;
+      break;
+    case 'easy1':
+      level = 2;
+      break;
+    case 'easy2':
+      level = 3;
+      break;
+    case 'medium0':
+      level = 4;
+      break;
+    case 'medium1':
+      level = 5;
+      break;
+    case 'medium2':
+      level = 6;
+      break;
+    case 'hard0':
+      level = 7;
+      break;
+    case 'hard1':
+      level = 8;
+      break;
+    case 'hard2':
+      level = 9;
+      break;
+    case 'expert0':
+      level = 10;
+      break;
+    case 'expert1':
+      level = 11;
+      break;
+    case 'expert2':
+      level = 12;
+      break;
+  }
+  return level;
+}
