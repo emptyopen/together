@@ -350,13 +350,13 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
     );
   }
 
-  teamResults(teamIndex, data) {
+  storeTeamResults(teamIndex, data) {
     int twoPlayerPairScore = 2;
     int threePlayerPairScore = 1;
     int threePlayerTripletScore = 3;
     int teamSize = data['teams'][teamIndex]['players'].length;
 
-    List results = [];
+    Map results = {};
 
     // if team has 2 players
     if (teamSize == 2) {
@@ -373,12 +373,12 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
           if (StringSimilarity.compareTwoStrings(
                   player1Word.toLowerCase(), player2Word.toLowerCase()) >
               matchFactor) {
-            results.add([
+            results[teamIndex] = [
               player1Word,
               player2Word,
               StringSimilarity.compareTwoStrings(player1Word, player2Word),
               twoPlayerPairScore
-            ]);
+            ];
             matchFound = true;
           }
         });
@@ -404,12 +404,14 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
     // if team has 3 players
     else {}
 
-    // returns words lined up, with scores:
+    // stores and returns words lined up, with scores:
     // [knife, knife, 2]
     // [counter, counter, 2]
     // [food, food, 2]
     // [tile, microwave, 0]
     // ...
+    data['results'] = results;
+    T.transact(data);
     return results;
   }
 
@@ -417,7 +419,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
     // for each team, check if all teams pass
     bool allTeamsPass = true;
     data['teams'].asMap().forEach((i, v) {
-      var results = teamResults(i, data);
+      var results = storeTeamResults(i, data);
       int score = 0;
       results.forEach((result) {
         score += result.last;
@@ -433,6 +435,27 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
       return true;
     }
     return false;
+  }
+
+  getResults(data) {
+    List<Widget> resultWidgets = [SizedBox(height: 5)];
+    data['results'].forEach((v) {
+      resultWidgets.add(
+        Row(
+          children: [
+            Text(v[0]),
+            SizedBox(width: 5),
+            Text(v[1]),
+            SizedBox(width: 5),
+            Text(v[2]),
+            SizedBox(width: 5),
+            Text(v[3]),
+            SizedBox(width: 5),
+          ],
+        ),
+      );
+    });
+    return Column(children: resultWidgets);
   }
 
   submitWord(data) async {
@@ -456,16 +479,18 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
           data['playerWords'][v] = [];
           data['ready'][v] = false;
         });
+        // store results for each team
+
       } else {
         data['state'] = 'scoreboard';
       }
     }
 
-    T.transact(data);
-    setState(() {
-      _controller.text = '';
-    });
-    myFocusNode.requestFocus();
+    // T.transact(data);
+    // setState(() {
+    //   _controller.text = '';
+    // });
+    // myFocusNode.requestFocus();
   }
 
   getSubmit(data) {
