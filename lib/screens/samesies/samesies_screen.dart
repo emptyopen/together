@@ -93,49 +93,6 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
     return [m, s];
   }
 
-  levelToEnglish(data) {
-    int level = 0;
-    switch (data['level']) {
-      case 'easy0':
-        level = 1;
-        break;
-      case 'easy1':
-        level = 2;
-        break;
-      case 'easy2':
-        level = 3;
-        break;
-      case 'medium0':
-        level = 4;
-        break;
-      case 'medium1':
-        level = 5;
-        break;
-      case 'medium2':
-        level = 6;
-        break;
-      case 'hard0':
-        level = 7;
-        break;
-      case 'hard1':
-        level = 8;
-        break;
-      case 'hard2':
-        level = 9;
-        break;
-      case 'expert0':
-        level = 10;
-        break;
-      case 'expert1':
-        level = 11;
-        break;
-      case 'expert2':
-        level = 12;
-        break;
-    }
-    return 'Level $level';
-  }
-
   getStatus(data) {
     // can either be
     // title: waiting to start
@@ -356,8 +313,6 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
     int threePlayerTripletScore = 3;
     int teamSize = data['teams'][teamIndex]['players'].length;
 
-    Map results = {};
-
     // if team has 2 players
     if (teamSize == 2) {
       // iterate over one players score, check if it exists in the other one
@@ -373,12 +328,12 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
           if (StringSimilarity.compareTwoStrings(
                   player1Word.toLowerCase(), player2Word.toLowerCase()) >
               matchFactor) {
-            results[teamIndex] = [
-              player1Word,
-              player2Word,
-              StringSimilarity.compareTwoStrings(player1Word, player2Word),
-              twoPlayerPairScore
-            ];
+            data['teams'][teamIndex]['results'].add({
+              'words': [player1Word, player2Word],
+              'similarity':
+                  StringSimilarity.compareTwoStrings(player1Word, player2Word),
+              'score': twoPlayerPairScore
+            });
             matchFound = true;
           }
         });
@@ -389,16 +344,13 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
       player2Words
           .removeWhere((element) => matchedPlayer2Words.contains(element));
       for (int i = 0; i < unmatchedPlayer1Words.length; i++) {
-        results.add([
-          unmatchedPlayer1Words[i],
-          player2Words[i],
-          StringSimilarity.compareTwoStrings(
+        data['teams'][teamIndex]['results'].add({
+          'words': [unmatchedPlayer1Words[i], player2Words[i]],
+          'similarity': StringSimilarity.compareTwoStrings(
               unmatchedPlayer1Words[i], player2Words[i]),
-          0
-        ]);
+          'score': 0
+        });
       }
-
-      print(results);
     }
 
     // if team has 3 players
@@ -410,9 +362,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
     // [food, food, 2]
     // [tile, microwave, 0]
     // ...
-    data['results'] = results;
-    T.transact(data);
-    return results;
+    return data['teams'][teamIndex]['results'];
   }
 
   teamsAllPass(data) {
@@ -422,7 +372,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
       var results = storeTeamResults(i, data);
       int score = 0;
       results.forEach((result) {
-        score += result.last;
+        score += result['score'];
       });
       if (scorePassesLevel(score, data)) {
         print('$score passes level');
@@ -471,7 +421,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
       }
     });
     if (allPlayersSubmitted) {
-      // check if all teams match sufficiently
+      // check if all teams match sufficiently, and store results
       if (teamsAllPass(data)) {
         incrementLevel(data);
         // reset playerWords and ready states
@@ -479,18 +429,20 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
           data['playerWords'][v] = [];
           data['ready'][v] = false;
         });
-        // store results for each team
-
       } else {
         data['state'] = 'scoreboard';
       }
+      data['expirationTime'] = null;
     }
+
+    print(allPlayersSubmitted);
+    print(data['expirationTime']);
 
     // T.transact(data);
     // setState(() {
     //   _controller.text = '';
     // });
-    // myFocusNode.requestFocus();
+    myFocusNode.requestFocus();
   }
 
   getSubmit(data) {
@@ -576,11 +528,11 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
           SizedBox(height: 10),
           RaisedGradientButton(
             height: 40,
-            width: 120,
+            width: 160,
             onPressed: () {
               submitWord(data);
             },
-            child: Text('Submit'),
+            child: Text('Submit (or hit enter)'),
             gradient: LinearGradient(colors: [
               Theme.of(context).primaryColor,
               Theme.of(context).accentColor

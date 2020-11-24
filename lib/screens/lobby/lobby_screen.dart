@@ -875,7 +875,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
     var playerIds = List.from(data['playerIds']);
 
-    // add player names, words, and readiness
+    // add player names, words, readiness, and results
     data['ready'] = {};
     data['playerWords'] = {};
     data['playerNames'] = {};
@@ -912,6 +912,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
         data['teams'][i]['words']['medium$j'] = mediumWords[j + i * 3];
         data['teams'][i]['words']['hard$j'] = hardWords[j + i * 3];
         data['teams'][i]['words']['expert$j'] = expertWords[j + i * 3];
+        // also add empty results
+        data['teams'][i]['results'] = [];
       }
     });
 
