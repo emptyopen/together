@@ -157,7 +157,7 @@ incrementLevel(data) async {
   }
 }
 
-levelToEnglish(data) {
+levelToNumber(data) {
   int level = 0;
   switch (data['level']) {
     case 'easy0':
@@ -197,5 +197,5 @@ levelToEnglish(data) {
       level = 12;
       break;
   }
-  return 'Level $level';
+  return level;
 }

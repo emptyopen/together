@@ -4,7 +4,9 @@ import 'package:flutter/services.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'dart:async';
 import 'package:string_similarity/string_similarity.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 
+import 'package:together/components/misc.dart';
 import 'package:together/components/buttons.dart';
 import 'package:together/services/services.dart';
 import 'package:together/services/firestore.dart';
@@ -104,7 +106,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
         word = data['teams'][i]['words'][data['level']];
       }
     });
-    var level = levelToEnglish(data);
+    var level = 'Level ${levelToNumber(data)}';
     var title = isRunning ? word.toUpperCase() : 'Waiting';
     var ms = [0, 0];
     if (isRunning && _now != null) {
@@ -157,6 +159,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
           border: Border.all(
             color: Theme.of(context).highlightColor,
           ),
+          color: Theme.of(context).dialogBackgroundColor,
         ),
         padding: EdgeInsets.all(5),
         child: Column(
@@ -240,6 +243,143 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
     T.transact(data);
   }
 
+  getTeamResults(teamIndex, data) {
+    // TODO: make this swipable for different teams, initialized per team
+    List<Widget> player1Words = [
+      Text(
+        data['playerNames'][data['teams'][teamIndex]['players'][0]],
+        style: TextStyle(fontSize: 22),
+      ),
+      PageBreak(width: 40),
+    ];
+    List<Widget> player2Words = [
+      Text(
+        data['playerNames'][data['teams'][teamIndex]['players'][1]],
+        style: TextStyle(fontSize: 22),
+      ),
+      PageBreak(width: 40),
+    ];
+    // TODO: add third if necessary
+    List<Widget> points = [
+      Text(
+        'pts',
+        style: TextStyle(fontSize: 22),
+      ),
+      PageBreak(width: 20),
+    ];
+    var width = MediaQuery.of(context).size.width;
+    data['teams'][teamIndex]['results'].forEach((v) {
+      player1Words.add(Container(
+          height: 25,
+          width: width * 0.25,
+          child: AutoSizeText(
+            v['words'][0],
+            textAlign: TextAlign.center,
+            minFontSize: 6,
+            style: TextStyle(
+                fontSize: 20,
+                color: v['score'] > 0
+                    ? v['score'] > 2
+                        ? gameColors[samesiesString]
+                        : Theme.of(context).highlightColor
+                    : Colors.grey),
+            maxLines: 2,
+          )));
+      player2Words.add(Container(
+          height: 25,
+          width: width * 0.25,
+          child: AutoSizeText(
+            v['words'][1],
+            textAlign: TextAlign.center,
+            minFontSize: 6,
+            style: TextStyle(
+                fontSize: 20,
+                color: v['score'] > 0
+                    ? v['score'] > 2
+                        ? gameColors[samesiesString]
+                        : Theme.of(context).highlightColor
+                    : Colors.grey),
+            maxLines: 2,
+          )));
+      points.add(Container(
+        height: 25,
+        child: AutoSizeText(
+          v['score'].toString(),
+          maxLines: 1,
+          style: TextStyle(
+            fontSize: 22,
+            color: v['score'] > 0
+                ? v['score'] > 2
+                    ? gameColors[samesiesString]
+                    : Theme.of(context).highlightColor
+                : Colors.grey,
+          ),
+        ),
+      ));
+    });
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey),
+            borderRadius: BorderRadius.circular(5),
+          ),
+          padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
+          child: Column(children: player1Words),
+        ),
+        SizedBox(width: 15),
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey),
+            borderRadius: BorderRadius.circular(5),
+          ),
+          padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
+          child: Column(
+            children: player2Words,
+          ),
+        ),
+        SizedBox(width: 15),
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey),
+            borderRadius: BorderRadius.circular(5),
+          ),
+          padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
+          child: Column(
+            children: points,
+          ),
+        ),
+      ],
+    );
+  }
+
+  getRoundSummary(data) {
+    int score = 0;
+    // TODO: multiple
+    data['teams'][0]['results'].forEach((v) {
+      score += v['score'];
+    });
+    List<Widget> teamResultWidgets = [
+      Text('Level ${levelToNumber(data) - 1} complete!',
+          style: TextStyle(
+            fontSize: 22,
+          )),
+      SizedBox(height: 5),
+      Text('Score: $score',
+          style: TextStyle(
+            fontSize: 18,
+          )),
+      SizedBox(height: 10),
+    ];
+    data['teams'].asMap().forEach((i, v) {
+      teamResultWidgets.add(getTeamResults(i, data));
+      teamResultWidgets.add(SizedBox(height: 10));
+    });
+    return Column(children: teamResultWidgets);
+  }
+
   getPrepare(data) {
     // check if player is ready, show who is ready
     List<Widget> playerStatuses = [];
@@ -257,6 +397,14 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
         ),
       );
     });
+
+    bool roundSummaryExists = false;
+    data['teams'].forEach((v) {
+      if (v['results'].length > 0) {
+        roundSummaryExists = true;
+      }
+    });
+
     return Center(
       child: Container(
         decoration: BoxDecoration(
@@ -264,10 +412,11 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
           borderRadius: BorderRadius.circular(15),
           color: Theme.of(context).dialogBackgroundColor,
         ),
-        padding: EdgeInsets.all(25),
+        padding: EdgeInsets.fromLTRB(15, 10, 15, 10),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            roundSummaryExists ? getRoundSummary(data) : Container(),
             Container(
               width: 200,
               decoration: BoxDecoration(
@@ -356,7 +505,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
     // if team has 3 players
     else {}
 
-    // stores and returns words lined up, with scores:
+    // stores words lined up, with scores:
     // [knife, knife, 2]
     // [counter, counter, 2]
     // [food, food, 2]
@@ -369,13 +518,13 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
     // for each team, check if all teams pass
     bool allTeamsPass = true;
     data['teams'].asMap().forEach((i, v) {
-      var results = storeTeamResults(i, data);
+      storeTeamResults(i, data);
       int score = 0;
-      results.forEach((result) {
+      data['teams'][i]['results'].forEach((result) {
         score += result['score'];
       });
       if (scorePassesLevel(score, data)) {
-        print('$score passes level');
+        print('score $score passes level');
       } else {
         allTeamsPass = false;
       }
@@ -385,27 +534,6 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
       return true;
     }
     return false;
-  }
-
-  getResults(data) {
-    List<Widget> resultWidgets = [SizedBox(height: 5)];
-    data['results'].forEach((v) {
-      resultWidgets.add(
-        Row(
-          children: [
-            Text(v[0]),
-            SizedBox(width: 5),
-            Text(v[1]),
-            SizedBox(width: 5),
-            Text(v[2]),
-            SizedBox(width: 5),
-            Text(v[3]),
-            SizedBox(width: 5),
-          ],
-        ),
-      );
-    });
-    return Column(children: resultWidgets);
   }
 
   submitWord(data) async {
@@ -435,13 +563,10 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
       data['expirationTime'] = null;
     }
 
-    print(allPlayersSubmitted);
-    print(data['expirationTime']);
-
-    // T.transact(data);
-    // setState(() {
-    //   _controller.text = '';
-    // });
+    T.transact(data);
+    setState(() {
+      _controller.text = '';
+    });
     myFocusNode.requestFocus();
   }
 
@@ -545,9 +670,8 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
 
   getGameboard(data) {
     return Column(
-      mainAxisAlignment: MainAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        SizedBox(height: 50),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -556,17 +680,15 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
             getRoomCode(data),
           ],
         ),
-        SizedBox(height: 20),
+        SizedBox(height: 5),
         getTimerBar(data),
-        !playerIsDoneSubmitting(widget.userId, data)
-            ? SizedBox(height: 10)
-            : Container(),
+        SizedBox(height: 5),
         !playerIsDoneSubmitting(widget.userId, data) && allPlayersAreReady(data)
             ? getSubmissionProgress(data)
             : Container(),
-        SizedBox(height: 20),
+        SizedBox(height: 5),
         !allPlayersAreReady(data) ? getPrepare(data) : getSubmit(data),
-        SizedBox(height: 20),
+        SizedBox(height: 15),
         widget.userId == data['leader']
             ? EndGameButton(
                 sessionId: widget.sessionId,
