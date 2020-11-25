@@ -23,36 +23,11 @@ void main() async {
 // charade: skip button seemed to freeze?
 
 // Samesies:
-// two modes, automatically chosen: high score mode (one group of 2 or 3 people) vs competitive mode (min 4 people, 2v2). groups of 2 or 3
-// everyone gets presented with the same word, and write down 10 words
-// input 10 (adjustable) words. score is calculated as the number of "similar" words
-// 2 people teams: each shared word is worth 2 points (max = 20 points)
-// 3 people teams: each tripled word is worth 3 points, each shared word is worth 1 point (max = 3 * 10 = 30)
-// gets increasingly difficult:
-// 1: easy, 4 points (2/5)
-// 2: easy, 6 points (3/7)
-// 3: easy, 8 points (4/9)
-// 4: medium: 4 points (2/5)
-// 5: medium: 6 points (3/7)
-// 6: medium: 8 points (4/9)
-// 7: hard: 6 points (2/5)
-// 8: hard: 8 points (...)
-// 9: hard: 10 points
-// 10: expert: 8 points
-// 11: expert: 10 points
-// 12: expert: 12 points (6 out of 10 the same)
-
-// list 3's, then 2's, then 1's... can fill in the blanks with loners
-// ant ant ant
-// blue blue blue
-// crow crow x
-// x dance dance
-// smash x x
+// two modes, automatically chosen: high score mode vs competitive mode
+// high score mode: ends when lose
+// competitive mode: ends when one team remains, all teams lose, or some teams win
 
 // samesies: there should be an option for multiple teams if they want the same words or not (as each other)
-// samesies: add timer for round
-// samesies: add rule for round timer
-// samesies: avoid duplicates for submissions by same person
 
 // TODO:
 // big: consolidation of new game to simplified parameters / per screen (init, scaffold, etc.)

@@ -13,6 +13,7 @@ var inSyncWords = {
     'France',
     'Egypt',
     'Australia',
+    'pencil',
   ],
   'medium': [
     'alarm',
@@ -42,6 +43,8 @@ var inSyncWords = {
     'universe',
     'table',
     'painting',
+    'smell',
+    'moon',
   ],
   'expert': [
     'self-improvement',
@@ -52,7 +55,6 @@ var inSyncWords = {
     'depths',
     'house',
     'light',
-    'smell',
     'nothing',
     'card',
     'pass',
@@ -160,23 +162,23 @@ levelToNumber(data) {
 }
 
 requiredScoreForLevel(level) {
-  int requiredScore = 4;
+  int requiredScore = 2;
   if (level.substring(level.length - 1) == '1') {
-    requiredScore = 6;
+    requiredScore = 3;
   }
   if (level.substring(level.length - 1) == '2') {
-    requiredScore = 8;
+    requiredScore = 4;
   }
   return requiredScore;
 }
 
 requiredScoreForPreviousLevel(level) {
-  int requiredScore = 8;
+  int requiredScore = 4;
   if (level.substring(level.length - 1) == '1') {
-    requiredScore = 4;
+    requiredScore = 2;
   }
   if (level.substring(level.length - 1) == '2') {
-    requiredScore = 6;
+    requiredScore = 3;
   }
   return requiredScore;
 }
