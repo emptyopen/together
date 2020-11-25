@@ -238,7 +238,7 @@ getDefaultRules(String gameName) {
       addRules = {
         'numTeams': 1,
         'maxTeams': 0,
-        'maxTeamSize': 3,
+        'maxTeamSize': 2,
         'roundTimeLimit': 120,
       };
       break;

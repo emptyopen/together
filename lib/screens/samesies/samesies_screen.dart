@@ -606,12 +606,8 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
       }
     });
     if (allPlayersSubmitted) {
-<<<<<<< HEAD
-      // check if all teams match sufficiently, and store results
-=======
       print('all players submitted');
       // check if all teams match sufficiently
->>>>>>> 6a8f025... round summary
       if (teamsAllPass(data)) {
         incrementLevel(data);
         // reset playerWords and ready states

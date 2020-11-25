@@ -89,6 +89,7 @@ class _HomeScreenState extends State<HomeScreen> {
             size: 30,
           ),
           minPlayers: gameMinPlayers[v],
+          underConstruction: v == samesiesString ? true : false,
         ),
       );
       quickStartWidgets.add(
@@ -844,6 +845,7 @@ class QuickStartButton extends StatefulWidget {
   final Icon icon;
   final int minPlayers;
   final int maxPlayers;
+  final bool underConstruction;
 
   QuickStartButton({
     this.gameName,
@@ -851,6 +853,7 @@ class QuickStartButton extends StatefulWidget {
     this.icon,
     this.minPlayers,
     this.maxPlayers,
+    this.underConstruction = false,
   });
 
   @override
@@ -859,6 +862,7 @@ class QuickStartButton extends StatefulWidget {
 
 class _QuickStartButtonState extends State<QuickStartButton> {
   bool pressed = false;
+  double length = 135;
 
   unpress() async {
     setState(() {
@@ -873,107 +877,142 @@ class _QuickStartButtonState extends State<QuickStartButton> {
       numberOfPlayersString =
           '${widget.minPlayers}-${widget.maxPlayers} players';
     }
-    return GestureDetector(
-      onTap: () async {
-        HapticFeedback.vibrate();
-        setState(() {
-          pressed = true;
-        });
-        createGame(context, widget.gameName, '', false, unpress);
-      },
-      child: Container(
-        height: 135,
-        width: 135,
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              blurRadius: 1.0,
-              offset: Offset(
-                1.0,
-                1.0,
+    return Stack(
+      children: [
+        GestureDetector(
+          onTap: () async {
+            HapticFeedback.vibrate();
+            setState(() {
+              pressed = true;
+            });
+            createGame(context, widget.gameName, '', false, unpress);
+          },
+          child: Container(
+            height: length,
+            width: length,
+            decoration: BoxDecoration(
+              boxShadow: [
+                BoxShadow(
+                  blurRadius: 1.0,
+                  offset: Offset(
+                    1.0,
+                    1.0,
+                  ),
+                )
+              ],
+              gradient: LinearGradient(
+                colors: pressed
+                    ? [
+                        Colors.blue[900],
+                        Colors.blue[600],
+                      ]
+                    : [
+                        Colors.blue[800],
+                        Colors.blue[400],
+                      ],
               ),
-            )
-          ],
-          gradient: LinearGradient(
-            colors: pressed
-                ? [
-                    Colors.blue[900],
-                    Colors.blue[600],
-                  ]
-                : [
-                    Colors.blue[800],
-                    Colors.blue[400],
-                  ],
+              borderRadius: BorderRadius.circular(20),
+            ),
+            padding: EdgeInsets.all(15),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Container(
+                  padding: EdgeInsets.all(5),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: widget.icon,
+                ),
+                SizedBox(height: 7),
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(100),
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.white.withAlpha(100),
+                        Colors.blue.withAlpha(50),
+                      ],
+                    ),
+                  ),
+                  padding: EdgeInsets.fromLTRB(11, 3, 11, 2),
+                  child: AutoSizeText(
+                    widget.gameName,
+                    maxLines: 1,
+                    minFontSize: 8,
+                    style: TextStyle(
+                      fontSize: 17,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 1),
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(100),
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.blue.withAlpha(0),
+                        Colors.white.withAlpha(50),
+                      ],
+                    ),
+                  ),
+                  padding: EdgeInsets.fromLTRB(12, 3, 10, 2),
+                  child: Text(
+                    widget.subtitle,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 9,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 3),
+                Text(
+                  numberOfPlayersString,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 9,
+                    color: Colors.grey[300],
+                  ),
+                ),
+              ],
+            ),
           ),
-          borderRadius: BorderRadius.circular(20),
         ),
-        padding: EdgeInsets.all(15),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Container(
-              padding: EdgeInsets.all(5),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: widget.icon,
-            ),
-            SizedBox(height: 7),
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(100),
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.white.withAlpha(100),
-                    Colors.blue.withAlpha(50),
+        widget.underConstruction
+            ? Icon(MdiIcons.texture, size: length, color: Colors.amber)
+            : Container(),
+        widget.underConstruction
+            ? Container(
+                height: length,
+                width: length,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  color: Colors.black.withAlpha(
+                    140,
+                  ),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      MdiIcons.accountHardHat,
+                      size: 40,
+                      color: Colors.amber,
+                    ),
+                    Text('UNDER\nCONSTRUCTION',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.amber,
+                          fontSize: 14,
+                        )),
                   ],
                 ),
-              ),
-              padding: EdgeInsets.fromLTRB(11, 3, 11, 2),
-              child: AutoSizeText(
-                widget.gameName,
-                maxLines: 1,
-                minFontSize: 8,
-                style: TextStyle(
-                  fontSize: 17,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-            SizedBox(height: 1),
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(100),
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.blue.withAlpha(0),
-                    Colors.white.withAlpha(50),
-                  ],
-                ),
-              ),
-              padding: EdgeInsets.fromLTRB(12, 3, 10, 2),
-              child: Text(
-                widget.subtitle,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 9,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-            SizedBox(height: 3),
-            Text(
-              numberOfPlayersString,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 9,
-                color: Colors.grey[300],
-              ),
-            ),
-          ],
-        ),
-      ),
+              )
+            : Container(),
+      ],
     );
   }
 }
