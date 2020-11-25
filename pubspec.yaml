@@ -23,6 +23,7 @@ dependencies:
   speech_to_text:
   rxdart:
   clipboard:
+  flushbar:
 
   firebase_core:
   firebase_analytics:

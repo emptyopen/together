@@ -913,6 +913,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
         data['teams'][i]['words']['hard$j'] = hardWords[j + i * 3];
         data['teams'][i]['words']['expert$j'] = expertWords[j + i * 3];
       }
+      data['teams'][i]['results'] = [];
     });
 
     data['level'] = 'easy0';
@@ -1433,7 +1434,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
                         ? RaisedGradientButton(
                             height: 25,
                             width: 100,
-                            child: Text('Join team'),
+                            child: Text('Join team',
+                                style: TextStyle(color: Colors.white)),
                             onPressed: () {
                               joinTeam(data, i, userId, T);
                             },
