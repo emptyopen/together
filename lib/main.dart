@@ -18,14 +18,14 @@ void main() async {
 // also draw 2 seems to fail????
 // bananaphone: increment player score
 
-// charade: go button grey, stuck
-// charade: show crossed out words for judge
+// charade: go button grey, stuck - add a permanent check for a bad state (band-aid?)
+// charade: show crossed out words when judging
 // charade: skip button seemed to freeze?
 
 // Samesies:
-// two modes, automatically chosen: high score mode vs competitive mode
-// high score mode: ends when lose
-// competitive mode: ends when one team remains, all teams lose, or some teams win
+// two modes, automatically chosen: high score mode vs survival mode
+// TODO: survival mode: ends when lose (only available for one team)
+// high score mode: play to the end, best score wins
 
 // samesies: there should be an option for multiple teams if they want the same words or not (as each other)
 

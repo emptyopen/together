@@ -14,6 +14,24 @@ var inSyncWords = {
     'Egypt',
     'Australia',
     'pencil',
+    'mirror',
+    'concert',
+    'frozen',
+    'ground',
+    'dentist',
+    'camera',
+    'witch',
+    'champagne',
+    'bagel',
+    'salt',
+    'beach',
+    'laughter',
+    'underwear',
+    'playground',
+    'hike',
+    'pocket',
+    'shoes',
+    'angel',
   ],
   'medium': [
     'alarm',
@@ -29,6 +47,29 @@ var inSyncWords = {
     'Hawaii',
     'lion',
     'cigar',
+    'bank',
+    'abstract',
+    'houseplant',
+    'flour',
+    'pool',
+    'bed',
+    'pig',
+    'garage',
+    'countryside',
+    'Arctic',
+    'sink',
+    'cabin',
+    'baby',
+    'sweet',
+    'hand',
+    'massage',
+    'paranormal',
+    'punch',
+    'guest',
+    'sleep',
+    'sword',
+    'escape',
+    'mask',
   ],
   'hard': [
     'water',
@@ -45,6 +86,27 @@ var inSyncWords = {
     'painting',
     'smell',
     'moon',
+    'travel',
+    'past',
+    'crime',
+    'cage',
+    'calm',
+    'backyard',
+    'neighbor',
+    'you',
+    'box',
+    'depths',
+    'charisma',
+    'warning',
+    'pop',
+    'storm',
+    'flower',
+    'fire',
+    'warm',
+    'gold',
+    'tree',
+    'hair',
+    'team',
   ],
   'expert': [
     'self-improvement',
@@ -52,12 +114,31 @@ var inSyncWords = {
     'music',
     'art',
     'metal',
-    'depths',
     'house',
     'light',
     'nothing',
     'card',
     'pass',
+    'life',
+    'cold',
+    'rhetoric',
+    'purple',
+    'architecture',
+    'body',
+    'relationship',
+    'small',
+    'ethics',
+    'go',
+    'visit',
+    'bag',
+    'water',
+    'oil',
+    'theater',
+    'rare',
+    'product',
+    'sell',
+    'top',
+    'city',
   ],
 };
 
@@ -116,6 +197,46 @@ incrementLevel(data) async {
       data['state'] = 'scoreboard';
       break;
   }
+}
+
+previousLevel(data) {
+  String level = 'easy0';
+  switch (data['level']) {
+    case 'easy1':
+      level = 'easy0';
+      break;
+    case 'easy2':
+      level = 'easy1';
+      break;
+    case 'medium0':
+      level = 'easy2';
+      break;
+    case 'medium1':
+      level = 'medium1';
+      break;
+    case 'medium2':
+      level = 'medium1';
+      break;
+    case 'hard0':
+      level = 'medium2';
+      break;
+    case 'hard1':
+      level = 'hard0';
+      break;
+    case 'hard2':
+      level = 'hard1';
+      break;
+    case 'expert0':
+      level = 'hard2';
+      break;
+    case 'expert1':
+      level = 'expert0';
+      break;
+    case 'expert2':
+      level = 'expert1';
+      break;
+  }
+  return level;
 }
 
 levelToNumber(data) {

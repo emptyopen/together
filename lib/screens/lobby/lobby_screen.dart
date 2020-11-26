@@ -916,6 +916,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
         data['teams'][i]['results'] = [];
       }
       data['teams'][i]['results'] = [];
+      data['teams'][i]['score'] = 0;
     });
 
     data['level'] = 'easy0';

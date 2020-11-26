@@ -6,6 +6,7 @@ import 'dart:async';
 import 'package:string_similarity/string_similarity.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flushbar/flushbar.dart';
+import 'dart:math';
 
 import 'package:together/components/misc.dart';
 import 'package:together/components/buttons.dart';
@@ -97,6 +98,56 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
     return [m, s];
   }
 
+  getLevelProgress(data) {
+    double progressBallLength = 7;
+    int level = levelToNumber(data);
+    List<Widget> barWidgets = [
+      Container(
+        height: progressBallLength,
+        width: progressBallLength,
+        decoration: BoxDecoration(
+          color: level == 1
+              ? gameColors[samesiesString]
+              : Theme.of(context).highlightColor.withAlpha(230),
+          borderRadius: BorderRadius.circular(progressBallLength),
+        ),
+      ),
+    ];
+    for (int i = 2; i < 13; i++) {
+      // line
+      barWidgets.add(
+        Container(
+          height: 1,
+          width: 8,
+          decoration: BoxDecoration(
+            color: level >= i
+                ? Theme.of(context).highlightColor.withAlpha(230)
+                : Colors.grey,
+          ),
+        ),
+      );
+      // dot
+      barWidgets.add(
+        Container(
+          height: progressBallLength + (level == i ? 5 : 0),
+          width: progressBallLength + (level == i ? 5 : 0),
+          decoration: BoxDecoration(
+            color: level == i
+                ? gameColors[samesiesString]
+                : level > i
+                    ? Theme.of(context).highlightColor.withAlpha(230)
+                    : Colors.grey,
+            borderRadius: BorderRadius.circular(progressBallLength),
+          ),
+        ),
+      );
+    }
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: barWidgets,
+    );
+  }
+
   getStatus(data) {
     // can either be
     // title: waiting to start
@@ -119,13 +170,12 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
         ? '--:--'
         : '${intToString(ms[0], pad: 2)}:${intToString(ms[1], pad: 2)}';
     return Container(
-      width: 200,
-      height: 100,
       decoration: BoxDecoration(
         border: Border.all(color: Theme.of(context).highlightColor),
         borderRadius: BorderRadius.circular(15),
         color: Theme.of(context).dialogBackgroundColor,
       ),
+      padding: EdgeInsets.fromLTRB(15, 10, 15, 10),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -136,6 +186,8 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
               color: Colors.grey,
             ),
           ),
+          SizedBox(height: 5),
+          getLevelProgress(data),
           SizedBox(height: 5),
           Text(
             title,
@@ -251,34 +303,53 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
   }
 
   getTeamResults(teamIndex, data) {
-    // TODO: make this swipable for different teams, initialized per team
     List<Widget> player1Words = [
       Text(
         data['playerNames'][data['teams'][teamIndex]['players'][0]],
-        style: TextStyle(fontSize: 22),
+        style: TextStyle(
+          fontSize: 22,
+        ),
       ),
-      PageBreak(width: 40),
+      PageBreak(width: 60),
+      SizedBox(height: 5),
     ];
     List<Widget> player2Words = [
       Text(
         data['playerNames'][data['teams'][teamIndex]['players'][1]],
-        style: TextStyle(fontSize: 22),
+        style: TextStyle(
+          fontSize: 22,
+        ),
       ),
-      PageBreak(width: 40),
+      PageBreak(width: 60),
+      SizedBox(height: 5),
     ];
-    // TODO: add third if necessary
-    List<Widget> points = [
-      Text(
-        'pts',
-        style: TextStyle(fontSize: 22),
-      ),
-      PageBreak(width: 20),
-    ];
+
+    int score = 0;
+    data['teams'][teamIndex]['results'].forEach((v) {
+      score += v['score'];
+    });
+
+    bool complete = false;
+    if (data['state'] == 'scoreboard') {
+      complete = true;
+    }
+
+    bool isWinner = false;
+    int maxScore = 0;
+    data['teams'].forEach((v) {
+      if (v['score'] > maxScore) {
+        maxScore = v['score'];
+      }
+    });
+    if (data['teams'][teamIndex]['score'] == maxScore) {
+      isWinner = true;
+    }
+
     var width = MediaQuery.of(context).size.width;
     data['teams'][teamIndex]['results'].forEach((v) {
       player1Words.add(Container(
           height: 25,
-          width: width * 0.25,
+          width: width * 0.3,
           child: Center(
             child: AutoSizeText(
               v['words'][0],
@@ -296,7 +367,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
           )));
       player2Words.add(Container(
           height: 25,
-          width: width * 0.25,
+          width: width * 0.3,
           child: Center(
             child: AutoSizeText(
               v['words'][1],
@@ -312,55 +383,114 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
               maxLines: 2,
             ),
           )));
-      points.add(Container(
-        height: 25,
-        child: AutoSizeText(
-          v['score'].toString(),
-          maxLines: 1,
-          style: TextStyle(
-            fontSize: 22,
-            color: v['score'] > 0
-                ? v['score'] > 2
-                    ? gameColors[samesiesString]
-                    : Theme.of(context).highlightColor
-                : Colors.grey,
-          ),
-        ),
-      ));
     });
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      mainAxisSize: MainAxisSize.min,
+    return Column(
       children: [
-        Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey),
-            borderRadius: BorderRadius.circular(5),
-          ),
-          padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
-          child: Column(children: player1Words),
+        SizedBox(height: 5),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            complete && isWinner
+                ? Icon(
+                    MdiIcons.crown,
+                    color: Colors.amber,
+                    size: 40,
+                  )
+                : Container(),
+            SizedBox(width: 10),
+            Container(),
+            SizedBox(width: 10),
+            Column(
+              children: [
+                Text('Team ${teamIndex + 1}',
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 18,
+                    )),
+                SizedBox(height: 5),
+                PageBreak(width: 50),
+                Text(
+                    '${data['teams'][teamIndex]['words'][previousLevel(data)].toUpperCase()}',
+                    style: TextStyle(
+                      fontSize: 26,
+                    )),
+                SizedBox(height: 5),
+                PageBreak(width: 50),
+                Text('Round Score:',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey,
+                    )),
+                Text('$score',
+                    style: TextStyle(
+                      fontSize: 20,
+                    )),
+              ],
+            ),
+            SizedBox(width: 20),
+            complete
+                ? Column(
+                    children: [
+                      Text(
+                        'Total Score:',
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 18,
+                        ),
+                      ),
+                      Text(
+                        '${data['teams'][teamIndex]['score']}',
+                        style: TextStyle(
+                          fontSize: 40,
+                        ),
+                      ),
+                    ],
+                  )
+                : Container(),
+            SizedBox(width: 10),
+            complete && isWinner
+                ? Icon(
+                    MdiIcons.crown,
+                    color: Colors.amber,
+                    size: 40,
+                  )
+                : Container(),
+          ],
         ),
-        SizedBox(width: 15),
-        Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey),
-            borderRadius: BorderRadius.circular(5),
-          ),
-          padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
-          child: Column(
-            children: player2Words,
-          ),
-        ),
-        SizedBox(width: 15),
-        Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey),
-            borderRadius: BorderRadius.circular(5),
-          ),
-          padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
-          child: Column(
-            children: points,
-          ),
+        SizedBox(height: 10),
+        data['mode'] == 'Survival'
+            ? Text(
+                '(needed ${complete ? requiredScoreForLevel(data['level']) : requiredScoreForPreviousLevel(data['level'])})',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey,
+                ))
+            : Container(width: 0),
+        SizedBox(height: 5),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey),
+                borderRadius: BorderRadius.circular(5),
+              ),
+              padding: EdgeInsets.fromLTRB(15, 15, 15, 15),
+              child: Column(children: player1Words),
+            ),
+            SizedBox(width: 15),
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey),
+                borderRadius: BorderRadius.circular(5),
+              ),
+              padding: EdgeInsets.fromLTRB(15, 15, 15, 15),
+              child: Column(
+                children: player2Words,
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -371,43 +501,22 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
     if (data['state'] == 'scoreboard') {
       complete = true;
     }
-    int score = 0;
-    // TODO: multiple
-    data['teams'][0]['results'].forEach((v) {
-      score += v['score'];
-    });
     List<Widget> teamResultWidgets = [
       Text(
           complete
-              ? 'You got knocked out on level ${levelToNumber(data)}'
+              ? levelToNumber(data) == 12
+                  ? 'Game complete!'
+                  : 'You got knocked out on level ${levelToNumber(data)}'
               : 'Level ${levelToNumber(data) - 1} complete!',
           style: TextStyle(
             fontSize: 22,
             color: gameColors[samesiesString],
           )),
-      SizedBox(height: 5),
-      Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text('Score: $score',
-              style: TextStyle(
-                fontSize: 18,
-              )),
-          SizedBox(width: 10),
-          Text(
-              '(needed ${complete ? requiredScoreForLevel(data['level']) : requiredScoreForPreviousLevel(data['level'])})',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
-              )),
-        ],
-      ),
       SizedBox(height: 10),
     ];
     data['teams'].asMap().forEach((i, v) {
       teamResultWidgets.add(getTeamResults(i, data));
-      teamResultWidgets.add(SizedBox(height: 10));
+      teamResultWidgets.add(SizedBox(height: 20));
     });
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -539,36 +648,30 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
       }
     }
 
-    // if team has 3 players
-    else {}
-
-    // stores words lined up, with scores:
-    // [knife, knife, 2]
-    // [counter, counter, 2]
-    // [food, food, 2]
-    // [tile, microwave, 0]
-    // ...
-    return data['teams'][teamIndex]['results'];
-  }
-
-  teamsAllPass(data) {
-    // for each team, check if all teams pass
-    bool allTeamsPass = true;
-    data['teams'].asMap().forEach((i, v) {
-      storeTeamResults(i, data);
-      int score = 0;
-      data['teams'][i]['results'].forEach((result) {
-        score += result['score'];
-      });
-      if (score >= requiredScoreForLevel(data['level'])) {
-        print(
-            'score $score passes required score ${requiredScoreForLevel(data['level'])}');
-      } else {
-        allTeamsPass = false;
-      }
+    int roundScore = 0;
+    data['teams'][teamIndex]['results'].forEach((v) {
+      roundScore += v['score'];
     });
 
-    if (allTeamsPass) {
+    print('adding $roundScore');
+
+    data['teams'][teamIndex]['score'] += roundScore;
+  }
+
+  teamPasses(data) {
+    bool passes = true;
+    int score = 0;
+    data['teams'][0]['results'].forEach((result) {
+      score += result['score'];
+    });
+    if (score >= requiredScoreForLevel(data['level'])) {
+      print(
+          'score $score passes required score ${requiredScoreForLevel(data['level'])}');
+    } else {
+      passes = false;
+    }
+
+    if (passes) {
       return true;
     }
     return false;
@@ -605,19 +708,23 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
         allPlayersSubmitted = false;
       }
     });
+    // increment / check if game is over
     if (allPlayersSubmitted) {
-      print('all players submitted');
-      // check if all teams match sufficiently
-      if (teamsAllPass(data)) {
-        incrementLevel(data);
-        // reset playerWords and ready states
-        data['playerIds'].forEach((v) {
-          data['playerWords'][v] = [];
-          data['ready'][v] = false;
-        });
-      } else {
-        data['state'] = 'scoreboard';
+      // store team results
+      data['teams'].asMap().forEach((i, v) {
+        storeTeamResults(i, data);
+      });
+      if (data['mode'] == 'Survival') {
+        if (!teamPasses(data)) {
+          data['state'] = 'scoreboard';
+        }
       }
+      incrementLevel(data);
+      // reset playerWords and ready states
+      data['playerIds'].forEach((v) {
+        data['playerWords'][v] = [];
+        data['ready'][v] = false;
+      });
       data['expirationTime'] = null;
     }
 
@@ -727,20 +834,24 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
   }
 
   getScoreboard(data) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          getRoundSummary(data),
-          widget.userId == data['leader']
-              ? EndGameButton(
-                  sessionId: widget.sessionId,
-                  fontSize: 14,
-                  height: 30,
-                  width: 100,
-                )
-              : Container(),
-        ],
+    return TogetherScrollView(
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(height: 30),
+            getRoundSummary(data),
+            widget.userId == data['leader']
+                ? EndGameButton(
+                    sessionId: widget.sessionId,
+                    fontSize: 14,
+                    height: 30,
+                    width: 100,
+                  )
+                : Container(),
+            SizedBox(height: 40),
+          ],
+        ),
       ),
     );
   }
