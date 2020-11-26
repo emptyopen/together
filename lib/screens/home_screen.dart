@@ -36,6 +36,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
+  List gamesUnderConstruction = [];
 
   signOutCallback() async {
     try {
@@ -89,7 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
             size: 30,
           ),
           minPlayers: gameMinPlayers[v],
-          underConstruction: v == samesiesString ? true : false,
+          underConstruction: gamesUnderConstruction.contains(v) ? true : false,
         ),
       );
       quickStartWidgets.add(

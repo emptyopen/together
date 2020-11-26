@@ -914,6 +914,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
         data['teams'][i]['words']['expert$j'] = expertWords[j + i * 3];
       }
       data['teams'][i]['results'] = [];
+      data['teams'][i]['score'] = 0;
     });
 
     data['level'] = 'easy0';

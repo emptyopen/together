@@ -435,6 +435,7 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
                   rule: 'collectionTimeLimit',
                   updateRules: updateRules,
                   choices: [30, 45, 60, 90, 120, 180, 240, 300, 360],
+                  locked: data['rules']['playerWords'] == 'Player',
                 ),
               ];
               break;
@@ -454,7 +455,16 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
                   title: 'Round time limit:',
                   rule: 'roundTimeLimit',
                   updateRules: updateRules,
-                  choices: [80, 100, 120, 140, 160, 180, 200, 220, 240, 2400],
+                  choices: [30, 45, 60, 70, 80, 90, 100, 120],
+                ),
+                SizedBox(height: 20),
+                EditRulesDropdown(
+                  data: data,
+                  title: 'Survival mode (2 player only)',
+                  rule: 'mode',
+                  updateRules: updateRules,
+                  choices: ['High Score', 'Survival'],
+                  locked: data['rules']['numTeams'] > 1,
                 ),
               ];
               break;
@@ -488,9 +498,15 @@ class EditRulesDropdown extends StatelessWidget {
   final String rule;
   final Function updateRules;
   final List choices;
+  final bool locked;
 
   EditRulesDropdown(
-      {this.data, this.title, this.rule, this.updateRules, this.choices});
+      {this.data,
+      this.title,
+      this.rule,
+      this.updateRules,
+      this.choices,
+      this.locked});
 
   @override
   Widget build(BuildContext context) {
@@ -504,12 +520,16 @@ class EditRulesDropdown extends StatelessWidget {
             value: data['rules'][rule],
             iconSize: 24,
             elevation: 16,
-            style: TextStyle(color: Theme.of(context).highlightColor),
+            style: TextStyle(
+                color: locked ? Colors.grey : Theme.of(context).highlightColor),
             underline: Container(
               height: 2,
               color: Theme.of(context).highlightColor,
             ),
             onChanged: (newValue) {
+              if (locked) {
+                return;
+              }
               updateRules(data, rule, newValue);
             },
             items: choices.map<DropdownMenuItem<int>>((value) {

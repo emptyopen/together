@@ -40,7 +40,7 @@ Map gameSubtitles = {
   threeCrownsString: 'Rise, peasants!',
   plotTwistString: 'Chit & chat!',
   charadeATroisString: '3 round charades!',
-  samesiesString: 'Coming soon!',
+  samesiesString: 'In Sync!',
 };
 
 Map gameMinPlayers = {
