@@ -36,4 +36,35 @@ class Transactor {
       transaction.update(postRef, {'texts': texts});
     });
   }
+
+  transactThreeCrownsDuelerCard(card) async {
+    await _firestore.runTransaction((transaction) async {
+      DocumentReference postRef =
+          _firestore.collection('sessions').doc(sessionId);
+      DocumentSnapshot snapshot = await transaction.get(postRef);
+      var duel = snapshot.data()['duel'];
+      duel['duelerCard'] = card;
+      transaction.update(postRef, {'duel': duel});
+    });
+  }
+
+  transactThreeCrownsDueleeCard(card) async {
+    await _firestore.runTransaction((transaction) async {
+      DocumentReference postRef =
+          _firestore.collection('sessions').doc(sessionId);
+      DocumentSnapshot snapshot = await transaction.get(postRef);
+      var duel = snapshot.data()['duel'];
+      duel['dueleeCard'] = card;
+      transaction.update(postRef, {'duel': duel});
+    });
+  }
+
+  transactAll(data) async {
+    await _firestore.runTransaction((transaction) async {
+      DocumentReference postRef =
+          _firestore.collection('sessions').doc(sessionId);
+      DocumentSnapshot snapshot = await transaction.get(postRef);
+      transaction.set(postRef, data);
+    });
+  }
 }

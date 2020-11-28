@@ -92,8 +92,8 @@ var deck = [
   '5S',
   '6S',
   '7S',
-  '8S',
-  '9S',
+  // '8S',
+  // '9S',
   'JS',
   'QS',
   'KS',
@@ -104,8 +104,8 @@ var deck = [
   '5H',
   '6H',
   '7H',
-  '8H',
-  '9H',
+  // '8H',
+  // '9H',
   'JH',
   'QH',
   'KH',
@@ -116,8 +116,8 @@ var deck = [
   '5C',
   '6C',
   '7C',
-  '8C',
-  '9C',
+  // '8C',
+  // '9C',
   'JC',
   'QC',
   'KC',
@@ -128,8 +128,8 @@ var deck = [
   '5D',
   '6D',
   '7D',
-  '8D',
-  '9D',
+  // '8D',
+  // '9D',
   'JD',
   'QD',
   'KD',
@@ -137,13 +137,13 @@ var deck = [
 
 stringToNumeric(String v) {
   if (v == 'J') {
-    return 10;
+    return 9;
   }
   if (v == 'Q') {
-    return 11;
+    return 10;
   }
   if (v == 'K') {
-    return 12;
+    return 11;
   }
   return int.parse(v);
 }
