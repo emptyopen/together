@@ -95,6 +95,36 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     }
   }
 
+  addBonusTiles(data) {
+    String duelerValue = data['duel']['duelerCard'][0];
+    String dueleeValue = data['duel']['dueleeCard'][0];
+
+    bool fiveSixSevenPair = true;
+    if (!['5', '6', '7'].contains(dueleeValue)) {
+      fiveSixSevenPair = false;
+    }
+    if (!['5', '6', '7'].contains(duelerValue)) {
+      fiveSixSevenPair = false;
+    }
+    if (dueleeValue == duelerValue) {
+      fiveSixSevenPair = false;
+    }
+    if (fiveSixSevenPair) {
+      data['log']
+          .add('$dueleeValue and $duelerValue! Both players get 1 bonus tile.');
+      data['duel']['state'] = 'collection';
+      if (data['duel']['winnerIndexes'][0] == data['duel']['duelerIndex']) {
+        data['duel']['tilePrizes'] = [1 + data['duel']['tilePrizes'][0], 1];
+      } else {
+        data['duel']['tilePrizes'] = [1, 1 + data['duel']['tilePrizes'][0]];
+      }
+      data['duel']['winnerIndexes'] = [
+        data['duel']['duelerIndex'],
+        data['duel']['dueleeIndex']
+      ];
+    }
+  }
+
   determineDuelWinner(data) async {
     print('determining winner');
 
@@ -165,14 +195,15 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     } else if (flipWinners) {
       print('flip winners');
       // winners are flipped, lower value wins
+      var winner = data['duel']['duelerIndex'];
       if (stringToNumeric(duelerValue) > stringToNumeric(dueleeValue)) {
-        setWinner(data['duel']['dueleeIndex'], data);
-      } else {
-        setWinner(data['duel']['duelerIndex'], data);
+        winner = data['duel']['dueleeIndex'];
       }
+      setWinner(winner, data);
       int tilePrize = (letterCardInvolved ? 2 : 1) * data['duel']['joust'];
       data['duel']['tilePrizes'] = [tilePrize];
       data['duel']['state'] = 'collection';
+      addBonusTiles(data);
     } else {
       print('non flip winner');
       // winners are NOT flipped, higher value wins
@@ -264,6 +295,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
         return;
       }
       data['duel']['duelerCard'] = val;
+      // T.transactThreeCrownsDuelerCard(val);
       if (data['duel']['dueleeCard'] != '') {
         determineDuelWinner(data);
       }
@@ -279,6 +311,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
         return;
       }
       data['duel']['dueleeCard'] = val;
+      // T.transactThreeCrownsDueleeCard(val);
       if (data['duel']['duelerCard'] != '') {
         determineDuelWinner(data);
       }
@@ -294,7 +327,9 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
 
     HapticFeedback.heavyImpact();
 
-    T.transact(data);
+    T.transactAll(data);
+
+    // T.transact(data);
   }
 
   getHand(data) {
@@ -690,6 +725,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
       if (letterCardInvolved) {
         data['duel']['tilePrizes'] = [2 * data['duel']['joust']];
       }
+      addBonusTiles(data);
       data['duel']['pillagePrize'] = 0;
       String plural = data['duel']['tilePrizes'][0] <= 1 ? 'tile' : 'tiles';
       String winner = playerNameFromIndex(data['duel']['responderIndex'], data);

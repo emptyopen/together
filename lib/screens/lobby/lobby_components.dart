@@ -506,7 +506,7 @@ class EditRulesDropdown extends StatelessWidget {
       this.rule,
       this.updateRules,
       this.choices,
-      this.locked});
+      this.locked = false});
 
   @override
   Widget build(BuildContext context) {

@@ -168,6 +168,17 @@ class ThreeCrownsCard extends StatelessWidget {
                       right: 1,
                     )
                   : Container(),
+              ['5', '6', '7'].contains(value[0]) && size == 'medium'
+                  ? Positioned(
+                      child: Icon(
+                        MdiIcons.baguette,
+                        size: 20,
+                        color: Colors.black.withAlpha(100),
+                      ),
+                      bottom: 1,
+                      right: 1,
+                    )
+                  : Container(),
             ],
           )),
     );

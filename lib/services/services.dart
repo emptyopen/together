@@ -208,7 +208,7 @@ getDefaultRules(String gameName) {
       addRules = {
         'turn': userId,
         'minWordLength': 4,
-        'maxWordLength': 7,
+        'maxWordLength': 5,
       };
       break;
     case 'Rivers':

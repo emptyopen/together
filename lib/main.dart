@@ -17,6 +17,23 @@ void main() async {
 // drawing remains on the board when the final description is submitted...
 // also draw 2 seems to fail????
 // bananaphone: increment player score
+// remove scrolling issue
+// voting screen: 2nd round still showing 1st round clues
+
+// transact:
+// bananaphone
+// three crowns
+// charade a trois for judging vs. playing - also look at how the timer might be getting set by everyone?
+
+// help screen weird
+
+// transact ALL!!!
+// 3 crowns - show outline of winning card
+
+// charade a trois: many duplicates across rounds
+// starting with 2v3 teams in charade was bad for #3 (eric)
+
+// keyboard issue in plot twist - all textfields should have a "go" button to close the keyboard
 
 // charade: go button grey, stuck - add a permanent check for a bad state (band-aid?)
 // charade: show crossed out words when judging
@@ -28,6 +45,9 @@ void main() async {
 // high score mode: play to the end, best score wins
 
 // samesies: there should be an option for multiple teams if they want the same words or not (as each other)
+
+// BIG: add additional skins after certain number of wins
+// - new crowns for certain wins in three crowns
 
 // TODO:
 // big: consolidation of new game to simplified parameters / per screen (init, scaffold, etc.)
