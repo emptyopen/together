@@ -115,7 +115,6 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
   }
 
   judgmentComplete(data) async {
-    print('judgement complete running');
     // if time is expired, turn should be updated
     if (data['temporaryExpirationTime'] == null) {
       print('turn');
@@ -439,12 +438,7 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
   }
 
   playerSkipsWord(data) async {
-    // pop word from pile, add words to judgeList
-    String pile = data['internalState'];
-    var word = data['${pile}Pile'].removeLast();
-    data['${pile}Pile'].insert(0, word);
-
-    T.transact(data);
+    T.transactCharadeATroisStatePile(data);
   }
 
   getButtons(data) {
@@ -557,6 +551,8 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
     data['roundScore'] += 1;
 
     HapticFeedback.vibrate();
+
+    T.transactCharadeATroisJudgeListRemove(data['judgeList']);
 
     if (data['expirationTime'] == null && data['judgeList'].length == 0) {
       judgmentComplete(data);

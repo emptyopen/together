@@ -241,6 +241,9 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
       padding: const EdgeInsets.fromLTRB(0.0, 15.0, 0.0, 0.0),
       child: new TextFormField(
         maxLines: 1,
+        onFieldSubmitted: (s) {
+          validateAndSubmit();
+        },
         obscureText: true,
         autofocus: false,
         decoration: new InputDecoration(

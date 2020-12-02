@@ -295,7 +295,6 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
         return;
       }
       data['duel']['duelerCard'] = val;
-      // T.transactThreeCrownsDuelerCard(val);
       if (data['duel']['dueleeCard'] != '') {
         determineDuelWinner(data);
       }
@@ -311,7 +310,6 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
         return;
       }
       data['duel']['dueleeCard'] = val;
-      // T.transactThreeCrownsDueleeCard(val);
       if (data['duel']['duelerCard'] != '') {
         determineDuelWinner(data);
       }
@@ -327,9 +325,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
 
     HapticFeedback.heavyImpact();
 
-    T.transactAll(data);
-
-    // T.transact(data);
+    T.transact(data);
   }
 
   getHand(data) {
@@ -1826,34 +1822,36 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     var height = MediaQuery.of(context).size.height;
     var playerIndex = data['playerIds'].indexOf(widget.userId);
     return SafeArea(
-      child: Container(
-        height: height,
-        width: width,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            getLog(data, context, 260),
-            SizedBox(height: 10),
-            getCenter(data),
-            SizedBox(height: 10),
-            getAction(data),
-            SizedBox(height: 10),
-            getHand(data),
-            SizedBox(height: 10),
-            getTiles(playerIndex, data),
-            widget.userId == data['leader']
-                ? Column(
-                    children: <Widget>[
-                      SizedBox(height: 20),
-                      EndGameButton(
-                        sessionId: widget.sessionId,
-                        height: 35,
-                        width: 100,
-                      ),
-                    ],
-                  )
-                : Container(),
-          ],
+      child: TogetherScrollView(
+        child: Container(
+          height: height,
+          width: width,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              getLog(data, context, 260),
+              SizedBox(height: 10),
+              getCenter(data),
+              SizedBox(height: 10),
+              getAction(data),
+              SizedBox(height: 10),
+              getHand(data),
+              SizedBox(height: 10),
+              getTiles(playerIndex, data),
+              widget.userId == data['leader']
+                  ? Column(
+                      children: <Widget>[
+                        SizedBox(height: 20),
+                        EndGameButton(
+                          sessionId: widget.sessionId,
+                          height: 35,
+                          width: 100,
+                        ),
+                      ],
+                    )
+                  : Container(),
+            ],
+          ),
         ),
       ),
     );

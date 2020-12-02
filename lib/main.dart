@@ -22,19 +22,13 @@ void main() async {
 
 // transact:
 // bananaphone
-// three crowns
-// charade a trois for judging vs. playing - also look at how the timer might be getting set by everyone?
-
-// help screen weird
-
-// transact ALL!!!
-// 3 crowns - show outline of winning card
-
-// charade a trois: many duplicates across rounds
-// starting with 2v3 teams in charade was bad for #3 (eric)
+// three crowns - can't transact unless duelerCard & dealerCard are moved out of duel (probably should do)
 
 // keyboard issue in plot twist - all textfields should have a "go" button to close the keyboard
 
+// transact for charade a trois for judging vs. playing - also look at how the timer might be getting set by everyone?
+// starting with 2v3 teams in charade was bad for #3 (eric)
+// charade a trois: many duplicates across rounds
 // charade: go button grey, stuck - add a permanent check for a bad state (band-aid?)
 // charade: show crossed out words when judging
 // charade: skip button seemed to freeze?

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:transformer_page_view/transformer_page_view.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 
 import 'package:together/components/buttons.dart';
 import 'package:together/components/misc.dart';
-import 'package:together/components/scroll_view.dart';
 
 class TheHuntScreenHelp extends StatelessWidget {
   @override
@@ -114,7 +114,7 @@ class ThreeCrownsScreenHelp extends StatelessWidget {
             'which means they can play any number of cards whose value sum equals the difference between the lower card and the higher card. Face card values are '
             'J = 10, Q = 11, K = 12.\n    So in an example case where a 4 is defeated by a K, the losing duelist could play a 9, or a 7 plus two 1\'s, etc. \n\n    '
             'If a match is successful, the matcher gets to "pillage" the original winner. No matching can occur for sieges.',
-        '\n    Finally, if a duelist is "matched", they have a chance to respond to the match and avoid being pillaged. This can be accomplished by playing one or more '
+        '    Finally, if a duelist is "matched", they have a chance to respond to the match and avoid being pillaged. This can be accomplished by playing one or more '
             'duplicates of the card they already played. To extend the previous example, the original winner of the duel could respond to a match by playing one or more K\'s.'
             '\n    If the response is one card, it is called a "Peasant\'s Blockage", and the matcher loses the ability to steal tiles and simply receives two random tiles. ',
         '    Two of a kind results in a "Peasant\'s Reversal", and the pillager becomes the pillagee (the original winner now pillages). Three or more of a kind results in a '
@@ -200,51 +200,11 @@ class HelpScreen extends StatefulWidget {
 class _HelpScreenState extends State<HelpScreen> {
   int slideIndex = 0;
   final IndexController indexController = IndexController();
-  List<Widget> informationList = [];
   bool firstHelp = true;
 
   @override
   void initState() {
     super.initState();
-
-    if (widget.information.length > 1) {
-      informationList.add(Column(
-        children: <Widget>[
-          Text(
-            widget.information[0],
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.black,
-            ),
-            textAlign: TextAlign.left,
-          ),
-          SizedBox(
-            height: 20,
-          ),
-          Text(
-            '(Swipe for more information)',
-            style: TextStyle(fontSize: 16, color: Colors.grey[500]),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ));
-      widget.information.sublist(1).forEach((f) {
-        informationList.add(Text(
-          f,
-          style: TextStyle(
-            fontSize: 18,
-            color: Colors.black,
-          ),
-          textAlign: TextAlign.left,
-        ));
-      });
-    } else {
-      informationList.add(Text(
-        widget.information[0],
-        style: TextStyle(fontSize: 18, color: Colors.black),
-        textAlign: TextAlign.left,
-      ));
-    }
   }
 
   getSlideCircles(
@@ -281,6 +241,74 @@ class _HelpScreenState extends State<HelpScreen> {
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
 
+    List<Widget> informationList = [];
+
+    if (widget.information.length > 1) {
+      informationList.add(Column(
+        children: <Widget>[
+          Container(
+            height: screenHeight * 0.65 - 270,
+            decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey),
+                borderRadius: BorderRadius.circular(5)),
+            padding: EdgeInsets.all(15),
+            child: Center(
+              child: AutoSizeText(
+                widget.information[0],
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.black,
+                ),
+                textAlign: TextAlign.left,
+              ),
+            ),
+          ),
+          SizedBox(
+            height: 20,
+          ),
+          Text(
+            '(Swipe for more information)',
+            style: TextStyle(fontSize: 16, color: Colors.grey[500]),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ));
+      widget.information.sublist(1).forEach((f) {
+        informationList.add(Container(
+          height: screenHeight * 0.65 - 140,
+          decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey),
+              borderRadius: BorderRadius.circular(5)),
+          padding: EdgeInsets.all(15),
+          child: Center(
+            child: AutoSizeText(
+              f,
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.black,
+              ),
+              textAlign: TextAlign.left,
+            ),
+          ),
+        ));
+      });
+    } else {
+      informationList.add(Container(
+        height: screenHeight * 0.65 - 140,
+        decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey),
+            borderRadius: BorderRadius.circular(5)),
+        padding: EdgeInsets.all(15),
+        child: Center(
+          child: AutoSizeText(
+            widget.information[0],
+            style: TextStyle(fontSize: 18, color: Colors.black),
+            textAlign: TextAlign.left,
+          ),
+        ),
+      ));
+    }
+
     TransformerPageView transformerPageView = TransformerPageView(
       pageSnapping: true,
       onPageChanged: (index) {
@@ -301,10 +329,11 @@ class _HelpScreenState extends State<HelpScreen> {
           alignment: Alignment.center,
           child: Stack(
             children: <Widget>[
-              Center(
+              Align(
+                alignment: Alignment.topCenter,
                 child: Padding(
-                  padding: EdgeInsets.fromLTRB(20, 5, 20, 5),
-                  child: TogetherScrollView(
+                  padding: EdgeInsets.fromLTRB(20, 15, 20, 5),
+                  child: Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.center,

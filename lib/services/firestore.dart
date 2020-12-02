@@ -26,6 +26,30 @@ class Transactor {
     });
   }
 
+  transactCharadeATroisJudgeList() async {
+    await _firestore.runTransaction((transaction) async {
+      DocumentReference postRef =
+          _firestore.collection('sessions').doc(sessionId);
+      DocumentSnapshot snapshot = await transaction.get(postRef);
+      List judgeList = snapshot.data()['judgeList'];
+
+      transaction.update(postRef, {'words': words});
+    });
+  }
+
+  transactCharadeATroisStatePile(data) async {
+    await _firestore.runTransaction((transaction) async {
+      DocumentReference postRef =
+          _firestore.collection('sessions').doc(sessionId);
+      DocumentSnapshot snapshot = await transaction.get(postRef);
+      String state = data['internalState'];
+      List pile = snapshot.data()['${state}Pile'];
+      var word = data['${pile}Pile'].removeLast();
+      pile.insert(0, word);
+      transaction.update(postRef, {'${state}Pile': pile});
+    });
+  }
+
   transactPlotTwistMessage(newText) async {
     await _firestore.runTransaction((transaction) async {
       DocumentReference postRef =
@@ -34,37 +58,6 @@ class Transactor {
       List texts = snapshot.data()['texts'];
       texts.add(newText);
       transaction.update(postRef, {'texts': texts});
-    });
-  }
-
-  transactThreeCrownsDuelerCard(card) async {
-    await _firestore.runTransaction((transaction) async {
-      DocumentReference postRef =
-          _firestore.collection('sessions').doc(sessionId);
-      DocumentSnapshot snapshot = await transaction.get(postRef);
-      var duel = snapshot.data()['duel'];
-      duel['duelerCard'] = card;
-      transaction.update(postRef, {'duel': duel});
-    });
-  }
-
-  transactThreeCrownsDueleeCard(card) async {
-    await _firestore.runTransaction((transaction) async {
-      DocumentReference postRef =
-          _firestore.collection('sessions').doc(sessionId);
-      DocumentSnapshot snapshot = await transaction.get(postRef);
-      var duel = snapshot.data()['duel'];
-      duel['dueleeCard'] = card;
-      transaction.update(postRef, {'duel': duel});
-    });
-  }
-
-  transactAll(data) async {
-    await _firestore.runTransaction((transaction) async {
-      DocumentReference postRef =
-          _firestore.collection('sessions').doc(sessionId);
-      DocumentSnapshot snapshot = await transaction.get(postRef);
-      transaction.set(postRef, data);
     });
   }
 }
