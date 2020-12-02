@@ -29,14 +29,14 @@ void main() async {
 // 2 people teams: each shared word is worth 2 points (max = 20 points)
 // 3 people teams: each tripled word is worth 3 points, each shared word is worth 1 point (max = 3 * 10 = 30)
 // gets increasingly difficult:
-// 1: easy, 2 points
-// 2: easy, 4 points
-// 3: easy, 6 points
-// 4: medium: 4 points
-// 5: medium: 6 points
-// 6: medium: 8 points
-// 7: hard: 6 points
-// 8: hard: 8 points
+// 1: easy, 4 points (2/5)
+// 2: easy, 6 points (3/7)
+// 3: easy, 8 points (4/9)
+// 4: medium: 4 points (2/5)
+// 5: medium: 6 points (3/7)
+// 6: medium: 8 points (4/9)
+// 7: hard: 6 points (2/5)
+// 8: hard: 8 points (...)
 // 9: hard: 10 points
 // 10: expert: 8 points
 // 11: expert: 10 points

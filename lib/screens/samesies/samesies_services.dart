@@ -19,9 +19,9 @@ var inSyncWords = {
     'computer',
     'summer',
     'elevator',
-    'fruits',
-    'vegetables',
-    'desserts',
+    'fruit',
+    'vegetable',
+    'dessert',
     'palace',
     'garden',
     'Japan',
@@ -72,47 +72,6 @@ allPlayersAreReady(data) {
 playerIsDoneSubmitting(playerId, data) {
   // player words are not empty
   return data['playerWords'][playerId].length >= 10;
-}
-
-scorePassesLevel(score, data) {
-  switch (data['level']) {
-    case 'easy0':
-      return score > 4;
-      break;
-    case 'easy1':
-      return score > 6;
-      break;
-    case 'easy2':
-      return score > 8;
-      break;
-    case 'medium0':
-      return score > 6;
-      break;
-    case 'medium1':
-      return score > 8;
-      break;
-    case 'medium2':
-      return score > 10;
-      break;
-    case 'hard0':
-      return score > 6;
-      break;
-    case 'hard1':
-      return score > 8;
-      break;
-    case 'hard2':
-      return score > 10;
-      break;
-    case 'expert0':
-      return score > 6;
-      break;
-    case 'expert1':
-      return score > 8;
-      break;
-    case 'expert2':
-      return score > 10;
-      break;
-  }
 }
 
 incrementLevel(data) async {
@@ -198,4 +157,37 @@ levelToNumber(data) {
       break;
   }
   return level;
+}
+
+requiredScoreForLevel(level) {
+  int requiredScore = 4;
+  if (level.substring(level.length - 1) == '1') {
+    requiredScore = 6;
+  }
+  if (level.substring(level.length - 1) == '2') {
+    requiredScore = 8;
+  }
+  return requiredScore;
+}
+
+requiredScoreForPreviousLevel(level) {
+  int requiredScore = 8;
+  if (level.substring(level.length - 1) == '1') {
+    requiredScore = 4;
+  }
+  if (level.substring(level.length - 1) == '2') {
+    requiredScore = 6;
+  }
+  return requiredScore;
+}
+
+getSubmissionLimit(data) {
+  int limit = 5;
+  if (data['level'].substring(data['level'].length - 1) == '1') {
+    limit = 7;
+  }
+  if (data['level'].substring(data['level'].length - 1) == '2') {
+    limit = 9;
+  }
+  return limit;
 }

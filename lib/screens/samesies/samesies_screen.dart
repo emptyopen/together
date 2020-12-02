@@ -5,9 +5,11 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import 'dart:async';
 import 'package:string_similarity/string_similarity.dart';
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:flushbar/flushbar.dart';
 
 import 'package:together/components/misc.dart';
 import 'package:together/components/buttons.dart';
+import 'package:together/components/scroll_view.dart';
 import 'package:together/services/services.dart';
 import 'package:together/services/firestore.dart';
 import 'package:together/help_screens/help_screens.dart';
@@ -107,14 +109,14 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
       }
     });
     var level = 'Level ${levelToNumber(data)}';
-    var title = isRunning ? word.toUpperCase() : 'Waiting';
+    var title = isRunning ? word.toUpperCase() : 'Waiting...';
     var ms = [0, 0];
     if (isRunning && _now != null) {
       ms = getMinutesSeconds(
           -_now.difference(data['expirationTime'].toDate()).inSeconds);
     }
     var subtitle = !isRunning
-        ? 'Waiting...'
+        ? '--:--'
         : '${intToString(ms[0], pad: 2)}:${intToString(ms[1], pad: 2)}';
     return Container(
       width: 200,
@@ -206,7 +208,8 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
 
   getSubmissionProgress(data) {
     List<Widget> submissionWidgets = [SizedBox(width: 10)];
-    for (int i = 0; i < 10; i++) {
+    int limit = getSubmissionLimit(data);
+    for (int i = 0; i < limit; i++) {
       submissionWidgets.add(Container(
         decoration: BoxDecoration(
           border: Border.all(color: Colors.grey),
@@ -237,6 +240,10 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
       }
     });
     if (allReady) {
+      // clear previous results
+      data['teams'].asMap().forEach((i, v) {
+        data['teams'][i]['results'] = [];
+      });
       data['expirationTime'] = DateTime.now()
           .add(Duration(seconds: data['rules']['roundTimeLimit']));
     }
@@ -272,34 +279,38 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
       player1Words.add(Container(
           height: 25,
           width: width * 0.25,
-          child: AutoSizeText(
-            v['words'][0],
-            textAlign: TextAlign.center,
-            minFontSize: 6,
-            style: TextStyle(
-                fontSize: 20,
-                color: v['score'] > 0
-                    ? v['score'] > 2
-                        ? gameColors[samesiesString]
-                        : Theme.of(context).highlightColor
-                    : Colors.grey),
-            maxLines: 2,
+          child: Center(
+            child: AutoSizeText(
+              v['words'][0],
+              textAlign: TextAlign.center,
+              minFontSize: 6,
+              style: TextStyle(
+                  fontSize: 20,
+                  color: v['score'] > 0
+                      ? v['score'] > 2
+                          ? gameColors[samesiesString]
+                          : Theme.of(context).highlightColor
+                      : Colors.grey),
+              maxLines: 2,
+            ),
           )));
       player2Words.add(Container(
           height: 25,
           width: width * 0.25,
-          child: AutoSizeText(
-            v['words'][1],
-            textAlign: TextAlign.center,
-            minFontSize: 6,
-            style: TextStyle(
-                fontSize: 20,
-                color: v['score'] > 0
-                    ? v['score'] > 2
-                        ? gameColors[samesiesString]
-                        : Theme.of(context).highlightColor
-                    : Colors.grey),
-            maxLines: 2,
+          child: Center(
+            child: AutoSizeText(
+              v['words'][1],
+              textAlign: TextAlign.center,
+              minFontSize: 6,
+              style: TextStyle(
+                  fontSize: 20,
+                  color: v['score'] > 0
+                      ? v['score'] > 2
+                          ? gameColors[samesiesString]
+                          : Theme.of(context).highlightColor
+                      : Colors.grey),
+              maxLines: 2,
+            ),
           )));
       points.add(Container(
         height: 25,
@@ -356,28 +367,52 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
   }
 
   getRoundSummary(data) {
+    bool complete = false;
+    if (data['state'] == 'scoreboard') {
+      complete = true;
+    }
     int score = 0;
     // TODO: multiple
     data['teams'][0]['results'].forEach((v) {
       score += v['score'];
     });
     List<Widget> teamResultWidgets = [
-      Text('Level ${levelToNumber(data) - 1} complete!',
+      Text(
+          complete
+              ? 'You got knocked out on level ${levelToNumber(data)}'
+              : 'Level ${levelToNumber(data) - 1} complete!',
           style: TextStyle(
             fontSize: 22,
+            color: gameColors[samesiesString],
           )),
       SizedBox(height: 5),
-      Text('Score: $score',
-          style: TextStyle(
-            fontSize: 18,
-          )),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('Score: $score',
+              style: TextStyle(
+                fontSize: 18,
+              )),
+          SizedBox(width: 10),
+          Text(
+              '(needed ${complete ? requiredScoreForLevel(data['level']) : requiredScoreForPreviousLevel(data['level'])})',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey,
+              )),
+        ],
+      ),
       SizedBox(height: 10),
     ];
     data['teams'].asMap().forEach((i, v) {
       teamResultWidgets.add(getTeamResults(i, data));
       teamResultWidgets.add(SizedBox(height: 10));
     });
-    return Column(children: teamResultWidgets);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: teamResultWidgets,
+    );
   }
 
   getPrepare(data) {
@@ -416,15 +451,16 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            roundSummaryExists ? getRoundSummary(data) : Container(),
+            roundSummaryExists ? getRoundSummary(data) : Container(width: 0),
             Container(
               width: 200,
               decoration: BoxDecoration(
-                border: Border.all(color: Theme.of(context).highlightColor),
+                border: Border.all(color: Colors.grey),
                 borderRadius: BorderRadius.circular(15),
               ),
               padding: EdgeInsets.all(5),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: playerStatuses,
               ),
             ),
@@ -483,6 +519,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
                   StringSimilarity.compareTwoStrings(player1Word, player2Word),
               'score': twoPlayerPairScore
             });
+            matchedPlayer2Words.add(player2Word);
             matchFound = true;
           }
         });
@@ -523,8 +560,9 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
       data['teams'][i]['results'].forEach((result) {
         score += result['score'];
       });
-      if (scorePassesLevel(score, data)) {
-        print('score $score passes level');
+      if (score >= requiredScoreForLevel(data['level'])) {
+        print(
+            'score $score passes required score ${requiredScoreForLevel(data['level'])}');
       } else {
         allTeamsPass = false;
       }
@@ -537,19 +575,43 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
   }
 
   submitWord(data) async {
+    // check word isn't already submitted
+    bool isDuplicateWord = false;
+    data['playerWords'][widget.userId].forEach((v) {
+      if (StringSimilarity.compareTwoStrings(_controller.text, v) >
+          matchFactor) {
+        Flushbar(
+          flushbarPosition: FlushbarPosition.TOP,
+          title: 'Similar word already submitted!',
+          message: 'Try another word.',
+          duration: Duration(seconds: 3),
+        ).show(context);
+        isDuplicateWord = true;
+      }
+    });
+    if (isDuplicateWord) {
+      return;
+    }
+
     HapticFeedback.vibrate();
 
     data['playerWords'][widget.userId].add(_controller.text);
 
     // if all players are done, move to "comparison" page
     bool allPlayersSubmitted = true;
+    int limit = getSubmissionLimit(data);
     data['playerIds'].forEach((v) {
-      if (data['playerWords'][v].length < 10) {
+      if (data['playerWords'][v].length < limit) {
         allPlayersSubmitted = false;
       }
     });
     if (allPlayersSubmitted) {
+<<<<<<< HEAD
       // check if all teams match sufficiently, and store results
+=======
+      print('all players submitted');
+      // check if all teams match sufficiently
+>>>>>>> 6a8f025... round summary
       if (teamsAllPass(data)) {
         incrementLevel(data);
         // reset playerWords and ready states
@@ -668,36 +730,62 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
     );
   }
 
+  getScoreboard(data) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          getRoundSummary(data),
+          widget.userId == data['leader']
+              ? EndGameButton(
+                  sessionId: widget.sessionId,
+                  fontSize: 14,
+                  height: 30,
+                  width: 100,
+                )
+              : Container(),
+        ],
+      ),
+    );
+  }
+
   getGameboard(data) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            getStatus(data),
-            SizedBox(width: 10),
-            getRoomCode(data),
-          ],
-        ),
-        SizedBox(height: 5),
-        getTimerBar(data),
-        SizedBox(height: 5),
-        !playerIsDoneSubmitting(widget.userId, data) && allPlayersAreReady(data)
-            ? getSubmissionProgress(data)
-            : Container(),
-        SizedBox(height: 5),
-        !allPlayersAreReady(data) ? getPrepare(data) : getSubmit(data),
-        SizedBox(height: 15),
-        widget.userId == data['leader']
-            ? EndGameButton(
-                sessionId: widget.sessionId,
-                fontSize: 14,
-                height: 30,
-                width: 100,
-              )
-            : Container(),
-      ],
+    return TogetherScrollView(
+      child: Column(
+        mainAxisAlignment: data['expirationTime'] != null
+            ? MainAxisAlignment.start
+            : MainAxisAlignment.center,
+        children: [
+          SizedBox(height: 15),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              getStatus(data),
+              SizedBox(width: 10),
+              getRoomCode(data),
+            ],
+          ),
+          SizedBox(height: 5),
+          getTimerBar(data),
+          SizedBox(height: 5),
+          !playerIsDoneSubmitting(widget.userId, data) &&
+                  allPlayersAreReady(data)
+              ? getSubmissionProgress(data)
+              : Container(),
+          SizedBox(height: 5),
+          !allPlayersAreReady(data) ? getPrepare(data) : getSubmit(data),
+          SizedBox(height: 15),
+          widget.userId == data['leader']
+              ? EndGameButton(
+                  sessionId: widget.sessionId,
+                  fontSize: 14,
+                  height: 30,
+                  width: 100,
+                )
+              : Container(),
+          SizedBox(height: 15),
+        ],
+      ),
     );
   }
 
@@ -757,7 +845,9 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
                 ),
               ],
             ),
-            body: getGameboard(data));
+            body: data['state'] == 'scoreboard'
+                ? getScoreboard(data)
+                : getGameboard(data));
       },
     );
   }
