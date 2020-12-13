@@ -254,6 +254,7 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
           SizedBox(height: 40),
           Text(
             'Submit words or phrases\nto describe & act out!',
+            textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 24,
             ),
@@ -288,7 +289,7 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
             ),
             child: Center(
               child: TextField(
-                maxLines: null,
+                maxLines: 1,
                 textAlign: TextAlign.center,
                 decoration: InputDecoration(
                   border: InputBorder.none,
@@ -438,7 +439,7 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
   }
 
   playerSkipsWord(data) async {
-    T.transactCharadeATroisStatePile(data);
+    T.transact(data);
   }
 
   getButtons(data) {
@@ -552,7 +553,7 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
 
     HapticFeedback.vibrate();
 
-    T.transactCharadeATroisJudgeListRemove(data['judgeList']);
+    await T.transactCharadeATroisJudgeList(data['judgeList']);
 
     if (data['expirationTime'] == null && data['judgeList'].length == 0) {
       judgmentComplete(data);
@@ -565,6 +566,8 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
     data['judgeList'].removeAt(i);
 
     HapticFeedback.vibrate();
+
+    await T.transactCharadeATroisJudgeList(data['judgeList']);
 
     if (data['expirationTime'] == null && data['judgeList'].length == 0) {
       judgmentComplete(data);
@@ -582,6 +585,8 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
     data['judgeList'] = [];
 
     HapticFeedback.vibrate();
+
+    await T.transactCharadeATroisJudgeList(data['judgeList']);
 
     if (data['expirationTime'] == null && data['judgeList'].length == 0) {
       judgmentComplete(data);
@@ -728,7 +733,11 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
                 fontSize: 22,
               ),
             ),
-            data['judgeList'].length == 0 ? Container() : judgeWordListWidget,
+            data['expirationTime'] != null
+                ? Text('Waiting for player to finish...')
+                : data['judgeList'].length == 0
+                    ? Container()
+                    : judgeWordListWidget,
           ],
         ),
       );

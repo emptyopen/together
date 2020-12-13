@@ -13,12 +13,10 @@ void main() async {
 // DONE:
 
 // next up:
-// BANANAPHONE BIG PROBLEM: one vote moves entire state to next round - should multiply, know the answer
 // drawing remains on the board when the final description is submitted...
 // also draw 2 seems to fail????
 // bananaphone: increment player score
-// remove scrolling issue
-// voting screen: 2nd round still showing 1st round clues
+// bananaphone: maybe change voting to "entire progression", single vote
 
 // transact:
 // bananaphone
@@ -30,7 +28,6 @@ void main() async {
 // starting with 2v3 teams in charade was bad for #3 (eric)
 // charade a trois: many duplicates across rounds
 // charade: go button grey, stuck - add a permanent check for a bad state (band-aid?)
-// charade: show crossed out words when judging
 // charade: skip button seemed to freeze?
 
 // Samesies:

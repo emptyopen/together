@@ -15,6 +15,14 @@ class Transactor {
     });
   }
 
+  transactItem(itemName, item) async {
+    await _firestore.runTransaction((transaction) async {
+      DocumentReference postRef =
+          _firestore.collection('sessions').doc(sessionId);
+      transaction.update(postRef, {itemName: item});
+    });
+  }
+
   transactCharadeATroisWords(newWord) async {
     await _firestore.runTransaction((transaction) async {
       DocumentReference postRef =
@@ -26,26 +34,20 @@ class Transactor {
     });
   }
 
-  transactCharadeATroisJudgeList() async {
+  transactCharadeATroisJudgeList(judgeList) async {
     await _firestore.runTransaction((transaction) async {
       DocumentReference postRef =
           _firestore.collection('sessions').doc(sessionId);
-      DocumentSnapshot snapshot = await transaction.get(postRef);
-      List judgeList = snapshot.data()['judgeList'];
-
-      transaction.update(postRef, {'words': words});
+      transaction.update(postRef, {'judgeList': judgeList});
     });
   }
 
-  transactCharadeATroisStatePile(data) async {
+  transactCharadeATroisStatePile(pile) async {
     await _firestore.runTransaction((transaction) async {
       DocumentReference postRef =
           _firestore.collection('sessions').doc(sessionId);
       DocumentSnapshot snapshot = await transaction.get(postRef);
-      String state = data['internalState'];
-      List pile = snapshot.data()['${state}Pile'];
-      var word = data['${pile}Pile'].removeLast();
-      pile.insert(0, word);
+      String state = snapshot.data()['internalState'];
       transaction.update(postRef, {'${state}Pile': pile});
     });
   }
