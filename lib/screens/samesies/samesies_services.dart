@@ -144,8 +144,8 @@ var inSyncWords = {
 
 allPlayersAreReady(data) {
   bool allReady = true;
-  data['ready'].forEach((i, v) {
-    if (!v) {
+  data['playerIds'].forEach((v) {
+    if (!data['ready$v']) {
       allReady = false;
     }
   });
@@ -154,7 +154,7 @@ allPlayersAreReady(data) {
 
 playerIsDoneSubmitting(playerId, data) {
   // player words are not empty
-  return data['playerWords'][playerId].length >= 10;
+  return data['playerWords$playerId'].length >= 10;
 }
 
 incrementLevel(data) async {

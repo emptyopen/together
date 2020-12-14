@@ -62,4 +62,23 @@ class Transactor {
       transaction.update(postRef, {'texts': texts});
     });
   }
+
+  transactSamesiesReady(playerId) async {
+    await _firestore.runTransaction((transaction) async {
+      DocumentReference postRef =
+          _firestore.collection('sessions').doc(sessionId);
+      transaction.update(postRef, {'ready$playerId': true});
+    });
+  }
+
+  transactSamesiesWord(playerId, word) async {
+    await _firestore.runTransaction((transaction) async {
+      DocumentReference postRef =
+          _firestore.collection('sessions').doc(sessionId);
+      DocumentSnapshot snapshot = await transaction.get(postRef);
+      List playerWords = snapshot.data()['playerWords$playerId'];
+      playerWords.add(word);
+      transaction.update(postRef, {'playerWords$playerId': playerWords});
+    });
+  }
 }

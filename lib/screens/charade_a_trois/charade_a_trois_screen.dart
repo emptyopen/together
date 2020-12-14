@@ -290,6 +290,10 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
             child: Center(
               child: TextField(
                 maxLines: 1,
+                onSubmitted: (s) {
+                  addWordToList(data);
+                },
+                autofocus: true,
                 textAlign: TextAlign.center,
                 decoration: InputDecoration(
                   border: InputBorder.none,

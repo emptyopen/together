@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:together/components/layouts.dart';
-
+import 'package:together/constants/values.dart';
 import 'package:together/screens/plot_twist/plot_twist_services.dart';
 import 'lobby_services.dart';
 import 'package:together/services/firestore.dart';
@@ -73,11 +73,9 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
     // remove teams until existing teams equals numTeamsTeams, then distribute deleted players
     List displacedPlayers = [];
     while (data['teams'].length > data['rules']['numTeams']) {
-      print('will redistribute');
       displacedPlayers.addAll(data['teams'].last['players']);
       data['teams'].removeLast();
     }
-    print('displaced $displacedPlayers');
     displacedPlayers.forEach((v) {
       data['playerIds'].remove(v);
     });
@@ -88,6 +86,14 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
       data['teams'].add({
         'players': [],
       });
+    }
+
+    // for Samesies, if numTeams > 1 and mode is not High Score, update.
+    if (data['game'] == samesiesString) {
+      if (data['rules']['numTeams'] > 1 &&
+          data['rules']['mode'] != 'High Score') {
+        data['rules']['mode'] = 'High Score';
+      }
     }
 
     await FirebaseFirestore.instance
@@ -460,7 +466,7 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
                 SizedBox(height: 20),
                 EditRulesDropdown(
                   data: data,
-                  title: 'Survival mode (2 player only)',
+                  title: 'Survival mode?\n(2 player only)',
                   rule: 'mode',
                   updateRules: updateRules,
                   choices: ['High Score', 'Survival'],
@@ -515,7 +521,7 @@ class EditRulesDropdown extends StatelessWidget {
         Text(title),
         Container(
           width: 80,
-          child: DropdownButton<int>(
+          child: DropdownButton(
             isExpanded: true,
             value: data['rules'][rule],
             iconSize: 24,
@@ -532,8 +538,8 @@ class EditRulesDropdown extends StatelessWidget {
               }
               updateRules(data, rule, newValue);
             },
-            items: choices.map<DropdownMenuItem<int>>((value) {
-              return DropdownMenuItem<int>(
+            items: choices.map<DropdownMenuItem>((value) {
+              return DropdownMenuItem(
                 value: value,
                 child: Text('$value', style: TextStyle(fontFamily: 'Balsamiq')),
               );
