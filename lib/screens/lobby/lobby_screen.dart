@@ -1480,6 +1480,26 @@ class _LobbyScreenState extends State<LobbyScreen> {
                             ),
                           )
                         : Container(),
+            data['teams'][i]['players'].length == 0
+                ? SizedBox(height: 10)
+                : Container(),
+            data['teams'][i]['players'].length == 0
+                ? RaisedGradientButton(
+                    height: 25,
+                    width: 100,
+                    child: Text('Delete team',
+                        style: TextStyle(color: Colors.white)),
+                    onPressed: () {
+                      deleteTeam(data, i, T);
+                    },
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.red,
+                        Colors.red[600],
+                      ],
+                    ),
+                  )
+                : Container(),
             SizedBox(height: 30),
           ],
         ),

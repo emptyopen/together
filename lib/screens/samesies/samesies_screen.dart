@@ -39,6 +39,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
   int activeController;
   FocusNode myFocusNode;
   double matchFactor = 0.8;
+  bool isUpdating = false;
 
   @override
   void initState() {
@@ -147,11 +148,55 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
     );
   }
 
+  checkRoundOver(data) {
+    // if all players are done, move to "comparison" page
+    bool allPlayersSubmitted = true;
+    int limit = getSubmissionLimit(data);
+    data['playerIds'].forEach((v) {
+      if (data['playerWords$v'].length < limit) {
+        allPlayersSubmitted = false;
+      }
+    });
+    // increment / check if game is over
+    var timerExpired =
+        data['expirationTime'].toDate().difference(_now).inSeconds < 0;
+    if (allPlayersSubmitted || timerExpired) {
+      // store team results
+      data['teams'].asMap().forEach((i, v) {
+        storeTeamResults(i, timerExpired, data);
+      });
+      if (data['mode'] == 'Survival') {
+        if (!teamPasses(data)) {
+          data['state'] = 'scoreboard';
+        }
+      }
+      incrementLevel(data);
+      // reset playerWords and ready states
+      data['playerIds'].forEach((v) {
+        data['playerWords$v'] = [];
+        data['ready$v'] = false;
+      });
+      data['expirationTime'] = null;
+    }
+
+    T.transact(data);
+    setState(() {
+      _controller.text = '';
+      isUpdating = false;
+    });
+    myFocusNode.requestFocus();
+  }
+
   getStatus(data) {
-    // can either be
-    // title: waiting to start
-    // title: playing
     bool isRunning = data['expirationTime'] != null;
+    if (isRunning) {
+      var seconds = data['expirationTime'].toDate().difference(_now).inSeconds;
+      // if seconds is negative, round must be ended
+      if (seconds < 0 && !isUpdating) {
+        checkRoundOver(data);
+        isUpdating = true;
+      }
+    }
     String word = '';
     data['teams'].asMap().forEach((i, v) {
       if (data['teams'][i]['players'].contains(widget.userId)) {
@@ -365,7 +410,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
           width: width * 0.3,
           child: Center(
             child: AutoSizeText(
-              v['words'][0],
+              v['words'][0] == '' ? '-' : v['words'][0],
               textAlign: TextAlign.center,
               minFontSize: 6,
               style: TextStyle(
@@ -383,7 +428,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
           width: width * 0.3,
           child: Center(
             child: AutoSizeText(
-              v['words'][1],
+              v['words'][1] == '' ? '-' : v['words'][1],
               textAlign: TextAlign.center,
               minFontSize: 6,
               style: TextStyle(
@@ -422,11 +467,16 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
                     )),
                 SizedBox(height: 5),
                 PageBreak(width: 50),
-                Text(
-                    '${data['teams'][teamIndex]['words'][previousLevel(data)].toUpperCase()}',
-                    style: TextStyle(
-                      fontSize: 26,
-                    )),
+                Container(
+                  width: width * 0.33,
+                  child: AutoSizeText(
+                      '${data['teams'][teamIndex]['words'][data['level'] == 'expert2' ? data['level'] : previousLevel(data)].toUpperCase()}',
+                      maxLines: 1,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 26,
+                      )),
+                ),
                 SizedBox(height: 5),
                 PageBreak(width: 50),
                 Text('Round Score:',
@@ -562,8 +612,11 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
       }
     });
 
+    var width = MediaQuery.of(context).size.width;
+
     return Center(
       child: Container(
+        width: width * 0.95,
         decoration: BoxDecoration(
           border: Border.all(color: Theme.of(context).highlightColor),
           borderRadius: BorderRadius.circular(15),
@@ -614,21 +667,25 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
     );
   }
 
-  storeTeamResults(teamIndex, data) {
-    int teamSize = data['teams'][teamIndex]['players'].length;
-
-    // if team has 2 players
-    if (teamSize == 2) {
-      // iterate over one players score, check if it exists in the other one
-      var player1Id = data['teams'][teamIndex]['players'][0];
-      var player2Id = data['teams'][teamIndex]['players'][1];
-      List player1Words = List.of(data['playerWords$player1Id']);
-      List player2Words = List.of(data['playerWords$player2Id']);
-      List unmatchedPlayer1Words = [];
-      List matchedPlayer2Words = [];
-      player1Words.forEach((player1Word) {
-        bool matchFound = false;
-        player2Words.forEach((player2Word) {
+  storeTeamResults(teamIndex, timerExpired, data) {
+    var player1Id = data['teams'][teamIndex]['players'][0];
+    var player2Id = data['teams'][teamIndex]['players'][1];
+    List player1Words = List.of(data['playerWords$player1Id']);
+    List player2Words = List.of(data['playerWords$player2Id']);
+    // fill each list to capacity with null in case player ran out of time
+    while (player1Words.length < getSubmissionLimit(data)) {
+      player1Words.add('');
+    }
+    while (player2Words.length < getSubmissionLimit(data)) {
+      player2Words.add('');
+    }
+    List unmatchedPlayer1Words = [];
+    List matchedPlayer2Words = [];
+    // iterate over one players score, check if it exists in the other one
+    player1Words.forEach((player1Word) {
+      bool matchFound = false;
+      player2Words.forEach((player2Word) {
+        if (player1Word != '' && player2Word != '') {
           if (StringSimilarity.compareTwoStrings(
                   player1Word.toLowerCase(), player2Word.toLowerCase()) >
               matchFactor) {
@@ -641,24 +698,24 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
             matchedPlayer2Words.add(player2Word);
             matchFound = true;
           }
-        });
-        if (!matchFound) {
-          unmatchedPlayer1Words.add(player1Word);
         }
       });
-      player2Words
-          .removeWhere((element) => matchedPlayer2Words.contains(element));
-      for (int i = 0; i < unmatchedPlayer1Words.length; i++) {
-        data['teams'][teamIndex]['results'].add({
-          'words': [
-            unmatchedPlayer1Words[i],
-            player2Words[i],
-          ],
-          'similarity': StringSimilarity.compareTwoStrings(
-              unmatchedPlayer1Words[i], player2Words[i]),
-          'score': 0,
-        });
+      if (!matchFound) {
+        unmatchedPlayer1Words.add(player1Word);
       }
+    });
+    player2Words
+        .removeWhere((element) => matchedPlayer2Words.contains(element));
+    for (int i = 0; i < unmatchedPlayer1Words.length; i++) {
+      data['teams'][teamIndex]['results'].add({
+        'words': [
+          unmatchedPlayer1Words[i],
+          player2Words[i],
+        ],
+        'similarity': StringSimilarity.compareTwoStrings(
+            unmatchedPlayer1Words[i], player2Words[i]),
+        'score': 0,
+      });
     }
 
     int roundScore = 0;
@@ -711,7 +768,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
     }
 
     // check word isn't already submitted
-    data['playerWords'][widget.userId].forEach((v) {
+    data['playerWords${widget.userId}'].forEach((v) {
       if (StringSimilarity.compareTwoStrings(_controller.text, v) >
           matchFactor) {
         Flushbar(
@@ -733,39 +790,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
 
     await T.transactSamesiesWord(widget.userId, _controller.text);
 
-    // if all players are done, move to "comparison" page
-    bool allPlayersSubmitted = true;
-    int limit = getSubmissionLimit(data);
-    data['playerIds'].forEach((v) {
-      if (data['playerWords'][v].length < limit) {
-        allPlayersSubmitted = false;
-      }
-    });
-    // increment / check if game is over
-    if (allPlayersSubmitted) {
-      // store team results
-      data['teams'].asMap().forEach((i, v) {
-        storeTeamResults(i, data);
-      });
-      if (data['mode'] == 'Survival') {
-        if (!teamPasses(data)) {
-          data['state'] = 'scoreboard';
-        }
-      }
-      incrementLevel(data);
-      // reset playerWords and ready states
-      data['playerIds'].forEach((v) {
-        data['playerWords$v'] = [];
-        data['ready$v'] = false;
-      });
-      data['expirationTime'] = null;
-    }
-
-    T.transact(data);
-    setState(() {
-      _controller.text = '';
-    });
-    myFocusNode.requestFocus();
+    checkRoundOver(data);
   }
 
   getSubmit(data) {
@@ -773,7 +798,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
 
     // if player is done, show awaiting
     int limit = getSubmissionLimit(data);
-    if (data['playerWords'][widget.userId].length >= limit) {
+    if (data['playerWords${widget.userId}'].length >= limit) {
       List<Widget> playerStatuses = [
         Text(
           'Waiting for players...',
@@ -789,14 +814,14 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
               Container(),
               Text(data['playerNames'][v]),
               SizedBox(width: 5),
-              data['playerWords'][v].length >= limit
+              data['playerWords$v'].length >= limit
                   ? Icon(MdiIcons.checkBoxOutline, color: Colors.green)
                   : Icon(MdiIcons.checkboxBlank, color: Colors.grey),
               SizedBox(width: 5),
               Text(
-                data['playerWords'][v].length >= limit
+                data['playerWords$v'].length >= limit
                     ? '              '
-                    : '(${data['playerWords'][v].length}/$limit done)',
+                    : '(${data['playerWords$v'].length}/$limit done)',
                 style: TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ],
@@ -826,11 +851,11 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
       }
     });
     int remainingSubmissions =
-        limit - data['playerWords'][widget.userId].length;
+        limit - data['playerWords${widget.userId}'].length;
 
     // words submitted so far
     List<Widget> submittedWords = [];
-    data['playerWords'][widget.userId].forEach((v) {
+    data['playerWords${widget.userId}'].forEach((v) {
       submittedWords.add(Text(
         v,
         style: TextStyle(color: Theme.of(context).highlightColor),

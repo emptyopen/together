@@ -13,22 +13,8 @@ void main() async {
 // DONE:
 
 // next up:
-// bananaphone: increment player score
-// remove scrolling issue
-// voting screen: 2nd round still showing 1st round clues
 
-// transact:
-// bananaphone
-// three crowns
-// charade a trois for judging vs. playing - also look at how the timer might be getting set by everyone?
-
-// help screen weird
-
-// transact ALL!!!
 // 3 crowns - show outline of winning card
-
-// charade a trois: many duplicates across rounds
-// starting with 2v3 teams in charade was bad for #3 (eric)
 
 // keyboard issue in plot twist - all textfields should have a "go" button to close the keyboard
 
@@ -36,17 +22,13 @@ void main() async {
 // charade: show crossed out words when judging
 // charade: skip button seemed to freeze?
 
-// Samesies:
-// two modes, automatically chosen: high score mode vs survival mode
-// TODO: survival mode: ends when lose (only available for one team)
-// high score mode: play to the end, best score wins
-
 // samesies: there should be an option for multiple teams if they want the same words or not (as each other)
 
 // BIG: add additional skins after certain number of wins
 // - new crowns for certain wins in three crowns
 
 // TODO:
+// bananaphone: increment player score
 // samesies: there should be an option for multiple teams if they want the same words or not (as each other)
 // bananaphone: maybe change voting to "entire progression", single vote
 // big: consolidation of new game to simplified parameters / per screen (init, scaffold, etc.)

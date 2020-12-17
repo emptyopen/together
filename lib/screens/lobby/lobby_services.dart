@@ -11,6 +11,13 @@ joinTeam(data, teamIndex, userId, T) async {
   T.transact(data);
 }
 
+deleteTeam(data, teamIndex, T) async {
+  data['rules']['numTeams'] -= 1;
+  data['teams'].removeAt(teamIndex);
+
+  T.transact(data);
+}
+
 claimThrone(data, userId, T) async {
   data['teams'].asMap().forEach((i, v) {
     if (v['players'].contains(userId)) {
