@@ -137,7 +137,12 @@ class _SettingsScreenState extends State<SettingsScreen>
               RaisedGradientButton(
                 width: 120,
                 height: 40,
-                child: Text('Update name'),
+                child: Text(
+                  'Update name',
+                  style: TextStyle(
+                    color: Colors.white,
+                  ),
+                ),
                 onPressed: () => updateName(),
                 gradient: LinearGradient(
                   colors: <Color>[
@@ -209,7 +214,12 @@ class _SettingsScreenState extends State<SettingsScreen>
               RaisedGradientButton(
                 width: 160,
                 height: 40,
-                child: Text('Destroy old games'),
+                child: Text(
+                  'Destroy old games',
+                  style: TextStyle(
+                    color: Colors.white,
+                  ),
+                ),
                 onPressed: () => destroyOldGames(),
                 gradient: LinearGradient(
                   colors: <Color>[

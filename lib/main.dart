@@ -13,9 +13,6 @@ void main() async {
 // DONE:
 
 // next up:
-// BANANAPHONE BIG PROBLEM: one vote moves entire state to next round - should multiply, know the answer
-// drawing remains on the board when the final description is submitted...
-// also draw 2 seems to fail????
 // bananaphone: increment player score
 // remove scrolling issue
 // voting screen: 2nd round still showing 1st round clues
@@ -50,13 +47,12 @@ void main() async {
 // - new crowns for certain wins in three crowns
 
 // TODO:
+// samesies: there should be an option for multiple teams if they want the same words or not (as each other)
+// bananaphone: maybe change voting to "entire progression", single vote
 // big: consolidation of new game to simplified parameters / per screen (init, scaffold, etc.)
 // charades: shimmer for high round scores
 // charades: add everything to a log?
-// arrow for togetherScrollView bugged permanent on the hunt screen end game with incorrect guess
-// consolidation: move all "strings" and colors to constants, i.e. "charade a trois", Colors.cyan[700], etc.
 // team selector: a few annoying bugs remaining with rapid touches
-// ensure everything is using transacts in the whole project
 // add LEGAL donations link for ios/android
 // three crowns: better font for stealable tiles (holy letters)
 // plot twist: add ability to click a chat to see the character description

@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'dart:collection';
+import 'package:auto_size_text/auto_size_text.dart';
 
 import 'package:together/models/models.dart';
 import 'package:together/components/misc.dart';
@@ -12,7 +13,6 @@ import 'package:together/services/services.dart';
 import 'package:together/services/firestore.dart';
 import 'package:together/help_screens/help_screens.dart';
 import 'package:together/components/end_game.dart';
-import 'package:together/components/scroll_view.dart';
 
 import 'bananaphone_components.dart';
 
@@ -70,33 +70,9 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
     if (currPhase != data['phase']) {
       HapticFeedback.vibrate();
       currPhase = data['phase'];
+      pointsList = [];
+      // setState(() {});
     }
-  }
-
-  updatePhase(data) async {
-    var currPhase = data['phase'];
-    var nextPhase = '';
-    if (currPhase == 'draw1') {
-      nextPhase = 'describe1';
-    } else if (currPhase == 'describe1') {
-      nextPhase = 'draw2';
-    } else if (currPhase == 'draw2') {
-      nextPhase = 'describe2';
-    } else if (currPhase == 'describe2') {
-      print(
-          '$currPhase | ${data['rules']['numDrawDescribe']} ${data['rules']['numDrawDescribe'] == 2}');
-      if (data['rules']['numDrawDescribe'] == 2) {
-        nextPhase = 'vote';
-      } else {
-        nextPhase = 'draw3';
-      }
-    } else if (currPhase == 'draw3') {
-      nextPhase = 'describe3';
-    } else {
-      nextPhase = 'vote';
-    }
-    data['phase'] = nextPhase;
-    T.transact(data);
   }
 
   Widget getStatusOverview(data) {
@@ -257,10 +233,13 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
               Text('Draw this prompt:',
                   style: TextStyle(fontSize: 14), textAlign: TextAlign.center),
               SizedBox(height: 5),
-              Text(prompt,
-                  style: TextStyle(
-                      fontSize: 18, color: Theme.of(context).primaryColor),
-                  textAlign: TextAlign.center),
+              AutoSizeText(
+                prompt,
+                maxLines: 1,
+                style: TextStyle(
+                    fontSize: 38, color: Theme.of(context).primaryColor),
+                textAlign: TextAlign.center,
+              ),
             ],
           ),
         ));
@@ -302,21 +281,13 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
                     fontSize: 18, color: Theme.of(context).primaryColor),
               ),
               Text(
-                'One choice per column (round).',
+                'One choice per column!',
                 style: TextStyle(
-                    fontSize: 14, color: Theme.of(context).primaryColor),
+                    fontSize: 24, color: Theme.of(context).primaryColor),
               ),
               Text(
                 'Long press to select your favorite!',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-              Text(
-                'Scroll right for progression,',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-              Text(
-                'scroll down to see all prompts.',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
+                style: TextStyle(fontSize: 16, color: Colors.grey),
               ),
             ],
           ),
@@ -444,11 +415,14 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
 
     if (data['phase'] == 'draw1') {
       data['draw1Prompt$promptIndex'] = stringPointsList;
+      await T.transactItem('draw1Prompt$promptIndex', stringPointsList);
     } else if (data['phase'] == 'draw2') {
       data['draw2Prompt$promptIndex'] = stringPointsList;
+      await T.transactItem('draw2Prompt$promptIndex', stringPointsList);
     } else {
       // it's draw3
       data['draw3Prompt$promptIndex'] = stringPointsList;
+      await T.transactItem('draw3Prompt$promptIndex', stringPointsList);
     }
 
     // for every player, after submitting check if all drawings are done
@@ -487,7 +461,6 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
 
     setState(() {
       pointsList.clear();
-      // TODO: should probably also reset painting tools?
     });
 
     T.transact(data);
@@ -495,6 +468,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
 
   getDrawing(data) {
     // if already submitted, show container just waiting
+    List<Widget> remainingPlayers = []; // TODO
     var promptIndex = getPromptIndex(data);
     if ((data['phase'] == 'draw1' && data['draw1Prompt$promptIndex'] != null) ||
         (data['phase'] == 'draw2' && data['draw2Prompt$promptIndex'] != null) ||
@@ -728,6 +702,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
     var jsonPointsList;
     if (data['phase'] == 'describe1') {
       jsonPointsList = jsonDecode(data['draw1Prompt$promptIndex']);
+      // this gets invoked again, when phase should be "draw"
     } else if (data['phase'] == 'describe2') {
       jsonPointsList = jsonDecode(data['draw2Prompt$promptIndex']);
     } else if (data['phase'] == 'describe3') {
@@ -775,7 +750,8 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
           child: TextField(
             controller: descriptionController,
             textAlign: TextAlign.center,
-            maxLines: null,
+            maxLines: 1,
+            onSubmitted: (s) => submitDescription(data),
             decoration: InputDecoration(
               border: OutlineInputBorder(),
               hintText: 'Describe here!',
@@ -858,8 +834,6 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
     });
 
     T.transact(data);
-
-    print('pointslist $pointsList');
   }
 
   indexUpdateCallback(String phase, int promptIndex, data) {
@@ -1160,9 +1134,10 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
     // check if all votes are in
     var sum = scores.reduce((a, b) => a + b);
     var expectedSum = data['playerIds'].length *
-        (data['rules']['numDrawDescribe'] == 2 ? 4 : 6);
-    print('sum: $sum, expected sum: ${expectedSum * data['round']}');
-    if (sum >= expectedSum * data['round']) {
+        (data['rules']['numDrawDescribe'] == 2 ? 4 : 6) *
+        (data['round'] + 1);
+    print('sum: $sum, expected sum: $expectedSum');
+    if (sum >= expectedSum) {
       // if so, check if there is another round
       // new round = increment round and reset all submissions
 
@@ -1176,6 +1151,10 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
         data['votes'][playerIndex] = false;
       });
       data['round'] += 1;
+      // reset all votes to false
+      for (int i = 0; i < data['votes'].length; i++) {
+        data['votes'][i] = false;
+      }
       data['phase'] = 'draw1';
 
       if (data['round'] >= data['rules']['numRounds']) {
@@ -1195,8 +1174,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
   getVotes(data) {
     // construct a row of columns (scrollable left/right all together)
     // Original Prompt -> 1st Drawing -> 1st description -> 2nd Drawing -> 2nd prompt  (original prompt)
-    var promptsColumn = data['rules']['prompts'][0]
-        ['prompts']; // TODO: round needs to be dynamic here
+    var promptsColumn = data['rules']['prompts'][data['round']]['prompts'];
     var screenWidth = MediaQuery.of(context).size.width;
 
     // create column items
@@ -1232,7 +1210,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
               child: Center(
                   child: Text(
                 promptsColumn[i],
-                style: TextStyle(fontSize: 15, color: Colors.white),
+                style: TextStyle(fontSize: 28, color: Colors.white),
               ))),
         ),
       );
@@ -1329,6 +1307,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
               return Text('');
             }
             return Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
                 Text(
                   '${snapshot.data['name']}: ${playerScores[playerId].toString()}',
@@ -1343,6 +1322,7 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
     });
     var width = MediaQuery.of(context).size.width;
     return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
         SizedBox(height: 50),
         Container(
@@ -1445,21 +1425,19 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
                 child: data['phase'] == 'draw1' ||
                         data['phase'] == 'draw2' ||
                         data['phase'] == 'draw3'
-                    ? SingleChildScrollView(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: <Widget>[
-                            SizedBox(height: 10),
-                            getStatus(data),
-                            SizedBox(height: 10),
-                            getUserAction(data),
-                            SizedBox(height: 5),
-                          ],
-                        ),
+                    ? Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          SizedBox(height: 10),
+                          getStatus(data),
+                          SizedBox(height: 10),
+                          getUserAction(data),
+                          SizedBox(height: 5),
+                        ],
                       )
                     : SingleChildScrollView(
                         child: data['phase'] == 'scoreboard'
-                            ? getScoreboard(data)
+                            ? Center(child: getScoreboard(data))
                             : Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: <Widget>[

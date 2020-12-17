@@ -15,6 +15,14 @@ class Transactor {
     });
   }
 
+  transactItem(itemName, item) async {
+    await _firestore.runTransaction((transaction) async {
+      DocumentReference postRef =
+          _firestore.collection('sessions').doc(sessionId);
+      transaction.update(postRef, {itemName: item});
+    });
+  }
+
   transactCharadeATroisWords(newWord) async {
     await _firestore.runTransaction((transaction) async {
       DocumentReference postRef =
@@ -23,6 +31,24 @@ class Transactor {
       List words = snapshot.data()['words'];
       words.add(newWord);
       transaction.update(postRef, {'words': words});
+    });
+  }
+
+  transactCharadeATroisJudgeList(judgeList) async {
+    await _firestore.runTransaction((transaction) async {
+      DocumentReference postRef =
+          _firestore.collection('sessions').doc(sessionId);
+      transaction.update(postRef, {'judgeList': judgeList});
+    });
+  }
+
+  transactCharadeATroisStatePile(pile) async {
+    await _firestore.runTransaction((transaction) async {
+      DocumentReference postRef =
+          _firestore.collection('sessions').doc(sessionId);
+      DocumentSnapshot snapshot = await transaction.get(postRef);
+      String state = snapshot.data()['internalState'];
+      transaction.update(postRef, {'${state}Pile': pile});
     });
   }
 
@@ -59,12 +85,22 @@ class Transactor {
     });
   }
 
-  transactAll(data) async {
+  transactSamesiesReady(playerId) async {
+    await _firestore.runTransaction((transaction) async {
+      DocumentReference postRef =
+          _firestore.collection('sessions').doc(sessionId);
+      transaction.update(postRef, {'ready$playerId': true});
+    });
+  }
+
+  transactSamesiesWord(playerId, word) async {
     await _firestore.runTransaction((transaction) async {
       DocumentReference postRef =
           _firestore.collection('sessions').doc(sessionId);
       DocumentSnapshot snapshot = await transaction.get(postRef);
-      transaction.set(postRef, data);
+      List playerWords = snapshot.data()['playerWords$playerId'];
+      playerWords.add(word);
+      transaction.update(postRef, {'playerWords$playerId': playerWords});
     });
   }
 }

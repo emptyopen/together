@@ -875,13 +875,12 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
     var playerIds = List.from(data['playerIds']);
 
-    // add player names, words, and readiness
-    data['ready'] = {};
+    // add player names, words, readiness, and results
     data['playerWords'] = {};
     data['playerNames'] = {};
     for (int i = 0; i < playerIds.length; i++) {
-      data['ready'][playerIds[i]] = false;
-      data['playerWords'][playerIds[i]] = [];
+      data['ready${playerIds[i]}'] = false;
+      data['playerWords${playerIds[i]}'] = [];
       data['playerNames'][playerIds[i]] = (await FirebaseFirestore.instance
               .collection('users')
               .doc(playerIds[i])
@@ -912,6 +911,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
         data['teams'][i]['words']['medium$j'] = mediumWords[j + i * 3];
         data['teams'][i]['words']['hard$j'] = hardWords[j + i * 3];
         data['teams'][i]['words']['expert$j'] = expertWords[j + i * 3];
+        // also add empty results
+        data['teams'][i]['results'] = [];
       }
       data['teams'][i]['results'] = [];
       data['teams'][i]['score'] = 0;
@@ -1315,6 +1316,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                 style: TextStyle(fontSize: 18),
               ),
             ]),
+            SizedBox(height: 5),
             RulesContainer(rules: <Widget>[
               Text(
                 'Round time limit:',
@@ -1323,6 +1325,36 @@ class _LobbyScreenState extends State<LobbyScreen> {
               Text(
                 rules['roundTimeLimit'].toString(),
                 style: TextStyle(fontSize: 18),
+              ),
+            ]),
+            SizedBox(height: 5),
+            RulesContainer(rules: <Widget>[
+              Text(
+                'High Score / Survival:',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: rules['numTeams'] > 1
+                      ? Colors.grey
+                      : Theme.of(context).highlightColor,
+                ),
+              ),
+              Text(
+                '(1 team only)',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey,
+                ),
+              ),
+              Text(
+                rules['mode'].toString(),
+                style: TextStyle(
+                  fontSize: 18,
+                  color: rules['numTeams'] > 1
+                      ? Colors.grey
+                      : Theme.of(context).highlightColor,
+                ),
               ),
             ]),
           ],
@@ -1720,14 +1752,41 @@ class _LobbyScreenState extends State<LobbyScreen> {
                       children: <Widget>[
                         SizedBox(height: 50),
                         _getCountdown(context, data),
-                        Text(
-                          'Room Code:',
-                          style: TextStyle(
-                            fontSize: 20,
-                          ),
-                        ),
-                        PageBreak(
-                          width: 100,
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              gameIcons[gameName],
+                              color: gameColors[gameName].withAlpha(200),
+                              size: 60,
+                            ),
+                            SizedBox(width: 20),
+                            Column(
+                              children: [
+                                Text(
+                                  gameName,
+                                  style: TextStyle(
+                                    fontSize: 30,
+                                  ),
+                                ),
+                                PageBreak(
+                                  width: 100,
+                                ),
+                                Text(
+                                  'Room Code:',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(width: 20),
+                            Icon(
+                              gameIcons[gameName],
+                              color: gameColors[gameName].withAlpha(200),
+                              size: 60,
+                            ),
+                          ],
                         ),
                         SizedBox(height: 10),
                         Container(
@@ -1796,7 +1855,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                                   child: Text(
                                     widget.roomCode,
                                     style: TextStyle(
-                                      fontSize: 84,
+                                      fontSize: 74,
                                       color: Theme.of(context).highlightColor,
                                     ),
                                   ),

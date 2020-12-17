@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:simple_animations/simple_animations.dart';
+import 'dart:async';
 
 class TogetherScrollView extends StatefulWidget {
   final Widget child;
@@ -16,12 +19,13 @@ class TogetherScrollView extends StatefulWidget {
 
 class _TogetherScrollViewState extends State<TogetherScrollView> {
   ScrollController _controller;
-  double hysteresis = 30;
+  double hysteresis = 10;
 
   @override
   initState() {
     super.initState();
     _controller = ScrollController();
+    _controller.addListener(_scrollListener);
   }
 
   @override
@@ -30,21 +34,18 @@ class _TogetherScrollViewState extends State<TogetherScrollView> {
     super.dispose();
   }
 
+  _scrollListener() {
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     bool showTop = _controller.hasClients &&
-        _controller.offset < _controller.position.maxScrollExtent - hysteresis;
+        _controller.offset <
+            _controller.position.maxScrollExtent / 2 - hysteresis;
     bool showBottom = _controller.hasClients &&
-        _controller.offset > _controller.position.minScrollExtent + hysteresis;
-    if (showTop && showBottom) {
-      // choose closer
-      if (_controller.position.maxScrollExtent - _controller.offset >
-          _controller.offset - _controller.position.minScrollExtent) {
-        showBottom = false;
-      } else {
-        showTop = false;
-      }
-    }
+        _controller.offset >
+            _controller.position.maxScrollExtent / 2 + hysteresis;
     return Stack(
       children: [
         SingleChildScrollView(

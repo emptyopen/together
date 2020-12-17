@@ -6,7 +6,6 @@ import 'dart:async';
 import 'package:string_similarity/string_similarity.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flushbar/flushbar.dart';
-import 'dart:math';
 
 import 'package:together/components/misc.dart';
 import 'package:together/components/buttons.dart';
@@ -272,7 +271,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
         decoration: BoxDecoration(
           border: Border.all(color: Colors.grey),
           borderRadius: BorderRadius.circular(15),
-          color: data['playerWords'][widget.userId].length > i
+          color: data['playerWords${widget.userId}'].length > i
               ? gameColors[samesiesString]
               : Theme.of(context).highlightColor.withAlpha(5),
         ),
@@ -294,12 +293,14 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
   }
 
   playerReady(data) async {
-    data['ready'][widget.userId] = true;
+    data['ready${widget.userId}'] = true;
+
+    await T.transactSamesiesReady(widget.userId);
 
     // if all players are ready, start the timer
     bool allReady = true;
-    data['ready'].forEach((i, v) {
-      if (!v) {
+    data['playerIds'].forEach((v) {
+      if (!data['ready$v']) {
         allReady = false;
       }
     });
@@ -546,7 +547,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
           children: [
             Text(data['playerNames'][v]),
             SizedBox(width: 5),
-            data['ready'][v]
+            data['ready$v']
                 ? Icon(MdiIcons.checkBoxOutline, color: Colors.green)
                 : Icon(MdiIcons.checkboxBlank, color: Colors.grey),
           ],
@@ -591,7 +592,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
               width: 190,
               child: Text('Ready!', style: TextStyle(fontSize: 32)),
               gradient: LinearGradient(
-                colors: !data['ready'][widget.userId]
+                colors: !data['ready${widget.userId}']
                     ? [
                         gameColors[samesiesString],
                         gameColors[samesiesString].withAlpha(100),
@@ -601,7 +602,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
                         Colors.grey,
                       ],
               ),
-              onPressed: !data['ready'][widget.userId]
+              onPressed: !data['ready${widget.userId}']
                   ? () {
                       playerReady(data);
                     }
@@ -621,8 +622,8 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
       // iterate over one players score, check if it exists in the other one
       var player1Id = data['teams'][teamIndex]['players'][0];
       var player2Id = data['teams'][teamIndex]['players'][1];
-      List player1Words = List.of(data['playerWords'][player1Id]);
-      List player2Words = List.of(data['playerWords'][player2Id]);
+      List player1Words = List.of(data['playerWords$player1Id']);
+      List player2Words = List.of(data['playerWords$player2Id']);
       List unmatchedPlayer1Words = [];
       List matchedPlayer2Words = [];
       player1Words.forEach((player1Word) {
@@ -728,7 +729,9 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
 
     HapticFeedback.vibrate();
 
-    data['playerWords'][widget.userId].add(_controller.text);
+    data['playerWords${widget.userId}'].add(_controller.text);
+
+    await T.transactSamesiesWord(widget.userId, _controller.text);
 
     // if all players are done, move to "comparison" page
     bool allPlayersSubmitted = true;
@@ -752,13 +755,11 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
       incrementLevel(data);
       // reset playerWords and ready states
       data['playerIds'].forEach((v) {
-        data['playerWords'][v] = [];
-        data['ready'][v] = false;
+        data['playerWords$v'] = [];
+        data['ready$v'] = false;
       });
       data['expirationTime'] = null;
     }
-
-    print(data['teams']);
 
     T.transact(data);
     setState(() {
@@ -858,7 +859,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
               onSubmitted: (s) {
                 submitWord(data);
               },
-              autofocus: true,
+              // autofocus: true,
               focusNode: myFocusNode,
               style: TextStyle(fontSize: 16),
               controller: _controller,
@@ -886,11 +887,16 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
           SizedBox(height: 10),
           RaisedGradientButton(
             height: 40,
-            width: 160,
+            width: 180,
             onPressed: () {
               submitWord(data);
             },
-            child: Text('Submit (or hit enter)'),
+            child: Text(
+              'Submit (or hit enter)',
+              style: TextStyle(
+                color: Colors.white,
+              ),
+            ),
             gradient: LinearGradient(colors: [
               Theme.of(context).primaryColor,
               Theme.of(context).accentColor

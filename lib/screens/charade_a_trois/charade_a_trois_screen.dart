@@ -115,7 +115,6 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
   }
 
   judgmentComplete(data) async {
-    print('judgement complete running');
     // if time is expired, turn should be updated
     if (data['temporaryExpirationTime'] == null) {
       print('turn');
@@ -255,6 +254,7 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
           SizedBox(height: 40),
           Text(
             'Submit words or phrases\nto describe & act out!',
+            textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 24,
             ),
@@ -289,7 +289,11 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
             ),
             child: Center(
               child: TextField(
-                maxLines: null,
+                maxLines: 1,
+                onSubmitted: (s) {
+                  addWordToList(data);
+                },
+                autofocus: true,
                 textAlign: TextAlign.center,
                 decoration: InputDecoration(
                   border: InputBorder.none,
@@ -439,11 +443,6 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
   }
 
   playerSkipsWord(data) async {
-    // pop word from pile, add words to judgeList
-    String pile = data['internalState'];
-    var word = data['${pile}Pile'].removeLast();
-    data['${pile}Pile'].insert(0, word);
-
     T.transact(data);
   }
 
@@ -558,6 +557,8 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
 
     HapticFeedback.vibrate();
 
+    await T.transactCharadeATroisJudgeList(data['judgeList']);
+
     if (data['expirationTime'] == null && data['judgeList'].length == 0) {
       judgmentComplete(data);
     }
@@ -569,6 +570,8 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
     data['judgeList'].removeAt(i);
 
     HapticFeedback.vibrate();
+
+    await T.transactCharadeATroisJudgeList(data['judgeList']);
 
     if (data['expirationTime'] == null && data['judgeList'].length == 0) {
       judgmentComplete(data);
@@ -586,6 +589,8 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
     data['judgeList'] = [];
 
     HapticFeedback.vibrate();
+
+    await T.transactCharadeATroisJudgeList(data['judgeList']);
 
     if (data['expirationTime'] == null && data['judgeList'].length == 0) {
       judgmentComplete(data);
@@ -732,7 +737,11 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
                 fontSize: 22,
               ),
             ),
-            data['judgeList'].length == 0 ? Container() : judgeWordListWidget,
+            data['expirationTime'] != null
+                ? Text('Waiting for player to finish...')
+                : data['judgeList'].length == 0
+                    ? Container()
+                    : judgeWordListWidget,
           ],
         ),
       );

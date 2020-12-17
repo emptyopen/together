@@ -329,7 +329,6 @@ class _LobbyDialogState extends State<LobbyDialog> {
   TextEditingController _roomCodeController = new TextEditingController();
   // TODO: make default game choice in settings?
   String _dropDownGame = 'The Hunt';
-  bool isFormError = false;
   String formError = '';
 
   joinGame(String roomCode, String password) async {
@@ -351,7 +350,6 @@ class _LobbyDialogState extends State<LobbyDialog> {
         if (correctPassword != '') {
           if (correctPassword != _passwordController.text) {
             setState(() {
-              isFormError = true;
               formError = 'Incorrect password';
             });
             // break if form error
@@ -398,14 +396,12 @@ class _LobbyDialogState extends State<LobbyDialog> {
       } else {
         // room doesn't exist
         setState(() {
-          isFormError = true;
           formError = 'Room does not exist';
         });
       }
     }).catchError((e) {
       print('error fetching data: $e');
       setState(() {
-        isFormError = true;
         formError = 'Error: $e';
       });
     });
@@ -478,9 +474,13 @@ class _LobbyDialogState extends State<LobbyDialog> {
                 ? TextField(
                     onChanged: (s) {
                       setState(() {
-                        isFormError = false;
                         formError = '';
                       });
+                    },
+                    autofocus: true,
+                    onSubmitted: (s) {
+                      joinGame(
+                          _roomCodeController.text, _passwordController.text);
                     },
                     controller: _roomCodeController,
                     decoration: InputDecoration(labelText: 'Room Code: '),
@@ -489,7 +489,6 @@ class _LobbyDialogState extends State<LobbyDialog> {
             TextField(
               onChanged: (s) {
                 setState(() {
-                  isFormError = false;
                   formError = '';
                 });
               },
@@ -499,7 +498,7 @@ class _LobbyDialogState extends State<LobbyDialog> {
               ),
             ),
             SizedBox(height: 8),
-            isFormError
+            formError != ''
                 ? Text(formError,
                     style: TextStyle(color: Colors.red, fontSize: 14))
                 : Container(),
