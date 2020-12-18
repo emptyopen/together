@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:io';
 
 class Transactor {
   Transactor({this.sessionId});
@@ -91,6 +92,9 @@ class Transactor {
           _firestore.collection('sessions').doc(sessionId);
       transaction.update(postRef, {'ready$playerId': true});
     });
+    sleep(Duration(milliseconds: 100));
+    return (await _firestore.collection('sessions').doc(sessionId).get())
+        .data();
   }
 
   transactSamesiesWord(playerId, word) async {
@@ -102,5 +106,8 @@ class Transactor {
       playerWords.add(word);
       transaction.update(postRef, {'playerWords$playerId': playerWords});
     });
+    sleep(Duration(milliseconds: 100));
+    return (await _firestore.collection('sessions').doc(sessionId).get())
+        .data();
   }
 }

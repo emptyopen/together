@@ -165,7 +165,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
       data['teams'].asMap().forEach((i, v) {
         storeTeamResults(i, timerExpired, data);
       });
-      if (data['mode'] == 'Survival') {
+      if (data['rules']['mode'] == 'Survival') {
         if (!teamPasses(data)) {
           data['state'] = 'scoreboard';
         }
@@ -340,7 +340,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
   playerReady(data) async {
     data['ready${widget.userId}'] = true;
 
-    await T.transactSamesiesReady(widget.userId);
+    data = await T.transactSamesiesReady(widget.userId);
 
     // if all players are ready, start the timer
     bool allReady = true;
@@ -456,8 +456,6 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
                   )
                 : Container(),
             SizedBox(width: 10),
-            Container(),
-            SizedBox(width: 10),
             Column(
               children: [
                 Text('Team ${teamIndex + 1}',
@@ -490,7 +488,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
                     )),
               ],
             ),
-            SizedBox(width: 20),
+            SizedBox(width: 5),
             complete
                 ? Column(
                     children: [
@@ -520,16 +518,15 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
                 : Container(),
           ],
         ),
-        SizedBox(height: 10),
-        data['mode'] == 'Survival'
+        data['rules']['mode'] == 'Survival'
             ? Text(
-                '(needed ${complete ? requiredScoreForLevel(data['level']) : requiredScoreForPreviousLevel(data['level'])})',
+                '(needed ${data['level'] == 'expert2' ? requiredScoreForLevel(data['level']) : requiredScoreForPreviousLevel(data['level'])})',
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey,
                 ))
             : Container(width: 0),
-        SizedBox(height: 5),
+        SizedBox(height: 10),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
@@ -661,6 +658,33 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
                     }
                   : null,
             ),
+            SizedBox(height: 10),
+            data['rules']['mode'] == 'Survival'
+                ? Column(
+                    children: [
+                      Text(
+                        'Next round requires at least',
+                        style: TextStyle(
+                          color: Colors.grey,
+                        ),
+                      ),
+                      Text(
+                        '${requiredScoreForLevel(data['level'])} out of ${getSubmissionLimit(data)} correct',
+                        style: TextStyle(
+                          fontSize: 24,
+                        ),
+                      ),
+                      Text(
+                        'to pass',
+                        style: TextStyle(
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  )
+                : Text(
+                    '(Next round has ${getSubmissionLimit(data)} submission words)'),
+            SizedBox(height: 10),
           ],
         ),
       ),
@@ -739,6 +763,8 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
           'score $score passes required score ${requiredScoreForLevel(data['level'])}');
     } else {
       passes = false;
+      print(
+          'score $score does not pass required score ${requiredScoreForLevel(data['level'])}');
     }
 
     if (passes) {
@@ -788,7 +814,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
 
     data['playerWords${widget.userId}'].add(_controller.text);
 
-    await T.transactSamesiesWord(widget.userId, _controller.text);
+    data = await T.transactSamesiesWord(widget.userId, _controller.text);
 
     checkRoundOver(data);
   }
@@ -903,13 +929,6 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
             ),
           ),
           SizedBox(height: 10),
-          Text('($remainingSubmissions remaining)',
-              style: TextStyle(color: Colors.grey)),
-          submittedWords.length > 0 ? SizedBox(height: 10) : Container(),
-          submittedWords.length > 0
-              ? Column(children: submittedWords)
-              : Container(),
-          SizedBox(height: 10),
           RaisedGradientButton(
             height: 40,
             width: 180,
@@ -927,6 +946,13 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
               Theme.of(context).accentColor
             ]),
           ),
+          SizedBox(height: 10),
+          Text('($remainingSubmissions remaining)',
+              style: TextStyle(color: Colors.grey)),
+          submittedWords.length > 0 ? SizedBox(height: 10) : Container(),
+          submittedWords.length > 0
+              ? Column(children: submittedWords)
+              : Container(),
         ],
       ),
     );

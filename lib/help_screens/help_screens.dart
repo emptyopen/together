@@ -158,7 +158,12 @@ class SamesiesScreenHelp extends StatelessWidget {
     return HelpScreen(
       title: 'Samesies: Rules',
       information: [
-        '    This is a word association game, great for couples to compete ;)',
+        '    This is a word association game, great for couples to compete ;) The object of the game is to be "in sync" as much as possible '
+            'with your teammate. There are two ways to play: "Survival" and "High Score". The "Survival" mode is only available for one team, two '
+            'players. ',
+        '    In either game type, the object of the game is to try and guess the same words you and your teammate might associate with a given '
+            'target word. In "Survival" mode, there is a required number of words to be "in sync" per round. In "High Score" mode, teams will '
+            'proceed regardless of the number matched, and the team with the highest score at the end wins.'
       ],
       buttonColor: Theme.of(context).primaryColor,
     );
@@ -169,11 +174,16 @@ class CharadeATroisScreenHelp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return HelpScreen(
-      title: 'Plot Twist: Rules',
+      title: 'Charáde à Trois: Rules',
       information: [
-        '    Welcome to charade à trois! The rules are simple. There are three rounds in which players take turns '
+        '    Welcome to Charáde à Trois! The rules are simple. There are three rounds in which players take turns '
             'describing, gesturing, and saying but one word to get their teammates to guess the words and phrases. \n'
             '    Words and phrases can be generated automatically, or players can write their own.',
+        '    The first round is "Describe". In this round players can describe in as much detail as they want to '
+            'have their teammates guess the target word. \n\n    The only rules are:\n\n1) Cannot use the target word or part of the target word.'
+            '\n\n2) Cannot use gestures, only talking.',
+        '    The second round is "Gestures". The only rule for this round is: no sound from the mouth.\n\n    The final round is "One Word", '
+            'in which the player must choose a single word. The semantics of what constitutes a word is left up to the players.',
       ],
       buttonColor: Theme.of(context).primaryColor,
     );

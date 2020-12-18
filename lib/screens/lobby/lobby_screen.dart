@@ -888,12 +888,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
           .data()['name'];
     }
 
-    // if one team, high score. otherwise, it is competitive mode
-    data['mode'] = 'high score';
-    if (data['teams'].length > 1) {
-      data['mode'] = 'competitive';
-    }
-
     // determine all possible round words per team
     List easyWords = inSyncWords['easy'];
     List mediumWords = inSyncWords['medium'];

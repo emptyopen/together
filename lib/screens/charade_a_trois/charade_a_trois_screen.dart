@@ -1224,7 +1224,7 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
                       PageRouteBuilder(
                         opaque: false,
                         pageBuilder: (BuildContext context, _, __) {
-                          return PlotTwistScreenHelp();
+                          return CharadeATroisScreenHelp();
                         },
                       ),
                     );

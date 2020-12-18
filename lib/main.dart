@@ -14,20 +14,14 @@ void main() async {
 
 // next up:
 
-// 3 crowns - show outline of winning card
-
-// keyboard issue in plot twist - all textfields should have a "go" button to close the keyboard
-
-// charade: go button grey, stuck - add a permanent check for a bad state (band-aid?)
-// charade: show crossed out words when judging
-// charade: skip button seemed to freeze?
-
-// samesies: there should be an option for multiple teams if they want the same words or not (as each other)
-
-// BIG: add additional skins after certain number of wins
-// - new crowns for certain wins in three crowns
+// for other transacts, use new sleep and return data if relevant (use of data after transact)
+// move dealer card and dealee card out of "deal" and use trasact
 
 // TODO:
+// BIG: add additional skins after certain number of wins (new crowns for certain wins in three crowns)
+// samesies: show total score for each round score
+// samesies: don't show crown for a survival loss (unless won)
+// 3 crowns - show outline of winning card
 // bananaphone: increment player score
 // samesies: there should be an option for multiple teams if they want the same words or not (as each other)
 // bananaphone: maybe change voting to "entire progression", single vote
