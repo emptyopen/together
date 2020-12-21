@@ -14,17 +14,16 @@ void main() async {
 
 // next up:
 
+// three crowns, system check after transact update
+
 // BIG: add additional skins after certain number of wins (new crowns for certain wins in three crowns)
 // 3 crowns - show outline of winning card
 
-// for other transacts, use new sleep and return data if relevant (use of data after transact)
-// move dealer card and dealee card out of "deal" and use trasact
-
 // TODO:
-// bananaphone: increment player score
-// samesies: there should be an option for multiple teams if they want the same words or not (as each other)
-// bananaphone: maybe change voting to "entire progression", single vote
 // big: consolidation of new game to simplified parameters / per screen (init, scaffold, etc.)
+// samesies: there should be an option for multiple teams if they want the same words or not (as each other)
+// bananaphone: increment player score
+// bananaphone: maybe change voting to "entire progression", single vote
 // charades: shimmer for high round scores
 // charades: add everything to a log?
 // team selector: a few annoying bugs remaining with rapid touches
@@ -32,9 +31,7 @@ void main() async {
 // three crowns: better font for stealable tiles (holy letters)
 // plot twist: add ability to click a chat to see the character description
 // plot twist: add final scoreboard screen with "winners" who guessed correctly
-// plot twist: capability for narrator to cast poll, and for players to vote
 // plot twist: add "narrator silence" so narrators can only say something every X chats
-// plot twist: add ability to delete chats?
 // plot twist: add ability to choose narrator in lobby?
 // the hunt: add timer to voting!!
 // abstract: (might not need) add voting system for choosing abstract cards (all members of team must select it)
@@ -62,7 +59,6 @@ void main() async {
 // q@g.com quentin
 
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
