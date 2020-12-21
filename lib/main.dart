@@ -14,14 +14,13 @@ void main() async {
 
 // next up:
 
+// BIG: add additional skins after certain number of wins (new crowns for certain wins in three crowns)
+// 3 crowns - show outline of winning card
+
 // for other transacts, use new sleep and return data if relevant (use of data after transact)
 // move dealer card and dealee card out of "deal" and use trasact
 
 // TODO:
-// BIG: add additional skins after certain number of wins (new crowns for certain wins in three crowns)
-// samesies: show total score for each round score
-// samesies: don't show crown for a survival loss (unless won)
-// 3 crowns - show outline of winning card
 // bananaphone: increment player score
 // samesies: there should be an option for multiple teams if they want the same words or not (as each other)
 // bananaphone: maybe change voting to "entire progression", single vote
@@ -38,7 +37,6 @@ void main() async {
 // plot twist: add ability to delete chats?
 // plot twist: add ability to choose narrator in lobby?
 // the hunt: add timer to voting!!
-// other tools: random number generator?
 // abstract: (might not need) add voting system for choosing abstract cards (all members of team must select it)
 // abstract: tiebreaker with total time used as second marker
 // if leader leaves a game, need to assign remaining player the leader position - ORRRRR, "claim leadership" button would be more fun and easier

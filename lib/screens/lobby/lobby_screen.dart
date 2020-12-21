@@ -574,22 +574,20 @@ class _LobbyScreenState extends State<LobbyScreen> {
     data['targetWord'] = generateRandomWord(
         data['rules']['minWordLength'], data['rules']['maxWordLength']);
 
-    data['duel'] = {
-      'duelerIndex': 0,
-      'dueleeIndex': 1,
-      'duelerCard': '',
-      'dueleeCard': '',
-      'joust': 1,
-      'state': 'duel',
-      'matchingCards': [],
-      'peasantCards': [],
-      'oldJoustCards': {},
-      'tilePrizes': [],
-      'pillagePrize': 0,
-      'matcherIndex': 0,
-      'responderIndex': 0,
-      'winnerIndex': 0,
-    };
+    data['duelerIndex'] = 0;
+    data['dueleeIndex'] = 0;
+    data['duelerCard'] = '';
+    data['dueleeCard'] = '';
+    data['joust'] = 1;
+    data['phase'] = 'duel';
+    data['matchingCards'] = [];
+    data['peasantCards'] = [];
+    data['oldJoustCards'] = {};
+    data['tilePrizes'] = [];
+    data['pillagePrize'] = 0;
+    data['matcherIndex'] = 0;
+    data['responderIndex'] = 0;
+    data['winnerIndex'] = 0;
 
     return data;
   }

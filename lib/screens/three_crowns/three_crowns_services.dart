@@ -182,8 +182,8 @@ fillHand({data, scaffoldKey, userId, sessionId, force = false}) async {
 
 bool playerInDuel(data, userId) {
   var playerIndex = data['playerIds'].indexOf(userId);
-  return playerIndex == data['duel']['duelerIndex'] ||
-      playerIndex == data['duel']['dueleeIndex'];
+  return playerIndex == data['duelerIndex'] ||
+      playerIndex == data['dueleeIndex'];
 }
 
 playerNameFromIndex(int index, data) {
@@ -192,35 +192,35 @@ playerNameFromIndex(int index, data) {
 }
 
 cleanupDuel(data) async {
-  data['duel']['dueleeCard'] = '';
-  data['duel']['duelerCard'] = '';
-  data['duel']['matchingCards'] = [];
-  data['duel']['peasantCards'] = [];
-  data['duel']['oldJoustCards'] = {};
-  data['duel']['joust'] = 1;
-  data['duel']['tilePrize'] = 0;
-  data['duel']['pillagePrize'] = 0;
+  data['dueleeCard'] = '';
+  data['duelerCard'] = '';
+  data['matchingCards'] = [];
+  data['peasantCards'] = [];
+  data['oldJoustCards'] = {};
+  data['joust'] = 1;
+  data['tilePrize'] = 0;
+  data['pillagePrize'] = 0;
   // next duel
-  data['duel']['duelerIndex'] += 1;
-  if (data['duel']['duelerIndex'] >= data['playerIds'].length) {
-    data['duel']['duelerIndex'] = 0;
+  data['duelerIndex'] += 1;
+  if (data['duelerIndex'] >= data['playerIds'].length) {
+    data['duelerIndex'] = 0;
   }
-  data['duel']['dueleeIndex'] += 1;
-  if (data['duel']['dueleeIndex'] >= data['playerIds'].length) {
-    data['duel']['dueleeIndex'] = 0;
+  data['dueleeIndex'] += 1;
+  if (data['dueleeIndex'] >= data['playerIds'].length) {
+    data['dueleeIndex'] = 0;
   }
   // fill hands for dueler and duelee
-  int duelerIndex = data['duel']['duelerIndex'];
+  int duelerIndex = data['duelerIndex'];
   while (data['player${duelerIndex}Hand'].length < threeCardsHandSize) {
     String randomCard = generateRandomThreeCrownsCard();
     data['player${duelerIndex}Hand'].add(randomCard);
   }
-  int dueleeIndex = data['duel']['dueleeIndex'];
+  int dueleeIndex = data['dueleeIndex'];
   while (data['player${dueleeIndex}Hand'].length < threeCardsHandSize) {
     String randomCard = generateRandomThreeCrownsCard();
     data['player${dueleeIndex}Hand'].add(randomCard);
   }
-  data['duel']['state'] = 'duel';
+  data['phase'] = 'duel';
 }
 
 generateRandomWord(int minLength, int maxLength) {

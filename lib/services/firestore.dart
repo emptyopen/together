@@ -64,26 +64,38 @@ class Transactor {
     });
   }
 
-  transactThreeCrownsDuelerCard(card) async {
+  transactThreeCrownsDuelerCard(card, playerIndex, i) async {
     await _firestore.runTransaction((transaction) async {
       DocumentReference postRef =
           _firestore.collection('sessions').doc(sessionId);
       DocumentSnapshot snapshot = await transaction.get(postRef);
-      var duel = snapshot.data()['duel'];
-      duel['duelerCard'] = card;
-      transaction.update(postRef, {'duel': duel});
+      List playerHand = snapshot.data()['player${playerIndex}Hand'];
+      playerHand.removeAt(i);
+      transaction.update(postRef, {
+        'duelerCard': card,
+        'player${playerIndex}Hand': playerHand,
+      });
     });
+    sleep(Duration(milliseconds: 100));
+    return (await _firestore.collection('sessions').doc(sessionId).get())
+        .data();
   }
 
-  transactThreeCrownsDueleeCard(card) async {
+  transactThreeCrownsDueleeCard(card, playerIndex, i) async {
     await _firestore.runTransaction((transaction) async {
       DocumentReference postRef =
           _firestore.collection('sessions').doc(sessionId);
       DocumentSnapshot snapshot = await transaction.get(postRef);
-      var duel = snapshot.data()['duel'];
-      duel['dueleeCard'] = card;
-      transaction.update(postRef, {'duel': duel});
+      List playerHand = snapshot.data()['player${playerIndex}Hand'];
+      playerHand.removeAt(i);
+      transaction.update(postRef, {
+        'dueleeCard': card,
+        'player${playerIndex}Hand': playerHand,
+      });
     });
+    sleep(Duration(milliseconds: 100));
+    return (await _firestore.collection('sessions').doc(sessionId).get())
+        .data();
   }
 
   transactSamesiesReady(playerId) async {

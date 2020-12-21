@@ -98,7 +98,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
     return [m, s];
   }
 
-  getLevelProgress(data) {
+  getLevelProgress(data, {death = false}) {
     double progressBallLength = 7;
     int level = levelToNumber(data);
     List<Widget> barWidgets = [
@@ -128,18 +128,22 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
       );
       // dot
       barWidgets.add(
-        Container(
-          height: progressBallLength + (level == i ? 5 : 0),
-          width: progressBallLength + (level == i ? 5 : 0),
-          decoration: BoxDecoration(
-            color: level == i
-                ? gameColors[samesiesString]
-                : level > i
-                    ? Theme.of(context).highlightColor.withAlpha(230)
-                    : Colors.grey,
-            borderRadius: BorderRadius.circular(progressBallLength),
-          ),
-        ),
+        death && level == i
+            ? Icon(MdiIcons.skull, size: 22, color: gameColors[samesiesString])
+            : Container(
+                height: progressBallLength + (level == i ? 5 : 0),
+                width: progressBallLength + (level == i ? 5 : 0),
+                decoration: BoxDecoration(
+                  color: level == i
+                      ? death
+                          ? Theme.of(context).canvasColor
+                          : gameColors[samesiesString]
+                      : level > i
+                          ? Theme.of(context).highlightColor.withAlpha(230)
+                          : Colors.grey,
+                  borderRadius: BorderRadius.circular(progressBallLength),
+                ),
+              ),
       );
     }
     return Row(
@@ -170,7 +174,9 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
           data['state'] = 'scoreboard';
         }
       }
-      incrementLevel(data);
+      if (data['state'] != 'scoreboard') {
+        incrementLevel(data);
+      }
       // reset playerWords and ready states
       data['playerIds'].forEach((v) {
         data['playerWords$v'] = [];
@@ -403,6 +409,8 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
       isWinner = true;
     }
 
+    bool isLost = complete && data['level'] != 'expert2';
+
     var width = MediaQuery.of(context).size.width;
     data['teams'][teamIndex]['results'].forEach((v) {
       player1Words.add(Container(
@@ -450,8 +458,10 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
           children: [
             complete && isWinner
                 ? Icon(
-                    MdiIcons.crown,
-                    color: Colors.amber,
+                    isLost ? MdiIcons.skull : MdiIcons.crown,
+                    color: isLost
+                        ? Theme.of(context).highlightColor
+                        : Colors.amber,
                     size: 40,
                   )
                 : Container(),
@@ -511,8 +521,10 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
             SizedBox(width: 10),
             complete && isWinner
                 ? Icon(
-                    MdiIcons.crown,
-                    color: Colors.amber,
+                    isLost ? MdiIcons.skull : MdiIcons.crown,
+                    color: isLost
+                        ? Theme.of(context).highlightColor
+                        : Colors.amber,
                     size: 40,
                   )
                 : Container(),
@@ -570,9 +582,17 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
               : 'Level ${levelToNumber(data) - 1} complete!',
           style: TextStyle(
             fontSize: 22,
-            color: gameColors[samesiesString],
+            // color: gameColors[samesiesString],
           )),
       SizedBox(height: 10),
+      complete && levelToNumber(data) != 12
+          ? Column(
+              children: [
+                getLevelProgress(data, death: true),
+                SizedBox(height: 10),
+              ],
+            )
+          : Container(),
     ];
     data['teams'].asMap().forEach((i, v) {
       teamResultWidgets.add(getTeamResults(i, data));

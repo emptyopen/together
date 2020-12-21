@@ -233,10 +233,10 @@ class _PillageDialogState extends State<PillageDialog> {
     widget.data['log']
         .add('$winner stole a ${tile.toUpperCase()} from $selected!');
 
-    widget.data['duel']['pillagePrize'] -= 1;
+    widget.data['pillagePrize'] -= 1;
 
     // if player has collected all rewards, move to next duel
-    if (widget.data['duel']['pillagePrize'] == 0) {
+    if (widget.data['pillagePrize'] == 0) {
       cleanupDuel(widget.data);
     }
 
@@ -364,9 +364,9 @@ class _PillageDialogState extends State<PillageDialog> {
             widget.data['player${playerIndex}Tiles'].add(letter2);
             widget.data['log'].add(
                 '$winner collected two tiles: "${letter1.toUpperCase()}" and "${letter2.toUpperCase()}"');
-            widget.data['duel']['pillagePrize'] -= 1;
+            widget.data['pillagePrize'] -= 1;
             // if player has collected all rewards, move to next duel
-            if (widget.data['duel']['pillagePrize'] == 0) {
+            if (widget.data['pillagePrize'] == 0) {
               cleanupDuel(widget.data);
             }
 
