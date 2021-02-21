@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 import 'services/authentication.dart';
 import 'screens/auth/root_screen.dart';
@@ -7,25 +8,31 @@ import 'screens/auth/root_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  if (FirebaseCrashlytics.instance.isCrashlyticsCollectionEnabled) {
+    print('crash enabled');
+  } else {
+    print('crash disabled');
+  }
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterError;
   runApp(MyApp());
 }
 
 // DONE:
 
 // next up:
-
-// three crowns, system check after transact update
-
-// BIG: add additional skins after certain number of wins (new crowns for certain wins in three crowns)
+// samesies: fix inconsistent grading (duplicate words, missing words)
+// samesies: ensure no crash, look at game from Feb 19th w/ 6 people
+// ensure score is being incremented for Rivers
 // 3 crowns - show outline of winning card
 
 // TODO:
+// big: add additional skins after certain number of wins (new crowns for certain wins in three crowns)
+// big: add emoji version to samesies
 // big: consolidation of new game to simplified parameters / per screen (init, scaffold, etc.)
 // samesies: there should be an option for multiple teams if they want the same words or not (as each other)
 // bananaphone: increment player score
 // bananaphone: maybe change voting to "entire progression", single vote
 // charades: shimmer for high round scores
-// charades: add everything to a log?
 // team selector: a few annoying bugs remaining with rapid touches
 // add LEGAL donations link for ios/android
 // three crowns: better font for stealable tiles (holy letters)
@@ -34,7 +41,6 @@ void main() async {
 // plot twist: add "narrator silence" so narrators can only say something every X chats
 // plot twist: add ability to choose narrator in lobby?
 // the hunt: add timer to voting!!
-// abstract: (might not need) add voting system for choosing abstract cards (all members of team must select it)
 // abstract: tiebreaker with total time used as second marker
 // if leader leaves a game, need to assign remaining player the leader position - ORRRRR, "claim leadership" button would be more fun and easier
 // add password reset option

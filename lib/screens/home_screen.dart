@@ -477,7 +477,9 @@ class _LobbyDialogState extends State<LobbyDialog> {
                         formError = '';
                       });
                     },
+                    enableSuggestions: false,
                     autofocus: true,
+                    autocorrect: false,
                     onSubmitted: (s) {
                       joinGame(
                           _roomCodeController.text, _passwordController.text);
@@ -491,6 +493,9 @@ class _LobbyDialogState extends State<LobbyDialog> {
                 setState(() {
                   formError = '';
                 });
+              },
+              onSubmitted: (s) {
+                joinGame(_roomCodeController.text, _passwordController.text);
               },
               controller: _passwordController,
               decoration: InputDecoration(

@@ -575,7 +575,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
         data['rules']['minWordLength'], data['rules']['maxWordLength']);
 
     data['duelerIndex'] = 0;
-    data['dueleeIndex'] = 0;
+    data['dueleeIndex'] = 1;
     data['duelerCard'] = '';
     data['dueleeCard'] = '';
     data['joust'] = 1;

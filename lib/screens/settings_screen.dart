@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 import 'package:together/services/authentication.dart';
 import 'package:together/components/buttons.dart';
@@ -278,6 +279,26 @@ class _SettingsScreenState extends State<SettingsScreen>
                       ],
                     ),
                     onPressed: () => Navigator.of(context).pop()),
+                SizedBox(height: 10),
+                RaisedGradientButton(
+                    child: Text(
+                      'Crash App (seriously)',
+                      style: TextStyle(
+                        fontSize: 20,
+                        color: Colors.white,
+                      ),
+                    ),
+                    height: 50,
+                    width: 230,
+                    gradient: LinearGradient(
+                      colors: <Color>[
+                        Colors.black,
+                        Colors.black,
+                      ],
+                    ),
+                    onPressed: () {
+                      FirebaseCrashlytics.instance.crash();
+                    }),
                 SizedBox(height: 10),
                 RaisedGradientButton(
                     child: Text(
