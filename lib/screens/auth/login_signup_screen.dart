@@ -75,7 +75,7 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
         setState(() {
           _isLoading = false;
           _errorMessage = e.message;
-          _formKey.currentState.reset();
+          _password = '';
         });
       }
     }
@@ -89,13 +89,7 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
     super.initState();
   }
 
-  void resetForm() {
-    _formKey.currentState.reset();
-    _errorMessage = "";
-  }
-
   void toggleFormMode() {
-    resetForm();
     setState(() {
       _isLoginForm = !_isLoginForm;
     });

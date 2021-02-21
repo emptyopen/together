@@ -250,7 +250,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           tabs: myTabs,
         ),
       ),
-      resizeToAvoidBottomPadding: false,
+      resizeToAvoidBottomInset: false,
       key: _scaffoldKey,
       body: TabBarView(
         controller: _tabController,
@@ -297,6 +297,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                       ],
                     ),
                     onPressed: () {
+                      print('should crash');
                       FirebaseCrashlytics.instance.crash();
                     }),
                 SizedBox(height: 10),

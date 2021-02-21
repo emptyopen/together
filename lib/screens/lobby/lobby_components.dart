@@ -461,7 +461,15 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
                   title: 'Round time limit:',
                   rule: 'roundTimeLimit',
                   updateRules: updateRules,
-                  choices: [30, 45, 60, 70, 80, 90, 100, 120],
+                  choices: [30, 40, 50, 60, 70, 80, 90, 100, 120],
+                ),
+                SizedBox(height: 20),
+                EditRulesDropdown(
+                  data: data,
+                  title: 'Difficulty',
+                  rule: 'difficulty',
+                  updateRules: updateRules,
+                  choices: ['Easy', 'Medium', 'Hard'],
                 ),
                 SizedBox(height: 20),
                 EditRulesDropdown(

@@ -1,7 +1,7 @@
 name: together
 description: For friends to play games.
 
-version: 1.4.2+44
+version: 1.4.4+46
 
 environment:
   sdk: ">=2.6.0 <3.0.0"
@@ -25,12 +25,12 @@ dependencies:
   clipboard:
   flushbar:
 
-  firebase_core:
-  firebase_analytics:
-  firebase_crashlytics:
-  firebase_auth:
-  cloud_firestore:
-  firebase_storage:
+  firebase_core: ^0.7.0
+  firebase_analytics: ^7.0.1
+  firebase_crashlytics: ^0.4.0+1
+  firebase_auth: ^0.20.1
+  cloud_firestore: ^0.16.0+1
+  firebase_storage: ^7.0.0
 
 dev_dependencies:
   flutter_launcher_icons: ^0.7.3

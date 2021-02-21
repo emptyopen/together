@@ -865,7 +865,7 @@ class _TheScoreboardScreenState extends State<TheScoreboardScreen> {
           ),
         ),
         key: _scaffoldKey,
-        resizeToAvoidBottomPadding: false,
+        resizeToAvoidBottomInset: false,
         body: getScoreboard());
   }
 }

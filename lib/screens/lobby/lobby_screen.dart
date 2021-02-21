@@ -887,10 +887,10 @@ class _LobbyScreenState extends State<LobbyScreen> {
     }
 
     // determine all possible round words per team
-    List easyWords = inSyncWords['easy'];
-    List mediumWords = inSyncWords['medium'];
-    List hardWords = inSyncWords['hard'];
-    List expertWords = inSyncWords['expert'];
+    List easyWords = samesiesWords['easy'];
+    List mediumWords = samesiesWords['medium'];
+    List hardWords = samesiesWords['hard'];
+    List expertWords = samesiesWords['expert'];
     easyWords.shuffle();
     mediumWords.shuffle();
     hardWords.shuffle();

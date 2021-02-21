@@ -21,8 +21,7 @@ void main() async {
 
 // next up:
 // samesies: fix inconsistent grading (duplicate words, missing words)
-// samesies: ensure no crash, look at game from Feb 19th w/ 6 people
-// ensure score is being incremented for Rivers
+// samesies: ensure no crash, look at game from Feb 19th w/ 6 people - try forced duplicate words, and a blank submission
 // 3 crowns - show outline of winning card
 
 // TODO:

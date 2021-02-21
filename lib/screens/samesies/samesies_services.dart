@@ -1,4 +1,4 @@
-var inSyncWords = {
+var samesiesWords = {
   'easy': [
     'kitchen',
     'door',
@@ -36,6 +36,15 @@ var inSyncWords = {
     'umpire',
     'donation',
     'George Washington',
+    'circus',
+    'Elon Musk',
+    'selfie',
+    'McDonald\'s',
+    'Starbucks',
+    'rose',
+    'Halloween',
+    'bus',
+    'nose',
   ],
   'medium': [
     'alarm',
@@ -86,6 +95,11 @@ var inSyncWords = {
     'December',
     'ballet',
     'carbs',
+    'astronaut',
+    'back pain',
+    'traffic ticket',
+    'Gucci',
+    'TV',
   ],
   'hard': [
     'water',
@@ -130,6 +144,8 @@ var inSyncWords = {
     'Shakespeare',
     'reality show',
     'video game',
+    'Los Angeles',
+    'haircut',
   ],
   'expert': [
     'self-improvement',
@@ -166,6 +182,7 @@ var inSyncWords = {
     'mix',
     'ex',
     'track',
+    'Olympics',
   ],
 };
 
@@ -239,7 +256,7 @@ previousLevel(data) {
       level = 'easy2';
       break;
     case 'medium1':
-      level = 'medium1';
+      level = 'medium0';
       break;
     case 'medium2':
       level = 'medium1';
@@ -309,7 +326,8 @@ levelToNumber(data) {
   return level;
 }
 
-requiredScoreForLevel(level) {
+requiredScoreForLevel(data, {previous = false}) {
+  String level = data['level'] as String;
   int requiredScore = 2;
   if (level.substring(level.length - 1) == '1') {
     requiredScore = 3;
@@ -317,19 +335,25 @@ requiredScoreForLevel(level) {
   if (level.substring(level.length - 1) == '2') {
     requiredScore = 4;
   }
+  if (data['rules']['difficulty'] == 'Easy') {
+    requiredScore -= 1;
+  }
+  if (data['rules']['difficulty'] == 'Hard') {
+    requiredScore += 1;
+  }
   return requiredScore;
 }
 
-requiredScoreForPreviousLevel(level) {
-  int requiredScore = 4;
-  if (level.substring(level.length - 1) == '1') {
-    requiredScore = 2;
-  }
-  if (level.substring(level.length - 1) == '2') {
-    requiredScore = 3;
-  }
-  return requiredScore;
-}
+// requiredScoreForPreviousLevel(level) {
+//   int requiredScore = 4;
+//   if (level.substring(level.length - 1) == '1') {
+//     requiredScore = 2;
+//   }
+//   if (level.substring(level.length - 1) == '2') {
+//     requiredScore = 3;
+//   }
+//   return requiredScore;
+// }
 
 getSubmissionLimit(data) {
   int limit = 5;

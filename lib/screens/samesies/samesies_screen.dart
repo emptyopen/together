@@ -408,6 +408,9 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
     if (data['teams'][teamIndex]['score'] == maxScore) {
       isWinner = true;
     }
+    if (data['rules']['mode'] == 'Survival') {
+      isWinner = false;
+    }
 
     bool isLost = complete && data['level'] != 'expert2';
 
@@ -532,7 +535,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
         ),
         data['rules']['mode'] == 'Survival'
             ? Text(
-                '(needed ${data['level'] == 'expert2' ? requiredScoreForLevel(data['level']) : requiredScoreForPreviousLevel(data['level'])})',
+                '(needed ${data['level'] == 'expert2' ? requiredScoreForLevel(data) : requiredScoreForLevel(data, previous: true)})',
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey,
@@ -689,7 +692,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
                         ),
                       ),
                       Text(
-                        '${requiredScoreForLevel(data['level'])} out of ${getSubmissionLimit(data)} correct',
+                        '${requiredScoreForLevel(data)} out of ${getSubmissionLimit(data)} correct',
                         style: TextStyle(
                           fontSize: 24,
                         ),
@@ -778,13 +781,13 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
     data['teams'][0]['results'].forEach((result) {
       score += result['score'];
     });
-    if (score >= requiredScoreForLevel(data['level'])) {
+    if (score >= requiredScoreForLevel(data)) {
       print(
-          'score $score passes required score ${requiredScoreForLevel(data['level'])}');
+          'score $score passes required score ${requiredScoreForLevel(data)}');
     } else {
       passes = false;
       print(
-          'score $score does not pass required score ${requiredScoreForLevel(data['level'])}');
+          'score $score does not pass required score ${requiredScoreForLevel(data)}');
     }
 
     if (passes) {
@@ -930,7 +933,6 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
               onSubmitted: (s) {
                 submitWord(data);
               },
-              // autofocus: true,
               focusNode: myFocusNode,
               style: TextStyle(fontSize: 16),
               controller: _controller,

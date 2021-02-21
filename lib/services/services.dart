@@ -239,8 +239,9 @@ getDefaultRules(String gameName) {
         'numTeams': 1,
         'maxTeams': 0,
         'maxTeamSize': 2,
-        'roundTimeLimit': 45,
-        'mode': 'High Score'
+        'roundTimeLimit': 60,
+        'difficulty': 'Medium',
+        'mode': 'High Score',
       };
       break;
   }
