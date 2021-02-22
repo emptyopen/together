@@ -587,7 +587,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
     data['pillagePrize'] = 0;
     data['matcherIndex'] = 0;
     data['responderIndex'] = 0;
-    data['winnerIndex'] = 0;
+    data['winnerIndexes'] = [];
 
     return data;
   }

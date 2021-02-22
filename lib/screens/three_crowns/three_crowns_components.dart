@@ -13,6 +13,7 @@ class ThreeCrownsCard extends StatelessWidget {
   final bool faceDown;
   final bool empty;
   final bool winner;
+  final bool duelIsOver;
 
   ThreeCrownsCard({
     this.value,
@@ -22,6 +23,7 @@ class ThreeCrownsCard extends StatelessWidget {
     this.faceDown = false,
     this.empty = false,
     this.winner = false,
+    this.duelIsOver = false,
   });
 
   getIcon(size) {
@@ -86,10 +88,7 @@ class ThreeCrownsCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white,
             border: Border.all(
-              color: winner
-                  ? Colors.green
-                  : Colors.red, //Theme.of(context).highlightColor,
-              width: winner ? 3 : 1,
+              color: Theme.of(context).highlightColor,
             ),
             borderRadius: BorderRadius.circular(10),
           ));
@@ -125,69 +124,85 @@ class ThreeCrownsCard extends StatelessWidget {
     }
     return GestureDetector(
       onTap: callback,
-      child: Container(
-          height: height,
-          width: width,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: Theme.of(context).highlightColor),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Stack(
-            children: <Widget>[
-              Positioned(
-                left: 1,
-                top: 1,
-                child: getIcon(
-                  iconSize,
-                ),
+      child: Stack(
+        children: [
+          Container(
+            height: height,
+            width: width,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(
+                color: Theme.of(context).highlightColor,
+                width: winner && duelIsOver ? 3 : 1,
               ),
-              Positioned(
-                child: Text(
-                  value[0],
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontSize: fontSize,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Stack(
+              children: <Widget>[
+                Positioned(
+                  left: 1,
+                  top: 1,
+                  child: getIcon(
+                    iconSize,
                   ),
                 ),
-                top: 3,
-                left: 5,
-              ),
-              value[0] == '4' && size == 'medium'
-                  ? Positioned(
-                      child: Icon(
-                        MdiIcons.autorenew,
-                        size: 20,
-                        color: Colors.black.withAlpha(100),
-                      ),
-                      bottom: 1,
-                      right: 1,
-                    )
-                  : Container(),
-              value[0] == '1' && size == 'medium'
-                  ? Positioned(
-                      child: Icon(
-                        Icons.star,
-                        size: 20,
-                        color: Colors.black.withAlpha(100),
-                      ),
-                      bottom: 1,
-                      right: 1,
-                    )
-                  : Container(),
-              ['5', '6', '7'].contains(value[0]) && size == 'medium'
-                  ? Positioned(
-                      child: Icon(
-                        MdiIcons.baguette,
-                        size: 20,
-                        color: Colors.black.withAlpha(100),
-                      ),
-                      bottom: 1,
-                      right: 1,
-                    )
-                  : Container(),
-            ],
-          )),
+                Positioned(
+                  child: Text(
+                    value[0],
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: fontSize,
+                    ),
+                  ),
+                  top: 3,
+                  left: 5,
+                ),
+                value[0] == '4' && size == 'medium'
+                    ? Positioned(
+                        child: Icon(
+                          MdiIcons.autorenew,
+                          size: 20,
+                          color: Colors.black.withAlpha(100),
+                        ),
+                        bottom: 1,
+                        right: 1,
+                      )
+                    : Container(),
+                value[0] == '1' && size == 'medium'
+                    ? Positioned(
+                        child: Icon(
+                          Icons.star,
+                          size: 20,
+                          color: Colors.black.withAlpha(100),
+                        ),
+                        bottom: 1,
+                        right: 1,
+                      )
+                    : Container(),
+                ['5', '6', '7'].contains(value[0]) && size == 'medium'
+                    ? Positioned(
+                        child: Icon(
+                          MdiIcons.baguette,
+                          size: 20,
+                          color: Colors.black.withAlpha(100),
+                        ),
+                        bottom: 1,
+                        right: 1,
+                      )
+                    : Container(),
+                Container(
+                  decoration: BoxDecoration(
+                    color: !winner & duelIsOver
+                        ? Colors.black.withAlpha(150)
+                        : Colors.white.withAlpha(0),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
