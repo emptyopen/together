@@ -12,6 +12,7 @@ class ThreeCrownsCard extends StatelessWidget {
   final Function callback;
   final bool faceDown;
   final bool empty;
+  final bool winner;
 
   ThreeCrownsCard({
     this.value,
@@ -20,6 +21,7 @@ class ThreeCrownsCard extends StatelessWidget {
     this.callback,
     this.faceDown = false,
     this.empty = false,
+    this.winner = false,
   });
 
   getIcon(size) {
@@ -83,7 +85,12 @@ class ThreeCrownsCard extends StatelessWidget {
           width: width,
           decoration: BoxDecoration(
             color: Colors.white,
-            border: Border.all(color: Theme.of(context).highlightColor),
+            border: Border.all(
+              color: winner
+                  ? Colors.green
+                  : Colors.red, //Theme.of(context).highlightColor,
+              width: winner ? 3 : 1,
+            ),
             borderRadius: BorderRadius.circular(10),
           ));
     }

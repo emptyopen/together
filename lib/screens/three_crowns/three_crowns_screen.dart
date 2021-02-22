@@ -420,6 +420,9 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     var screenWidth = MediaQuery.of(context).size.width;
     var width = screenWidth / 7;
     var height = width * 1.25;
+    int oppositePlayerIndex =
+        playerIsDueler(data) ? data['dueleeIndex'] : data['duelerIndex'];
+    bool oppositeCardWins = data['winnerIndexes'].contains(oppositePlayerIndex);
     var oppositeCard = oppositeCardValue == ''
         ? Container(
             height: height,
@@ -462,12 +465,14 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
                 : ThreeCrownsCard(
                     value: oppositeCardValue,
                     size: 'medium',
+                    winner: oppositeCardWins,
                   );
     if (playerNotInDuel && oppositeCardValue != '') {
       if (data['duelerCard'] != '' && data['dueleeCard'] != '') {
         oppositeCard = ThreeCrownsCard(
           value: oppositeCardValue,
           size: 'medium',
+          winner: oppositeCardWins,
         );
       } else {
         oppositeCard = ThreeCrownsCard(
@@ -475,6 +480,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
         );
       }
     }
+    bool playerWins = data['winnerIndexes'].contains(playerIndex);
     var playerCard = playerCardValue == ''
         ? Container(
             height: height,
@@ -518,12 +524,14 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
                 value: playerCardValue,
                 size: 'medium',
                 callback: () => returnCard(data),
+                winner: playerWins,
               );
     if (playerNotInDuel && playerCardValue != '') {
       if (data['duelerCard'] != '' && data['dueleeCard'] != '') {
         playerCard = ThreeCrownsCard(
           value: playerCardValue,
           size: 'medium',
+          winner: playerWins,
         );
       } else {
         playerCard = ThreeCrownsCard(
