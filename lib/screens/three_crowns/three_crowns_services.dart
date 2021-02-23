@@ -200,6 +200,7 @@ cleanupDuel(data) async {
   data['joust'] = 1;
   data['tilePrize'] = 0;
   data['pillagePrize'] = 0;
+  data['duelIsOver'] = false;
   // next duel
   data['duelerIndex'] += 1;
   if (data['duelerIndex'] >= data['playerIds'].length) {

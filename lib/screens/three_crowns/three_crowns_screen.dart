@@ -85,6 +85,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
 
   setWinner(winnerIndex, data) {
     data['winnerIndexes'] = [winnerIndex];
+    data['duelIsOver'] = true;
     var name = playerNameFromIndex(winnerIndex, data);
     if (winnerIndex == data['duelerIndex']) {
       data['log']
@@ -123,8 +124,6 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
   }
 
   determineDuelWinner(data) async {
-    print('determining winner');
-
     // set up values
     bool flipWinners = false;
     String duelerValue = data['duelerCard'][0];
@@ -152,6 +151,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
         data['winnerIndexes'] = [data['duelerIndex'], data['dueleeIndex']];
         data['phase'] = 'collection';
         data['tilePrizes'] = [3, 3];
+        data['duelIsOver'] = true;
       } else {
         data['log'].add(
             'Tie of ${data['duelerCard'][0]}, moving to joust #${data['joust']}');
@@ -425,7 +425,12 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     bool oppositeCardWins =
         data['winnerIndexes'].contains(oppositePlayerIndex) &&
             data['winnerIndexes'].length > 0;
-    bool duelIsOver = data['winnerIndexes'].length > 0;
+    int prizeSum = 0;
+    data['tilePrizes'].forEach((v) {
+      prizeSum += v;
+    });
+    prizeSum += data['pillagePrize'];
+    print(prizeSum);
     var oppositeCard = oppositeCardValue == ''
         ? Container(
             height: height,
@@ -469,7 +474,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
                     value: oppositeCardValue,
                     size: 'medium',
                     winner: oppositeCardWins,
-                    duelIsOver: duelIsOver,
+                    duelIsOver: data['duelIsOver'],
                   );
     if (playerNotInDuel && oppositeCardValue != '') {
       if (data['duelerCard'] != '' && data['dueleeCard'] != '') {
@@ -477,7 +482,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
           value: oppositeCardValue,
           size: 'medium',
           winner: oppositeCardWins,
-          duelIsOver: duelIsOver,
+          duelIsOver: data['duelIsOver'],
         );
       } else {
         oppositeCard = ThreeCrownsCard(
@@ -531,7 +536,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
                 size: 'medium',
                 callback: () => returnCard(data),
                 winner: playerWins,
-                duelIsOver: duelIsOver,
+                duelIsOver: data['duelIsOver'],
               );
     if (playerNotInDuel && playerCardValue != '') {
       if (data['duelerCard'] != '' && data['dueleeCard'] != '') {
@@ -539,7 +544,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
           value: playerCardValue,
           size: 'medium',
           winner: playerWins,
-          duelIsOver: duelIsOver,
+          duelIsOver: data['duelIsOver'],
         );
       } else {
         playerCard = ThreeCrownsCard(
@@ -757,6 +762,8 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
       });
       data['peasantCards'] = [];
     }
+
+    data['duelIsOver'] = true;
 
     T.transact(data);
   }
@@ -1845,6 +1852,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
                     ],
                   )
                 : Container(),
+            SizedBox(height: 35),
           ],
         ),
       ),

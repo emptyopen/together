@@ -26,6 +26,19 @@ class ThreeCrownsCard extends StatelessWidget {
     this.duelIsOver = false,
   });
 
+  getColor(suit) {
+    switch (suit) {
+      case 'S':
+        return Colors.blue.withAlpha(230);
+      case 'H':
+        return Colors.red.withAlpha(230);
+      case 'C':
+        return Colors.green.withAlpha(230);
+      default:
+        return Colors.amber.withAlpha(230);
+    }
+  }
+
   getIcon(size) {
     var suit = value[1];
     if (value.length == 3) {
@@ -36,7 +49,7 @@ class ThreeCrownsCard extends StatelessWidget {
         return Icon(
           MdiIcons.cardsSpade,
           // MdiIcons.fish,
-          color: Colors.blue.withAlpha(230),
+          color: getColor(suit),
           size: size,
         );
         break;
@@ -44,7 +57,7 @@ class ThreeCrownsCard extends StatelessWidget {
         return Icon(
           MdiIcons.cardsHeart,
           // MdiIcons.ladybug,
-          color: Colors.red.withAlpha(230),
+          color: getColor(suit),
           size: size,
         );
         break;
@@ -52,7 +65,7 @@ class ThreeCrownsCard extends StatelessWidget {
         return Icon(
           MdiIcons.cardsClub,
           // MdiIcons.alien,
-          color: Colors.green.withAlpha(230),
+          color: getColor(suit),
           size: size,
         );
         break;
@@ -60,7 +73,7 @@ class ThreeCrownsCard extends StatelessWidget {
         return Icon(
           MdiIcons.cardsDiamond,
           // MdiIcons.duck,
-          color: Colors.amber.withAlpha(230),
+          color: getColor(suit),
           size: size,
         );
         break;
@@ -122,6 +135,11 @@ class ThreeCrownsCard extends StatelessWidget {
         ),
       );
     }
+    var suit = value[1];
+    if (value.length == 3) {
+      suit = value[2];
+    }
+    Color cardColor = getColor(suit);
     return GestureDetector(
       onTap: callback,
       child: Stack(
@@ -132,7 +150,9 @@ class ThreeCrownsCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.white,
               border: Border.all(
-                color: Theme.of(context).highlightColor,
+                color: winner && duelIsOver
+                    ? cardColor
+                    : Theme.of(context).highlightColor,
                 width: winner && duelIsOver ? 3 : 1,
               ),
               borderRadius: BorderRadius.circular(10),

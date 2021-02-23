@@ -588,6 +588,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
     data['matcherIndex'] = 0;
     data['responderIndex'] = 0;
     data['winnerIndexes'] = [];
+    data['duelIsOver'] = false;
 
     return data;
   }
