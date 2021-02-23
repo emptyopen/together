@@ -422,7 +422,10 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     var height = width * 1.25;
     int oppositePlayerIndex =
         playerIsDueler(data) ? data['dueleeIndex'] : data['duelerIndex'];
-    bool oppositeCardWins = data['winnerIndexes'].contains(oppositePlayerIndex);
+    bool oppositeCardWins =
+        data['winnerIndexes'].contains(oppositePlayerIndex) &&
+            data['winnerIndexes'].length > 0;
+    bool duelIsOver = data['winnerIndexes'].length > 0;
     var oppositeCard = oppositeCardValue == ''
         ? Container(
             height: height,
@@ -466,6 +469,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
                     value: oppositeCardValue,
                     size: 'medium',
                     winner: oppositeCardWins,
+                    duelIsOver: duelIsOver,
                   );
     if (playerNotInDuel && oppositeCardValue != '') {
       if (data['duelerCard'] != '' && data['dueleeCard'] != '') {
@@ -473,6 +477,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
           value: oppositeCardValue,
           size: 'medium',
           winner: oppositeCardWins,
+          duelIsOver: duelIsOver,
         );
       } else {
         oppositeCard = ThreeCrownsCard(
@@ -480,7 +485,8 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
         );
       }
     }
-    bool playerWins = data['winnerIndexes'].contains(playerIndex);
+    bool playerWins = data['winnerIndexes'].contains(playerIndex) &&
+        data['winnerIndexes'].length > 0;
     var playerCard = playerCardValue == ''
         ? Container(
             height: height,
@@ -525,6 +531,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
                 size: 'medium',
                 callback: () => returnCard(data),
                 winner: playerWins,
+                duelIsOver: duelIsOver,
               );
     if (playerNotInDuel && playerCardValue != '') {
       if (data['duelerCard'] != '' && data['dueleeCard'] != '') {
@@ -532,6 +539,7 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
           value: playerCardValue,
           size: 'medium',
           winner: playerWins,
+          duelIsOver: duelIsOver,
         );
       } else {
         playerCard = ThreeCrownsCard(
