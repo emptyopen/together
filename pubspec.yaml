@@ -1,7 +1,7 @@
 name: together
 description: For friends to play games.
 
-version: 1.4.4+46
+version: 1.4.5+47
 
 environment:
   sdk: ">=2.6.0 <3.0.0"

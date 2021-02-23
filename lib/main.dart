@@ -15,9 +15,9 @@ void main() async {
 // DONE:
 // three crowns: better font for stealable tiles (holy letters)
 // samesies: there should be an option for multiple teams if they want the same words or not (as each other)
+// add LEGAL donations link for ios/android
 
 // next up:
-// add LEGAL donations link for ios/android
 
 // TODO:
 // bananaphone: increment player score
