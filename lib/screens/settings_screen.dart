@@ -282,27 +282,6 @@ class _SettingsScreenState extends State<SettingsScreen>
                 SizedBox(height: 10),
                 RaisedGradientButton(
                     child: Text(
-                      'Crash App (seriously)',
-                      style: TextStyle(
-                        fontSize: 20,
-                        color: Colors.white,
-                      ),
-                    ),
-                    height: 50,
-                    width: 230,
-                    gradient: LinearGradient(
-                      colors: <Color>[
-                        Colors.black,
-                        Colors.black,
-                      ],
-                    ),
-                    onPressed: () {
-                      print('should crash');
-                      FirebaseCrashlytics.instance.crash();
-                    }),
-                SizedBox(height: 10),
-                RaisedGradientButton(
-                    child: Text(
                       'Logout',
                       style: TextStyle(
                         fontSize: 20,

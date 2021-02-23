@@ -132,3 +132,12 @@ addTheGang(data, T) {
       ],
       T);
 }
+
+addVanessa(data, T) {
+  addPlayers(
+      data,
+      [
+        'z5SqbMUvLVb7CfSxQz4OEk9VyDE3',
+      ],
+      T);
+}

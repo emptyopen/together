@@ -40,6 +40,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
   FocusNode myFocusNode;
   double matchFactor = 0.8;
   bool isUpdating = false;
+  bool submittingWord = false;
 
   @override
   void initState() {
@@ -797,7 +798,13 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
   }
 
   submitWord(data) async {
+    if (submittingWord || _controller.text == '') {
+      return;
+    }
     bool isBadWord = false;
+    setState(() {
+      submittingWord = true;
+    });
     // check word isn't the clue word
     String word = '';
     data['teams'].asMap().forEach((i, v) {
@@ -838,6 +845,10 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
     data['playerWords${widget.userId}'].add(_controller.text);
 
     data = await T.transactSamesiesWord(widget.userId, _controller.text);
+
+    setState(() {
+      submittingWord = false;
+    });
 
     checkRoundOver(data);
   }
@@ -930,9 +941,11 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
             ),
             child: TextField(
               textInputAction: TextInputAction.send,
-              onSubmitted: (s) {
-                submitWord(data);
-              },
+              onSubmitted: submittingWord
+                  ? null
+                  : (s) {
+                      submitWord(data);
+                    },
               focusNode: myFocusNode,
               style: TextStyle(fontSize: 16),
               controller: _controller,
@@ -958,15 +971,21 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
               submitWord(data);
             },
             child: Text(
-              'Submit (or hit enter)',
+              submittingWord ? 'Submitting...' : 'Submit (or hit enter)',
               style: TextStyle(
                 color: Colors.white,
               ),
             ),
-            gradient: LinearGradient(colors: [
-              Theme.of(context).primaryColor,
-              Theme.of(context).accentColor
-            ]),
+            gradient: LinearGradient(
+                colors: submittingWord
+                    ? [
+                        Colors.grey,
+                        Colors.grey,
+                      ]
+                    : [
+                        Theme.of(context).primaryColor,
+                        Theme.of(context).accentColor
+                      ]),
           ),
           SizedBox(height: 10),
           Text('($remainingSubmissions remaining)',

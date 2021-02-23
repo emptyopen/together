@@ -344,17 +344,6 @@ requiredScoreForLevel(data, {previous = false}) {
   return requiredScore;
 }
 
-// requiredScoreForPreviousLevel(level) {
-//   int requiredScore = 4;
-//   if (level.substring(level.length - 1) == '1') {
-//     requiredScore = 2;
-//   }
-//   if (level.substring(level.length - 1) == '2') {
-//     requiredScore = 3;
-//   }
-//   return requiredScore;
-// }
-
 getSubmissionLimit(data) {
   int limit = 5;
   if (data['level'].substring(data['level'].length - 1) == '1') {

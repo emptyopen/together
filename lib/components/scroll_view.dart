@@ -1,9 +1,6 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:simple_animations/simple_animations.dart';
-import 'dart:async';
 
 class TogetherScrollView extends StatefulWidget {
   final Widget child;

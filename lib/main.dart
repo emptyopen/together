@@ -8,11 +8,6 @@ import 'screens/auth/root_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  if (FirebaseCrashlytics.instance.isCrashlyticsCollectionEnabled) {
-    print('crash enabled');
-  } else {
-    print('crash disabled');
-  }
   FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterError;
   runApp(MyApp());
 }
@@ -20,8 +15,6 @@ void main() async {
 // DONE:
 
 // next up:
-// samesies: fix inconsistent grading (duplicate words, missing words)
-// samesies: ensure no crash, look at game from Feb 19th w/ 6 people - try forced duplicate words, and a blank submission
 // 3 crowns - show outline of winning card
 
 // TODO:

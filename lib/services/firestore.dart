@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:io';
 
 class Transactor {
   Transactor({this.sessionId});
@@ -76,7 +75,7 @@ class Transactor {
         'player${playerIndex}Hand': playerHand,
       });
     });
-    sleep(Duration(milliseconds: 100));
+    await Future.delayed(Duration(milliseconds: 100));
     return (await _firestore.collection('sessions').doc(sessionId).get())
         .data();
   }
@@ -93,7 +92,7 @@ class Transactor {
         'player${playerIndex}Hand': playerHand,
       });
     });
-    sleep(Duration(milliseconds: 100));
+    await Future.delayed(Duration(milliseconds: 100));
     return (await _firestore.collection('sessions').doc(sessionId).get())
         .data();
   }
@@ -104,7 +103,7 @@ class Transactor {
           _firestore.collection('sessions').doc(sessionId);
       transaction.update(postRef, {'ready$playerId': true});
     });
-    sleep(Duration(milliseconds: 100));
+    await Future.delayed(Duration(milliseconds: 100));
     return (await _firestore.collection('sessions').doc(sessionId).get())
         .data();
   }
@@ -118,7 +117,7 @@ class Transactor {
       playerWords.add(word);
       transaction.update(postRef, {'playerWords$playerId': playerWords});
     });
-    sleep(Duration(milliseconds: 100));
+    await Future.delayed(Duration(milliseconds: 100));
     return (await _firestore.collection('sessions').doc(sessionId).get())
         .data();
   }

@@ -587,7 +587,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
     data['pillagePrize'] = 0;
     data['matcherIndex'] = 0;
     data['responderIndex'] = 0;
-    data['winnerIndex'] = 0;
+    data['winnerIndexes'] = [];
 
     return data;
   }
@@ -1649,6 +1649,25 @@ class _LobbyScreenState extends State<LobbyScreen> {
                       ),
                     ),
                     onPressed: () => addTheGang(data, T),
+                    height: 25,
+                    width: 120,
+                    gradient: LinearGradient(
+                      colors: <Color>[
+                        Colors.green[200],
+                        Colors.green[100],
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 5),
+                  RaisedGradientButton(
+                    child: Text(
+                      'Add Vanessa',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 14,
+                      ),
+                    ),
+                    onPressed: () => addVanessa(data, T),
                     height: 25,
                     width: 120,
                     gradient: LinearGradient(
