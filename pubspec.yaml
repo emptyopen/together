@@ -23,6 +23,7 @@ dependencies:
   rxdart: ^0.25.0
   clipboard: ^0.1.2+8
   flushbar:
+  url_launcher: ^5.7.10
   # audioplayers: ^0.16.1
 
   firebase_core: ^0.7.0

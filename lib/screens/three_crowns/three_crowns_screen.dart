@@ -12,6 +12,7 @@ import 'package:together/help_screens/help_screens.dart';
 import 'package:together/components/log.dart';
 import 'package:together/components/end_game.dart';
 import 'package:together/components/scroll_view.dart';
+import 'package:together/components/dev_controls.dart';
 
 class ThreeCrownsScreen extends StatefulWidget {
   ThreeCrownsScreen({this.sessionId, this.userId, this.roomCode});
@@ -144,7 +145,6 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
 
     // if there is a value tie, immediately move to next joust
     if (duelerValue == dueleeValue) {
-      print('joust');
       data['joust'] += 1;
       if (data['joust'] >= 4) {
         data['log'].add('Three jousts! Both players get 3 tiles.');
@@ -166,8 +166,6 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     }
     // check if there is a siege ('1' and facevalue)
     else if (letterCardInvolved && oneCardInvolved) {
-      print(
-          'siege: dueler $duelerValue duelee $dueleeValue flipped $flipWinners');
       if (flipWinners) {
         // letter card owner wins
         if (dueleeValue == '1') {
@@ -187,7 +185,6 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
       data['tilePrizes'] = [0];
       data['phase'] = 'collection';
     } else if (flipWinners) {
-      print('flip winners');
       // winners are flipped, lower value wins
       var winner = data['duelerIndex'];
       if (stringToNumeric(duelerValue) > stringToNumeric(dueleeValue)) {
@@ -199,7 +196,6 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
       data['phase'] = 'collection';
       addBonusTiles(data);
     } else {
-      print('non flip winner');
       // winners are NOT flipped, higher value wins
       if (stringToNumeric(duelerValue) < stringToNumeric(dueleeValue)) {
         int responderIndex = data['dueleeIndex'];
@@ -425,12 +421,6 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
     bool oppositeCardWins =
         data['winnerIndexes'].contains(oppositePlayerIndex) &&
             data['winnerIndexes'].length > 0;
-    int prizeSum = 0;
-    data['tilePrizes'].forEach((v) {
-      prizeSum += v;
-    });
-    prizeSum += data['pillagePrize'];
-    print(prizeSum);
     var oppositeCard = oppositeCardValue == ''
         ? Container(
             height: height,
@@ -2136,9 +2126,18 @@ class _ThreeCrownsScreenState extends State<ThreeCrownsScreen> {
                 ),
               ],
             ),
-            body: data['phase'] == 'roundEnd'
-                ? getRoundEnd(data)
-                : getGameboard(data),
+            body: Stack(
+              children: [
+                data['phase'] == 'roundEnd'
+                    ? getRoundEnd(data)
+                    : getGameboard(data),
+                Positioned(
+                  top: 5,
+                  right: 5,
+                  child: DevControls(),
+                ),
+              ],
+            ),
           );
         });
   }

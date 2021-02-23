@@ -13,21 +13,20 @@ void main() async {
 }
 
 // DONE:
+// three crowns: better font for stealable tiles (holy letters)
+// samesies: there should be an option for multiple teams if they want the same words or not (as each other)
 
 // next up:
-// 3 crowns - show outline of winning card
+// add LEGAL donations link for ios/android
 
 // TODO:
+// bananaphone: increment player score
+// charades: shimmer for high round scores
 // big: add additional skins after certain number of wins (new crowns for certain wins in three crowns)
 // big: add emoji version to samesies
 // big: consolidation of new game to simplified parameters / per screen (init, scaffold, etc.)
-// samesies: there should be an option for multiple teams if they want the same words or not (as each other)
-// bananaphone: increment player score
 // bananaphone: maybe change voting to "entire progression", single vote
-// charades: shimmer for high round scores
 // team selector: a few annoying bugs remaining with rapid touches
-// add LEGAL donations link for ios/android
-// three crowns: better font for stealable tiles (holy letters)
 // plot twist: add ability to click a chat to see the character description
 // plot twist: add final scoreboard screen with "winners" who guessed correctly
 // plot twist: add "narrator silence" so narrators can only say something every X chats

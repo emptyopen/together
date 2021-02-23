@@ -480,6 +480,15 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
                   choices: ['High Score', 'Survival'],
                   locked: data['rules']['numTeams'] > 1,
                 ),
+                SizedBox(height: 20),
+                EditRulesDropdown(
+                  data: data,
+                  title: 'Same word?\n(2+ teams)',
+                  rule: 'sameWord',
+                  updateRules: updateRules,
+                  choices: [true, false],
+                  locked: data['rules']['numTeams'] == 1,
+                ),
               ];
               break;
           }

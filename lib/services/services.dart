@@ -242,6 +242,7 @@ getDefaultRules(String gameName) {
         'roundTimeLimit': 60,
         'difficulty': 'Medium',
         'mode': 'High Score',
+        'sameWord': true,
       };
       break;
   }

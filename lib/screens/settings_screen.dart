@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:together/services/authentication.dart';
 import 'package:together/components/buttons.dart';
+import 'package:together/constants/users.dart';
 
 class SettingsScreen extends StatefulWidget {
   SettingsScreen({Key key, this.auth, this.logoutCallback}) : super(key: key);
@@ -22,11 +23,6 @@ class _SettingsScreenState extends State<SettingsScreen>
   String currName;
   String nameError = '';
   String userId = '';
-  List<String> admins = [
-    'y4w4pWknS7gIBVxKUM3llpbieA92', // matt
-    'z5SqbMUvLVb7CfSxQz4OEk9VyDE3', // vanessa
-    'XMFwripPojYlcvagoiDEmyoxZyK2'
-  ]; // markus
   List<String> reservedGames = ['001', '002', '003'];
   int sessionDeletionDaysThreshold = 1;
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
@@ -34,11 +30,9 @@ class _SettingsScreenState extends State<SettingsScreen>
   final List<Tab> myTabs = <Tab>[
     Tab(
       text: 'Settings',
-      // icon: Icon(Icons.settings),
     ),
     Tab(
       text: 'About the Developer',
-      // icon: Icon(Icons.person),
     ),
   ];
 
@@ -261,7 +255,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               children: <Widget>[
                 getNameBox(),
                 SizedBox(height: 30),
-                admins.contains(userId) ? getMattBox() : Container(),
+                isAdmin(userId) ? getMattBox() : Container(),
                 RaisedGradientButton(
                     child: Text(
                       'Main Menu',
@@ -321,46 +315,55 @@ class _SettingsScreenState extends State<SettingsScreen>
                       ),
                     ),
                   ),
-                  SizedBox(
-                    height: 30,
-                  ),
+                  SizedBox(height: 30),
                   Text(
                     '    Matt and Aki live in LA and are always having a good time with friends and family. ',
                     style: TextStyle(
                       color: Theme.of(context).highlightColor,
-                      fontSize: 22,
+                      fontSize: 20,
                     ),
                   ),
-                  SizedBox(
-                    height: 30,
+                  SizedBox(height: 30),
+                  Container(
+                    height: 40,
+                    width: 140,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(15),
+                      border:
+                          Border.all(color: Theme.of(context).highlightColor),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Colors.yellow[200],
+                          Colors.yellow[700],
+                        ], // whitish to gray
+                        tileMode: TileMode
+                            .repeated, // repeats the gradient over the canvas
+                      ),
+                    ),
+                    child: Center(
+                      child: InkWell(
+                        child: Text(
+                          'Give Matt beer!',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 16,
+                          ),
+                        ),
+                        onTap: () => launch('http://paypal.me/takaomatt'),
+                      ),
+                    ),
                   ),
-                  // Container(
-                  //   height: 40,
-                  //   width: 140,
-                  //   decoration: BoxDecoration(
-                  //     borderRadius: BorderRadius.circular(5),
-                  //     border: Border.all(color: backgroundHighlightColor),
-                  //     gradient: LinearGradient(
-                  //       begin: Alignment.topLeft,
-                  //       end: Alignment.bottomRight,
-                  //       colors: [
-                  //         Colors.yellow[200],
-                  //         Colors.yellow[700],
-                  //       ], // whitish to gray
-                  //       tileMode: TileMode
-                  //           .repeated, // repeats the gradient over the canvas
-                  //     ),
-                  //   ),
-                  //   child: Center(
-                  //     child: InkWell(
-                  //       child: Text(
-                  //         'Give Matt beer!',
-                  //         style: TextStyle(color: Colors.black),
-                  //       ),
-                  //       onTap: () => launch('http://paypal.me/takaomatt'),
-                  //     ),
-                  //   ),
-                  // ),
+                  SizedBox(height: 10),
+                  Text(
+                    'Donating does not unlock any\nadditional features or functionality.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 12,
+                    ),
+                  ),
                 ],
               ),
             ),

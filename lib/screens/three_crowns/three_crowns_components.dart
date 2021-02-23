@@ -263,8 +263,8 @@ class _PillageDialogState extends State<PillageDialog> {
   }
 
   stealTiles() async {
-    var tile =
-        widget.data['player${selectedPlayerIndex}Tiles'][selectedTileIndex];
+    var sortedTileList = widget.data['player${selectedPlayerIndex}Tiles'];
+    var tile = sortedTileList[selectedTileIndex];
     // add tile to winner index
     var playerIndex = widget.data['playerIds'].indexOf(widget.userId);
     widget.data['player${playerIndex}Tiles'].add(tile);
@@ -290,6 +290,8 @@ class _PillageDialogState extends State<PillageDialog> {
 
   @override
   Widget build(BuildContext context) {
+    var sortedTileList = widget.data['player${selectedPlayerIndex}Tiles'];
+    sortedTileList.sort();
     return AlertDialog(
       title: Text('Choose your spoils!'),
       contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),
@@ -310,10 +312,8 @@ class _PillageDialogState extends State<PillageDialog> {
               setState(() {
                 selectedPlayerIndex = newValue;
                 possibleTileIndices = List<int>.generate(
-                    widget.data['player${selectedPlayerIndex}Tiles'].length,
-                    (int index) => index);
-                if (widget.data['player${selectedPlayerIndex}Tiles'].length >
-                    0) {
+                    sortedTileList.length, (int index) => index);
+                if (sortedTileList.length > 0) {
                   selectedTileIndex = 0;
                 }
               });
@@ -352,11 +352,15 @@ class _PillageDialogState extends State<PillageDialog> {
                     return DropdownMenuItem<int>(
                       value: value,
                       child: Text(
-                        widget.data['player${selectedPlayerIndex}Tiles'][value]
-                            .toUpperCase(),
+                        sortedTileList[value].toUpperCase(),
                         style: TextStyle(
                           fontFamily: 'Balsamiq',
                           fontSize: 18,
+                          color: widget.data['targetWord'].contains(widget
+                                      .data['player${selectedPlayerIndex}Tiles']
+                                  [value])
+                              ? Colors.amber[500]
+                              : Theme.of(context).highlightColor,
                         ),
                       ),
                     );

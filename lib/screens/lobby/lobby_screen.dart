@@ -31,6 +31,7 @@ import 'package:together/screens/plot_twist/plot_twist_screen.dart';
 import 'package:together/screens/charade_a_trois/charade_a_trois_screen.dart';
 import 'package:together/screens/samesies/samesies_screen.dart';
 import 'package:together/services/firestore.dart';
+import 'package:together/constants/users.dart';
 
 import 'lobby_components.dart';
 import 'lobby_services.dart';
@@ -900,10 +901,14 @@ class _LobbyScreenState extends State<LobbyScreen> {
     data['teams'].asMap().forEach((i, v) {
       data['teams'][i]['words'] = {};
       for (int j = 0; j < 3; j++) {
-        data['teams'][i]['words']['easy$j'] = easyWords[j + i * 3];
-        data['teams'][i]['words']['medium$j'] = mediumWords[j + i * 3];
-        data['teams'][i]['words']['hard$j'] = hardWords[j + i * 3];
-        data['teams'][i]['words']['expert$j'] = expertWords[j + i * 3];
+        data['teams'][i]['words']['easy$j'] =
+            easyWords[j + (data['rules']['sameWord'] ? 0 : i) * 3];
+        data['teams'][i]['words']['medium$j'] =
+            mediumWords[j + (data['rules']['sameWord'] ? 0 : i) * 3];
+        data['teams'][i]['words']['hard$j'] =
+            hardWords[j + (data['rules']['sameWord'] ? 0 : i) * 3];
+        data['teams'][i]['words']['expert$j'] =
+            expertWords[j + (data['rules']['sameWord'] ? 0 : i) * 3];
         // also add empty results
         data['teams'][i]['results'] = [];
       }
@@ -1323,6 +1328,17 @@ class _LobbyScreenState extends State<LobbyScreen> {
             SizedBox(height: 5),
             RulesContainer(rules: <Widget>[
               Text(
+                'Difficulty:',
+                style: TextStyle(fontSize: 14),
+              ),
+              Text(
+                rules['difficulty'].toString(),
+                style: TextStyle(fontSize: 18),
+              ),
+            ]),
+            SizedBox(height: 5),
+            RulesContainer(rules: <Widget>[
+              Text(
                 'High Score / Survival:',
                 textAlign: TextAlign.center,
                 style: TextStyle(
@@ -1345,6 +1361,36 @@ class _LobbyScreenState extends State<LobbyScreen> {
                 style: TextStyle(
                   fontSize: 18,
                   color: rules['numTeams'] > 1
+                      ? Colors.grey
+                      : Theme.of(context).highlightColor,
+                ),
+              ),
+            ]),
+            SizedBox(height: 5),
+            RulesContainer(rules: <Widget>[
+              Text(
+                'Teams have same word?',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: rules['numTeams'] > 1
+                      ? Colors.grey
+                      : Theme.of(context).highlightColor,
+                ),
+              ),
+              Text(
+                '(2+ team only)',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey,
+                ),
+              ),
+              Text(
+                rules['sameWord'].toString().toUpperCase(),
+                style: TextStyle(
+                  fontSize: 18,
+                  color: rules['numTeams'] == 1
                       ? Colors.grey
                       : Theme.of(context).highlightColor,
                 ),
@@ -1638,7 +1684,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
               )
             : Container(),
         // if markus, add the gang
-        userId == 'XMFwripPojYlcvagoiDEmyoxZyK2' && !isStarting
+        isAdmin(userId) && !isStarting
             ? Column(
                 children: <Widget>[
                   RaisedGradientButton(
