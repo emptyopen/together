@@ -9,6 +9,7 @@ String threeCrownsString = 'Three Crowns';
 String plotTwistString = 'Plot Twist';
 String charadeATroisString = 'Charáde à Trois';
 String samesiesString = 'Samesies';
+String inTheClubString = 'In The Club';
 
 Map gameColors = {
   theHuntString: Colors.black,
@@ -17,8 +18,9 @@ Map gameColors = {
   riversString: Colors.lightBlue,
   threeCrownsString: Colors.amber,
   plotTwistString: Colors.orange,
-  charadeATroisString: Colors.indigoAccent,
+  charadeATroisString: Colors.purple,
   samesiesString: Colors.pink,
+  inTheClubString: Colors.black,
 };
 
 Map gameIcons = {
@@ -30,6 +32,7 @@ Map gameIcons = {
   plotTwistString: MdiIcons.chatProcessingOutline,
   charadeATroisString: MdiIcons.dramaMasks,
   samesiesString: MdiIcons.heartMultipleOutline,
+  inTheClubString: MdiIcons.emoticonCoolOutline,
 };
 
 Map gameSubtitles = {
@@ -41,6 +44,7 @@ Map gameSubtitles = {
   plotTwistString: 'Chit & chat!',
   charadeATroisString: '3 round charades!',
   samesiesString: 'In Sync!',
+  inTheClubString: 'Are you in?'
 };
 
 Map gameMinPlayers = {
@@ -52,6 +56,7 @@ Map gameMinPlayers = {
   plotTwistString: 3,
   charadeATroisString: 4,
   samesiesString: 2,
+  inTheClubString: 3,
 };
 
 Map phoneticAlphabet = {

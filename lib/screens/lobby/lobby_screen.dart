@@ -298,6 +298,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
     data['log'] = ['', '', ''];
 
+    data['turn'] = data['playerIds'][0];
+
     return data;
   }
 
@@ -918,6 +920,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
     data['level'] = 'easy0';
     data['expirationTime'] = null;
+    data['beatFinalLevel'] = false;
 
     return data;
   }
@@ -1333,6 +1336,17 @@ class _LobbyScreenState extends State<LobbyScreen> {
               ),
               Text(
                 rules['difficulty'].toString(),
+                style: TextStyle(fontSize: 18),
+              ),
+            ]),
+            SizedBox(height: 5),
+            RulesContainer(rules: <Widget>[
+              Text(
+                'Game Length:',
+                style: TextStyle(fontSize: 14),
+              ),
+              Text(
+                rules['gameLength'].toString(),
                 style: TextStyle(fontSize: 18),
               ),
             ]),

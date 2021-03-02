@@ -36,7 +36,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
-  List gamesUnderConstruction = [];
+  List gamesUnderConstruction = ['In The Club'];
 
   signOutCallback() async {
     try {
@@ -71,12 +71,13 @@ class _HomeScreenState extends State<HomeScreen> {
     double intervalLength = 25.0;
     List<Widget> quickStartWidgets = [SizedBox(width: intervalLength)];
     [
-      riversString,
+      inTheClubString,
       samesiesString,
-      bananaphoneString,
-      plotTwistString,
       charadeATroisString,
+      riversString,
+      plotTwistString,
       threeCrownsString,
+      bananaphoneString,
       abstractString,
       theHuntString,
     ].forEach((v) {

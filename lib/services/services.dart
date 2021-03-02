@@ -177,7 +177,6 @@ getDefaultRules(String gameName) {
   switch (gameName) {
     case 'The Hunt':
       addRules = {
-        'turn': userId,
         'locations': ['Casino', 'Pirate Ship', 'Coal Mine', 'University'],
         'numSpies': 1,
         'accusationsPerTurn': 1, // accusations allowed per turn
@@ -243,6 +242,7 @@ getDefaultRules(String gameName) {
         'difficulty': 'Medium',
         'mode': 'High Score',
         'sameWord': true,
+        'gameLength': 'Medium',
       };
       break;
   }

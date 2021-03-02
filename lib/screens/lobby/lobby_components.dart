@@ -105,7 +105,7 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
     });
   }
 
-  locationCallback(data) {
+  locationCallback(data) async {
     // update the rules, they will be saved when update is pressed
     // check strikethroughs, add all non striked to new rules value
     data['rules']['locations'] = [];
@@ -124,6 +124,12 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
     });
     setState(() {
       numLocationsEnabled = numLocationsEnabled;
+    });
+    await FirebaseFirestore.instance
+        .collection('sessions')
+        .doc(widget.sessionId)
+        .update({
+      'rules': data['rules'],
     });
   }
 
@@ -159,6 +165,7 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
   @override
   Widget build(BuildContext context) {
     var width = MediaQuery.of(context).size.width;
+    var height = MediaQuery.of(context).size.height;
     if (isLoading) {
       return AlertDialog();
     }
@@ -204,7 +211,7 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
                       'Number of other accusations before one can accuse again:',
                   rule: 'accusationCooldown',
                   updateRules: updateRules,
-                  choices: [0, 1, 2, 3, 4, 5, 6, 7],
+                  choices: [0, 1, 2, 3],
                 ),
                 SizedBox(height: 20),
                 Text(
@@ -474,6 +481,14 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
                 SizedBox(height: 20),
                 EditRulesDropdown(
                   data: data,
+                  title: 'Game Length',
+                  rule: 'gameLength',
+                  updateRules: updateRules,
+                  choices: ['Quick', 'Medium', 'Long'],
+                ),
+                SizedBox(height: 20),
+                EditRulesDropdown(
+                  data: data,
                   title: 'Survival mode?\n(2 player only)',
                   rule: 'mode',
                   updateRules: updateRules,
@@ -497,9 +512,12 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
             contentPadding: EdgeInsets.fromLTRB(30, 0, 30, 0),
             content: Container(
               width: width * 0.95,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: ruleWidgets,
+              height: height * 0.7,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: ruleWidgets,
+                ),
               ),
             ),
             actions: <Widget>[

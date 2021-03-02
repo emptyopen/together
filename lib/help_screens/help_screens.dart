@@ -170,6 +170,19 @@ class SamesiesScreenHelp extends StatelessWidget {
   }
 }
 
+class InTheClubScreenHelp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return HelpScreen(
+      title: 'Samesies: Rules',
+      information: [
+        '    "Majority" rules TBD ',
+      ],
+      buttonColor: Theme.of(context).primaryColor,
+    );
+  }
+}
+
 class CharadeATroisScreenHelp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {

@@ -13,13 +13,23 @@ void main() async {
 }
 
 // DONE:
-// three crowns: better font for stealable tiles (holy letters)
-// samesies: there should be an option for multiple teams if they want the same words or not (as each other)
-// add LEGAL donations link for ios/android
+// samesies: fix submitting.. stuck
+// samesies: new length options
+// the hunt: put turn outside of rules
+// samesies: show word difficulty
+// the hunt: rules edit dialog not working (scroll, toggle location)
 
 // next up:
+// new game: "in the club"
+// ready buttons between rounds like samesies
+// players vote for a category: "people", "objects", "places", "concepts"
+// everyone has to answer the prompt like "name a president"
+// whoever is in the majority is "in the club", gets "popularity" equal to the number of people in the club
+// awards at the end: "networking machine", "outside the box thinker"
 
 // TODO:
+// samesies: submit looks like success but fails to record anything (overwrite during transact?)
+// the hunt: complete support for two spies
 // bananaphone: increment player score
 // charades: shimmer for high round scores
 // big: add additional skins after certain number of wins (new crowns for certain wins in three crowns)

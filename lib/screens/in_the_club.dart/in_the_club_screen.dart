@@ -16,20 +16,20 @@ import 'package:together/help_screens/help_screens.dart';
 import 'package:together/components/end_game.dart';
 import 'package:together/constants/values.dart';
 
-import 'samesies_services.dart';
+import 'in_the_club_services.dart';
 
-class SamesiesScreen extends StatefulWidget {
-  SamesiesScreen({this.sessionId, this.userId, this.roomCode});
+class InTheClubScreen extends StatefulWidget {
+  InTheClubScreen({this.sessionId, this.userId, this.roomCode});
 
   final String sessionId;
   final String userId;
   final String roomCode;
 
   @override
-  _SamesiesScreenState createState() => _SamesiesScreenState();
+  _InTheClubScreenState createState() => _InTheClubScreenState();
 }
 
-class _SamesiesScreenState extends State<SamesiesScreen> {
+class _InTheClubScreenState extends State<InTheClubScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   bool isSpectator = false;
   TextEditingController messageController;
@@ -140,7 +140,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
       }
       barWidgets.add(
         !data['beatFinalLevel'] && level == i
-            ? Icon(MdiIcons.skull, size: 22, color: gameColors[samesiesString])
+            ? Icon(MdiIcons.skull, size: 22, color: gameColors[inTheClubString])
             : Container(
                 height: progressBallLength + (level == i ? 7 : 0),
                 width: progressBallLength + (level == i ? 7 : 0),
@@ -330,7 +330,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
                   height: 5,
                   width: remainingPercentage * width,
                   decoration: BoxDecoration(
-                    color: gameColors[samesiesString],
+                    color: gameColors[inTheClubString],
                   ),
                 ),
               ),
@@ -349,7 +349,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
           border: Border.all(color: Colors.grey),
           borderRadius: BorderRadius.circular(15),
           color: data['playerWords${widget.userId}'].length > i
-              ? gameColors[samesiesString]
+              ? gameColors[inTheClubString]
               : Theme.of(context).highlightColor.withAlpha(5),
         ),
         height: 20,
@@ -372,7 +372,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
   playerReady(data) async {
     data['ready${widget.userId}'] = true;
 
-    data = await T.transactSamesiesReady(widget.userId);
+    data = await T.transactInTheClubReady(widget.userId);
 
     // if all players are ready, start the timer
     bool allReady = true;
@@ -454,7 +454,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
                   fontSize: 20,
                   color: v['score'] > 0
                       ? v['score'] > 2
-                          ? gameColors[samesiesString]
+                          ? gameColors[inTheClubString]
                           : Theme.of(context).highlightColor
                       : Colors.grey),
               maxLines: 2,
@@ -472,7 +472,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
                   fontSize: 20,
                   color: v['score'] > 0
                       ? v['score'] > 2
-                          ? gameColors[samesiesString]
+                          ? gameColors[inTheClubString]
                           : Theme.of(context).highlightColor
                       : Colors.grey),
               maxLines: 2,
@@ -609,7 +609,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
               : 'Level ${levelToNumber(data) - 1} complete!',
           style: TextStyle(
             fontSize: 22,
-            // color: gameColors[samesiesString],
+            // color: gameColors[inTheClubString],
           )),
       SizedBox(height: 10),
       complete
@@ -691,8 +691,8 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
               gradient: LinearGradient(
                 colors: !data['ready${widget.userId}']
                     ? [
-                        gameColors[samesiesString],
-                        gameColors[samesiesString].withAlpha(100),
+                        gameColors[inTheClubString],
+                        gameColors[inTheClubString].withAlpha(100),
                       ]
                     : [
                         Colors.grey,
@@ -869,7 +869,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
 
     data['playerWords${widget.userId}'].add(_controller.text);
 
-    data = await T.transactSamesiesWord(widget.userId, _controller.text);
+    data = await T.transactInTheClubWord(widget.userId, _controller.text);
 
     setState(() {
       submittingWord = false;
@@ -1099,7 +1099,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
           return Scaffold(
             appBar: AppBar(
               title: Text(
-                'Samesies',
+                'InTheClub',
               ),
             ),
             body: Container(),
@@ -1112,7 +1112,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
           return Scaffold(
             appBar: AppBar(
               title: Text(
-                'Samesies',
+                'InTheClub',
               ),
             ),
             body: Container(),
@@ -1125,7 +1125,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
             resizeToAvoidBottomInset: false,
             appBar: AppBar(
               title: Text(
-                'Samesies',
+                'InTheClub',
               ),
               actions: <Widget>[
                 IconButton(
@@ -1135,7 +1135,7 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
                       PageRouteBuilder(
                         opaque: false,
                         pageBuilder: (BuildContext context, _, __) {
-                          return SamesiesScreenHelp();
+                          return InTheClubScreenHelp();
                         },
                       ),
                     );
