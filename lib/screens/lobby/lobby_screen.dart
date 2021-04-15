@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 // import 'package:audioplayers/audio_cache.dart';
 import 'package:string_similarity/string_similarity.dart';
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:together/screens/in_the_club.dart/in_the_club_screen.dart';
 
 import '../../components/buttons.dart';
 import '../../components/misc.dart';
@@ -176,6 +177,16 @@ class _LobbyScreenState extends State<LobbyScreen> {
               slideTransition(
                 context,
                 SamesiesScreen(
+                  sessionId: sessionId,
+                  userId: userId,
+                  roomCode: widget.roomCode,
+                ),
+              );
+              break;
+            case 'In The Club':
+              slideTransition(
+                context,
+                InTheClubScreen(
                   sessionId: sessionId,
                   userId: userId,
                   roomCode: widget.roomCode,
@@ -925,6 +936,23 @@ class _LobbyScreenState extends State<LobbyScreen> {
     return data;
   }
 
+  setupInTheClub(data) async {
+    // must be at least three players
+    if (data['playerIds'].length < 3) {
+      setState(() {
+        startError = 'Need at least 3 players';
+      });
+      return;
+    }
+
+    // clear error if we are good to start
+    setState(() {
+      startError = '';
+    });
+
+    data['state'] = 'questionSubmission';
+  }
+
   startGame(data) async {
     // initialize final values/rules for games
     switch (gameName) {
@@ -958,6 +986,10 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
       case 'Samesies':
         data = await setupSamesies(data);
+        break;
+
+      case 'In The Club':
+        data = await setupInTheClub(data);
         break;
     }
 
@@ -1413,6 +1445,46 @@ class _LobbyScreenState extends State<LobbyScreen> {
           ],
         );
         break;
+      case 'In The Club':
+        return Column(
+          children: <Widget>[
+            RulesContainer(rules: <Widget>[
+              Text(
+                'Questions per player:',
+                style: TextStyle(fontSize: 14),
+              ),
+              Text(
+                rules['numQuestionsPerPlayer'].toString(),
+                style: TextStyle(fontSize: 18),
+              ),
+            ]),
+            SizedBox(height: 5),
+            RulesContainer(rules: <Widget>[
+              Text(
+                'Answers per player:',
+                style: TextStyle(fontSize: 14),
+              ),
+              Text(
+                rules['numAnswersPerPlayer'].toString(),
+                style: TextStyle(fontSize: 18),
+              ),
+            ]),
+            SizedBox(height: 5),
+            RulesContainer(
+              rules: <Widget>[
+                Text(
+                  'Number of "would you rather":',
+                  style: TextStyle(fontSize: 14),
+                ),
+                Text(
+                  rules['numWouldYouRather'].toString(),
+                  style: TextStyle(fontSize: 18),
+                ),
+              ],
+            ),
+          ],
+        );
+        break;
       default:
         return Text('Unknown game');
     }
@@ -1825,6 +1897,9 @@ class _LobbyScreenState extends State<LobbyScreen> {
                               break;
                             case 'Samesies':
                               return SamesiesScreenHelp();
+                              break;
+                            case 'In The Club':
+                              return InTheClubScreenHelp();
                               break;
                           }
                           return Text('tell Matt you got here: 1');

@@ -1,190 +1,44 @@
-var samesiesWords = {
-  'easy': [
-    'kitchen',
-    'door',
-    'bathroom',
-    'makeup',
-    'yoga',
-    'airplane',
-    'cake',
-    'curtains',
-    'grass',
-    'Christmas',
-    'France',
-    'Egypt',
-    'Australia',
-    'pencil',
-    'mirror',
-    'concert',
-    'frozen',
-    'ground',
-    'dentist',
-    'camera',
-    'witch',
-    'champagne',
-    'bagel',
-    'salt',
-    'beach',
-    'laughter',
-    'underwear',
-    'playground',
-    'hike',
-    'pocket',
-    'shoes',
-    'angel',
-    'snail',
-    'umpire',
-    'donation',
-    'George Washington',
-    'circus',
-    'Elon Musk',
-    'selfie',
-    'McDonald\'s',
-    'Starbucks',
-    'rose',
-    'Halloween',
-    'bus',
-    'nose',
+List inTheClubSampleQuestions = [
+  'What is the most important room in the house?',
+  'What is the most important part of the body?',
+  'Which decade has the worst music?',
+  'Which is the least important useful part of the body',
+  'What is the ugliest fruit?',
+  'Which is the most uncomfortable medical procedure?',
+];
+
+List inTheClubWouldYouRather = [
+  [
+    'Rip your pants at a wedding',
+    'Run into your stalker ex on a date',
+    'Accidentally kiss your boss as you turn a corner',
+    'Blank on your last name when going through airport immigration'
   ],
-  'medium': [
-    'alarm',
-    'computer',
-    'summer',
-    'elevator',
-    'fruit',
-    'vegetable',
-    'dessert',
-    'palace',
-    'garden',
-    'Japan',
-    'Hawaii',
-    'lion',
-    'cigar',
-    'bank',
-    'abstract',
-    'houseplant',
-    'flour',
-    'pool',
-    'bed',
-    'pig',
-    'garage',
-    'countryside',
-    'Arctic',
-    'sink',
-    'cabin',
-    'baby',
-    'sweet',
-    'hand',
-    'massage',
-    'paranormal',
-    'punch',
-    'guest',
-    'sleep',
-    'sword',
-    'escape',
-    'mask',
-    'alcohol',
-    'sting',
-    'Canada',
-    'parachute',
-    'village',
-    'feminine',
-    'masculine',
-    'country music',
-    'rain',
-    'December',
-    'ballet',
-    'carbs',
-    'astronaut',
-    'back pain',
-    'traffic ticket',
-    'Gucci',
-    'TV',
-    'tool',
+  [
+    'Win \$1,000,000',
+    'Your body becomes 5 years younger',
+    'You get a random house in the US state of your choice',
+    'Two weeks per year you get a free vacation to Hawaii (everything free)'
   ],
-  'hard': [
-    'water',
-    'cat',
-    'star',
-    'leisure',
-    'parents',
-    'phone',
-    'wind',
-    'road',
-    'universe',
-    'table',
-    'painting',
-    'smell',
-    'moon',
-    'travel',
-    'past',
-    'crime',
-    'cage',
-    'calm',
-    'backyard',
-    'neighbor',
-    'you',
-    'box',
-    'depths',
-    'charisma',
-    'warning',
-    'pop',
-    'storm',
-    'flower',
-    'fire',
-    'warm',
-    'gold',
-    'tree',
-    'hair',
-    'team',
-    'project',
-    'Sweden',
-    'boarding school',
-    'fuzzy',
-    'Shakespeare',
-    'reality show',
-    'video game',
-    'Los Angeles',
-    'haircut',
+  [
+    'Go without your phone for a week',
+    'Go without toilet paper for a week',
+    'No brushing teeth for a week',
+    'Eat only bread and butter for a week',
   ],
-  'expert': [
-    'self-improvement',
-    'noise',
-    'music',
-    'art',
-    'metal',
-    'house',
-    'light',
-    'nothing',
-    'card',
-    'pass',
-    'life',
-    'cold',
-    'rhetoric',
-    'purple',
-    'architecture',
-    'body',
-    'relationship',
-    'small',
-    'ethics',
-    'go',
-    'visit',
-    'bag',
-    'water',
-    'oil',
-    'theater',
-    'rare',
-    'product',
-    'sell',
-    'top',
-    'city',
-    'grateful',
-    'mix',
-    'ex',
-    'track',
-    'Olympics',
+  [
+    'Every time you stand up, you have to scream',
+    'Every time you greet someone, you audibly fart',
+    'Every time you check your phone, you have to clap three times to unlock it',
+    'Every time you hug someone, you have you to apologize afterwards for being sweaty (even when you are not)'
   ],
-};
+  [
+    'Eat a small tub of yogurt with ketchup mixed in',
+    'Eat a steak covered in milk',
+    'Drink a large cup of coffee with several raw scallops inside',
+    'Eat a tiramisu that has a layer of wasabi',
+  ],
+];
 
 allPlayersAreReady(data) {
   bool allReady = true;
@@ -194,107 +48,4 @@ allPlayersAreReady(data) {
     }
   });
   return allReady;
-}
-
-playerIsDoneSubmitting(playerId, data) {
-  // player words are not empty
-  return data['playerWords$playerId'].length >= 10;
-}
-
-List quickLevels = ['easy0', 'medium0', 'hard0', 'expert0'];
-List mediumLevels = [
-  'easy0',
-  'easy1',
-  'medium0',
-  'medium1',
-  'hard0',
-  'hard1',
-  'expert0',
-  'expert1'
-];
-List longLevels = [
-  'easy0',
-  'easy1',
-  'easy2',
-  'medium0',
-  'medium1',
-  'medium2',
-  'hard0',
-  'hard1',
-  'hard2',
-  'expert0',
-  'expert1',
-  'expert2'
-];
-
-getLevelList(data) {
-  List levelList = mediumLevels;
-  switch (data['rules']['gameLength']) {
-    case 'Quick':
-      levelList = quickLevels;
-      break;
-    case 'Long':
-      levelList = longLevels;
-      break;
-  }
-  return levelList;
-}
-
-incrementLevel(data) async {
-  List levelList = getLevelList(data);
-  int currentLevelIndex = levelList.indexWhere((x) => x == data['level']);
-  print(
-      'incrementing: $currentLevelIndex || ${levelList.length - 1} || $levelList}');
-  if (currentLevelIndex >= (levelList.length - 1)) {
-    data['state'] = 'scoreboard';
-    print('setting beatFinalLevel true');
-    data['beatFinalLevel'] = true;
-  } else {
-    data['level'] = levelList[currentLevelIndex + 1];
-  }
-}
-
-previousLevel(data) {
-  List levelList = getLevelList(data);
-  int currentLevelIndex = levelList.indexWhere((x) => x == data['level']);
-  if (currentLevelIndex > 0) {
-    return levelList[currentLevelIndex - 1];
-  } else {
-    return levelList[0];
-  }
-}
-
-levelToNumber(data) {
-  List levelList = getLevelList(data);
-  int levelIndex = levelList.indexWhere((x) => x == data['level']);
-  return levelIndex + 1;
-}
-
-requiredScoreForLevel(data, {previous = false}) {
-  String level = data['level'] as String;
-  int requiredScore = 2;
-  if (level.substring(level.length - 1) == '1') {
-    requiredScore = 3;
-  }
-  if (level.substring(level.length - 1) == '2') {
-    requiredScore = 4;
-  }
-  if (data['rules']['difficulty'] == 'Easy') {
-    requiredScore -= 1;
-  }
-  if (data['rules']['difficulty'] == 'Hard') {
-    requiredScore += 1;
-  }
-  return requiredScore;
-}
-
-getSubmissionLimit(data) {
-  int limit = 5;
-  if (data['level'].substring(data['level'].length - 1) == '1') {
-    limit = 7;
-  }
-  if (data['level'].substring(data['level'].length - 1) == '2') {
-    limit = 9;
-  }
-  return limit;
 }

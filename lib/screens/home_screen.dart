@@ -36,7 +36,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
-  List gamesUnderConstruction = ['In The Club'];
+  List gamesUnderConstruction = [];
 
   signOutCallback() async {
     try {
@@ -464,6 +464,7 @@ class _LobbyDialogState extends State<LobbyDialog> {
                       'Plot Twist',
                       'Charáde à Trois',
                       'Samesies',
+                      'In The Club',
                     ].map<DropdownMenuItem<String>>((String value) {
                       return DropdownMenuItem<String>(
                         value: value,

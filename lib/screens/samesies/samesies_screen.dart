@@ -135,11 +135,13 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
       if (i - 1 >= expertCutoffIndex) {
         ballColor = Color(0xffb700ff);
       }
-      if (!data['beatFinalLevel']) {
+      if (data['beatFinalLevel']) {
         ballColor = Theme.of(context).canvasColor;
       }
       barWidgets.add(
-        !data['beatFinalLevel'] && level == i
+        data['state'] == 'scoreboard' &&
+                data['rules']['mode'] == 'Survival' &&
+                level == i
             ? Icon(MdiIcons.skull, size: 22, color: gameColors[samesiesString])
             : Container(
                 height: progressBallLength + (level == i ? 7 : 0),
@@ -393,21 +395,34 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
   }
 
   getTeamResults(teamIndex, data) {
+    var width = MediaQuery.of(context).size.width;
     List<Widget> player1Words = [
-      Text(
-        data['playerNames'][data['teams'][teamIndex]['players'][0]],
-        style: TextStyle(
-          fontSize: 22,
+      Container(
+        width: width * 0.32,
+        height: 30,
+        child: AutoSizeText(
+          data['playerNames'][data['teams'][teamIndex]['players'][0]],
+          maxLines: 1,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 22,
+          ),
         ),
       ),
       PageBreak(width: 60),
       SizedBox(height: 5),
     ];
     List<Widget> player2Words = [
-      Text(
-        data['playerNames'][data['teams'][teamIndex]['players'][1]],
-        style: TextStyle(
-          fontSize: 22,
+      Container(
+        width: width * 0.32,
+        height: 30,
+        child: AutoSizeText(
+          data['playerNames'][data['teams'][teamIndex]['players'][1]],
+          maxLines: 1,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 22,
+          ),
         ),
       ),
       PageBreak(width: 60),
@@ -440,7 +455,6 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
 
     bool isLost = complete && !data['beatFinalLevel'];
 
-    var width = MediaQuery.of(context).size.width;
     data['teams'][teamIndex]['results'].forEach((v) {
       player1Words.add(Container(
           height: 25,

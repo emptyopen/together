@@ -506,6 +506,34 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
                 ),
               ];
               break;
+            case 'In The Club':
+              ruleWidgets = [
+                SizedBox(height: 20),
+                EditRulesDropdown(
+                  data: data,
+                  title: 'Questions per player:',
+                  rule: 'numQuestionsPerPlayer',
+                  updateRules: updateRules,
+                  choices: [1, 2, 3, 4],
+                ),
+                SizedBox(height: 20),
+                EditRulesDropdown(
+                  data: data,
+                  title: 'Answers per player:',
+                  rule: 'numAnswersPerPlayer',
+                  updateRules: updateRules,
+                  choices: [1, 2, 3],
+                ),
+                SizedBox(height: 20),
+                EditRulesDropdown(
+                  data: data,
+                  title: 'Number of "would you rather" questions:',
+                  rule: 'numWouldYouRather',
+                  updateRules: updateRules,
+                  choices: [0, 1, 2, 3],
+                ),
+              ];
+              break;
           }
           return AlertDialog(
             title: Text('Edit game rules:'),

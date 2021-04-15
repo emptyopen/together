@@ -345,7 +345,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     child: Center(
                       child: InkWell(
                         child: Text(
-                          'Give Matt beer!',
+                          'Give Matt coffee money!',
                           style: TextStyle(
                             color: Colors.black,
                             fontSize: 16,

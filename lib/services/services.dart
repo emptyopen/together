@@ -163,6 +163,13 @@ getDefaultTeams(String gameName) {
         },
       ];
       break;
+    case 'In The Club':
+      return [
+        {
+          'players': [userId]
+        },
+      ];
+      break;
   }
 }
 
@@ -243,6 +250,13 @@ getDefaultRules(String gameName) {
         'mode': 'High Score',
         'sameWord': true,
         'gameLength': 'Medium',
+      };
+      break;
+    case 'In The Club':
+      addRules = {
+        'numQuestionsPerPlayer': 1,
+        'numAnswersPerPlayer': 2,
+        'numWouldYouRather': 1,
       };
       break;
   }
