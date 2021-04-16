@@ -121,4 +121,19 @@ class Transactor {
     return (await _firestore.collection('sessions').doc(sessionId).get())
         .data();
   }
+
+  transactInTheClubQuestion(playerId, question) async {
+    await _firestore.runTransaction((transaction) async {
+      DocumentReference postRef =
+          _firestore.collection('sessions').doc(sessionId);
+      DocumentSnapshot snapshot = await transaction.get(postRef);
+      List playerRoundQuestion = snapshot.data()['player${playerId}Questions'];
+      playerRoundQuestion.add(question);
+      transaction
+          .update(postRef, {'player${playerId}Questions': playerRoundQuestion});
+    });
+    await Future.delayed(Duration(milliseconds: 100));
+    return (await _firestore.collection('sessions').doc(sessionId).get())
+        .data();
+  }
 }

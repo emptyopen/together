@@ -9,7 +9,7 @@ import 'package:flutter/services.dart';
 // import 'package:audioplayers/audio_cache.dart';
 import 'package:string_similarity/string_similarity.dart';
 import 'package:auto_size_text/auto_size_text.dart';
-import 'package:together/screens/in_the_club.dart/in_the_club_screen.dart';
+import 'package:together/screens/in_the_club/in_the_club_screen.dart';
 
 import '../../components/buttons.dart';
 import '../../components/misc.dart';
@@ -460,17 +460,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
     data['roundExpiration'] = DateTime.now().add(
       Duration(seconds: 9 * rules['turnTimer'] + 120),
     );
-
-    // add player names
-    var players = data['playerIds'];
-    data['playerNames'] = {};
-    for (int i = 0; i < players.length; i++) {
-      data['playerNames'][players[i]] = (await FirebaseFirestore.instance
-              .collection('users')
-              .doc(players[i])
-              .get())
-          .data()['name'];
-    }
 
     data['phase'] = 'draw1';
     data['rules'] = rules;
@@ -950,7 +939,15 @@ class _LobbyScreenState extends State<LobbyScreen> {
       startError = '';
     });
 
-    data['state'] = 'questionSubmission';
+    // init arrays
+    data['playerIds'].forEach((playerId) {
+      data['player${playerId}Questions'] = [];
+    });
+
+    data['phase'] = 'questionCollection';
+    data['answerCollectionQuestionIndex'] = 0;
+
+    return data;
   }
 
   startGame(data) async {
@@ -997,6 +994,17 @@ class _LobbyScreenState extends State<LobbyScreen> {
       // update data
       data['state'] = 'started';
       data['startTime'] = DateTime.now().add(Duration(seconds: 5));
+
+      // add player names
+      var players = data['playerIds'];
+      data['playerNames'] = {};
+      for (int i = 0; i < players.length; i++) {
+        data['playerNames'][players[i]] = (await FirebaseFirestore.instance
+                .collection('users')
+                .doc(players[i])
+                .get())
+            .data()['name'];
+      }
 
       // player.play('reveal.wav');
 

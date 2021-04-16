@@ -6,6 +6,17 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../screens/lobby/lobby_screen.dart';
 
+extension CapExtension on String {
+  String get inCaps =>
+      this.length > 0 ? '${this[0].toUpperCase()}${this.substring(1)}' : '';
+  String get allInCaps => this.toUpperCase();
+  String get capitalizeFirstofEach => this
+      .replaceAll(RegExp(' +'), ' ')
+      .split(" ")
+      .map((str) => str.inCaps)
+      .join(" ");
+}
+
 checkIfExit(data, context, sessionId, roomCode) async {
   // run async func to check if game is over, or back to lobby or deleted (main menu)
   if (data == null) {

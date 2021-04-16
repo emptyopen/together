@@ -2,9 +2,14 @@ List inTheClubSampleQuestions = [
   'What is the most important room in the house?',
   'What is the most important part of the body?',
   'Which decade has the worst music?',
-  'Which is the least important useful part of the body',
+  'Which is the least important part of the body',
   'What is the ugliest fruit?',
   'Which is the most uncomfortable medical procedure?',
+  'What is the most interesting color?',
+  'What is the most difficult high school class?',
+  'What is the spiciest word?',
+  'What is the best car?',
+  'Which celebrity has the biggest eyes?',
 ];
 
 List inTheClubWouldYouRather = [
