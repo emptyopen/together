@@ -10,6 +10,7 @@ List inTheClubSampleQuestions = [
   'What is the spiciest word?',
   'What is the best car?',
   'Which celebrity has the biggest eyes?',
+  'Which city is the easiest to live in?',
 ];
 
 List inTheClubWouldYouRather = [

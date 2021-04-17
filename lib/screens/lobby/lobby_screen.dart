@@ -940,12 +940,20 @@ class _LobbyScreenState extends State<LobbyScreen> {
     });
 
     // init arrays
-    data['playerIds'].forEach((playerId) {
-      data['player${playerId}Questions'] = [];
+    data['playerIds'].asMap().forEach((i, playerId) {
+      data['player${i}Questions'] = [];
+      data['player${i}Answers'] = [];
+      data['player${i}Votes'] = {};
+      data['player${i}DoneVoting'] = false;
+      data['player${i}Points'] = 0;
+      data['player${i}ClubSelected'] = false;
     });
 
     data['phase'] = 'questionCollection';
     data['answerCollectionQuestionIndex'] = 0;
+    data['clubSelectionQuestionIndex'] = 0;
+    data['finalAnswers'] = {};
+    data['clubMembership'] = {};
 
     return data;
   }

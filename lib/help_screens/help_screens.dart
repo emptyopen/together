@@ -176,7 +176,20 @@ class InTheClubScreenHelp extends StatelessWidget {
     return HelpScreen(
       title: 'Samesies: Rules',
       information: [
-        '    "Majority" rules TBD ',
+        '    The point of this game is to be as popular as possible.\n\n    There is a question & answers portion of the game, and then '
+            'an optional "Would You Rather" portion of the game.',
+        '    For the first phase of the game, players are asked to submit questions. They can really be any questions, although keep in mind '
+            'that the answers will eventually end up in a multiple choice format.\n\n    In the next phase, the questions will be iterated on, '
+            'and all players can submit answers and vote on all answers. Selected answers are worth 2 points to the submitter. '
+            'You can vote for your own answers, but if you vote for your answer more than '
+            'anyone else did, you won\'t get points for it!',
+        '    Four answers will be selected for each question based on the number of votes on it, and ties will be broken with random selection. '
+            '\n\n    Once all questions have four answers each, the "Club Selection" phase begins. For each question and its associated answers, '
+            'each player chooses the answer which they think most people will choose. Once all players have made their choice, the answers or "clubs" '
+            'reveal their members. Each club awards points equal to the number of club members to each member. The most popular club, dubbed "The Club", '
+            'awards its members an additional point.',
+        '    In the final optional phase "Would You Rather", the same concept is employed with a randomly selected, pre-baked set of scenarios. '
+            'Club points are doubled for this round!',
       ],
       buttonColor: Theme.of(context).primaryColor,
     );

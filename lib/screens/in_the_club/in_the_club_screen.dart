@@ -16,6 +16,7 @@ import 'package:together/help_screens/help_screens.dart';
 import 'package:together/components/end_game.dart';
 import 'package:together/constants/values.dart';
 
+import 'in_the_club_components.dart';
 import 'in_the_club_services.dart';
 
 class InTheClubScreen extends StatefulWidget {
@@ -39,6 +40,7 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
       new TextEditingController();
   bool submittingWord = false;
   int randomIndex = 0;
+  int selectedTileIndex;
 
   @override
   void initState() {
@@ -145,8 +147,6 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
     }
     finalQuestion = finalQuestion.inCaps;
 
-    print('yo');
-
     var playerIndex = data['playerIds'].indexOf(widget.userId);
     // submit
     data = await T.transactInTheClubQuestion(playerIndex, finalQuestion);
@@ -156,10 +156,8 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
     // check if all players are done, if so set phase to answerCollection
     bool allPlayersDone = true;
     data['playerIds'].asMap().forEach((i, playerId) {
-      print(i);
       if (data['player${i}Questions'].length <
           data['rules']['numQuestionsPerPlayer']) {
-        print('what');
         allPlayersDone = false;
       }
     });
@@ -278,24 +276,31 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
             ),
           ),
           gradient: LinearGradient(
-              colors: submittingWord
-                  ? [
-                      Colors.grey,
-                      Colors.grey,
-                    ]
-                  : [
-                      Theme.of(context).primaryColor,
-                      Theme.of(context).accentColor
-                    ]),
-        ),
-        SizedBox(height: 15),
-        Text(
-          'Already submitted:',
-          style: TextStyle(
-            color: Colors.grey,
+            colors: submittingWord
+                ? [
+                    Colors.grey,
+                    Colors.grey,
+                  ]
+                : [
+                    Theme.of(context).primaryColor,
+                    Theme.of(context).accentColor
+                  ],
           ),
         ),
-        SizedBox(height: 5),
+        data['player${playerIndex}Questions'].length > 0
+            ? SizedBox(height: 15)
+            : Container(),
+        data['player${playerIndex}Questions'].length > 0
+            ? Text(
+                'Already submitted:',
+                style: TextStyle(
+                  color: Colors.grey,
+                ),
+              )
+            : Container(),
+        data['player${playerIndex}Questions'].length > 0
+            ? SizedBox(height: 5)
+            : Container(),
         Column(children: submittedQuestions),
       ],
     );
@@ -303,32 +308,33 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
 
   submitAnswer(data) async {
     HapticFeedback.vibrate();
-    String finalQuestion = answerCollectionController.text;
+    String answer = answerCollectionController.text;
 
-    // clean input
-    if (!finalQuestion.endsWith('?')) {
-      finalQuestion += '?';
-    }
-    finalQuestion = finalQuestion.inCaps;
-
-    print('yo');
+    // ensure similar answer doesn't already exist
 
     var playerIndex = data['playerIds'].indexOf(widget.userId);
     // submit
-    data = await T.transactInTheClubQuestion(playerIndex, finalQuestion);
+    data = await T.transactInTheClubAnswer(playerIndex, answer);
     setState(() {
-      questionCollectionController.text = '';
+      answerCollectionController.text = '';
     });
     // check if all players are done, if so set phase to answerCollection
     bool allPlayersDone = true;
     data['playerIds'].asMap().forEach((i, playerId) {
-      print(i);
-      if (data['player${i}Questions'].length <
-          data['rules']['numQuestionsPerPlayer']) {
-        print('what');
+      if (data['player${i}Votes'].length < 10) {
         allPlayersDone = false;
       }
     });
+    // ensure there are at least 4 answers
+    List<Widget> possibleAnswers = [];
+    data['playerIds'].asMap().forEach((i, playerId) {
+      data['player${i}Answers'].forEach((answer) {
+        possibleAnswers.add(Text(answer));
+      });
+    });
+    if (possibleAnswers.length < 4) {
+      allPlayersDone = false;
+    }
     if (allPlayersDone) {
       data['phase'] = 'answerCollection';
       data['answerCollectionQuestionIndex'] = 0;
@@ -336,11 +342,217 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
     await T.transact(data);
   }
 
+  getVoteCountForWord(data, word) {
+    var playerIndex = data['playerIds'].indexOf(widget.userId);
+    return '${data['player${playerIndex}Votes'][word] ?? 0}';
+  }
+
+  submitVote(data, word) async {
+    HapticFeedback.vibrate();
+    var playerIndex = data['playerIds'].indexOf(widget.userId);
+    data = await T.transactInTheClubVote(playerIndex, word);
+    setState(() {});
+  }
+
+  doneVoting(data) async {
+    HapticFeedback.vibrate();
+    var playerIndex = data['playerIds'].indexOf(widget.userId);
+    data['player${playerIndex}DoneVoting'] = true;
+    data = await T.transact(data);
+
+    // check if all players are done voting
+    bool allPlayersDoneVoting = true;
+    data['playerIds'].asMap().forEach((i, playerId) {
+      if (!data['player${i}DoneVoting']) {
+        allPlayersDoneVoting = false;
+      }
+    });
+
+    if (allPlayersDoneVoting) {
+      // get four best answers, "random" if tie
+      Map totalMapping = {};
+      data['playerIds'].asMap().forEach((i, playerId) {
+        data['player${i}Votes'].forEach((word, votes) {
+          if (totalMapping.containsKey(word)) {
+            totalMapping[word] += votes;
+          } else {
+            totalMapping[word] = votes;
+          }
+        });
+      });
+      var bestAnswers = totalMapping.keys.toList(growable: false)
+        ..sort((k1, k2) => totalMapping[k2].compareTo(totalMapping[k1]));
+      // add points for each player who came up with answers (if applicable)
+      bestAnswers = bestAnswers.sublist(0, 4);
+      bestAnswers.forEach((word) {
+        int playerIndexForWord = 0;
+        data['playerIds'].asMap().forEach((i, playerId) {
+          if (data['player${i}Answers'].contains(word)) {
+            playerIndexForWord = i;
+          }
+        });
+        // determine player index for highest bidder for answer
+        int highestVoterForWord = 0;
+        int maxVotes = 0;
+        data['playerIds'].asMap().forEach((i, playerId) {
+          if ((data['player${i}Votes'][word] ?? 0) > maxVotes) {
+            highestVoterForWord = i;
+            maxVotes = data['player${i}Votes'][word];
+          }
+        });
+        if (playerIndexForWord != highestVoterForWord) {
+          data['player${playerIndexForWord}Points'] += 2;
+        }
+        // save answers
+        data['clubMembership'] = {};
+        bestAnswers.forEach((bestAnswer) {
+          data['clubMembership'][bestAnswer] = [];
+        });
+        data['finalAnswers'][data['finalAnswers'].length().toString()] =
+            bestAnswers;
+      });
+      // next question, or move to answer submission
+      if (data['answerCollectionQuestionIndex'] <
+          data['playerIds'].length * data['rules']['numQuestionsPerPlayer'] -
+              1) {
+        // next question
+        data['answerCollectionQuestionIndex'] += 1;
+        // reset answers, votes, doneVoting
+        data['playerIds'].asMap().forEach((i, playerId) {
+          data['player${i}Answers'] = [];
+          data['player${i}Votes'] = {};
+          data['player${i}DoneVoting'] = false;
+        });
+      } else {
+        data['phase'] = 'clubSelection';
+      }
+      data = await T.transact(data);
+    }
+    setState(() {});
+  }
+
   answerCollectionBoard(data) {
     var width = MediaQuery.of(context).size.width;
+    var playerIndex = data['playerIds'].indexOf(widget.userId);
     int currentPlayer = (data['answerCollectionQuestionIndex'] ~/ 2);
     String currentQuestion = data['player${currentPlayer}Questions']
         [data['answerCollectionQuestionIndex'] % 2];
+
+    // possible answers. for each player, append all answers
+    // to do: use shared seed to randomize order of players?
+    List<String> possibleAnswers = [];
+    data['playerIds'].asMap().forEach((i, playerId) {
+      data['player${i}Answers'].forEach((answer) {
+        possibleAnswers.add(answer);
+      });
+    });
+
+    List<Widget> possibleAnswerColumns = [];
+    List<Widget> possibleAnswerColumn = [SizedBox(height: 5)];
+    possibleAnswers.forEach((answer) {
+      possibleAnswerColumn.add(
+        GestureDetector(
+          onTap: data['player${playerIndex}DoneVoting']
+              ? () {}
+              : () {
+                  submitVote(data, answer);
+                },
+          child: Container(
+            height: 33,
+            decoration: BoxDecoration(
+              border: Border.all(color: Theme.of(context).highlightColor),
+              borderRadius: BorderRadius.circular(5),
+              gradient: LinearGradient(
+                colors: [
+                  Colors.lightBlue[400].withAlpha(200),
+                  Colors.lightBlue[200].withAlpha(200),
+                ],
+              ),
+            ),
+            padding: EdgeInsets.fromLTRB(10, 5, 5, 5),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  answer,
+                  style: TextStyle(
+                    fontSize: 15,
+                  ),
+                ),
+                SizedBox(width: 5),
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Theme.of(context).highlightColor),
+                    borderRadius: BorderRadius.circular(5),
+                    color: Colors.white.withAlpha(200),
+                  ),
+                  padding: EdgeInsets.all(2),
+                  height: 20,
+                  width: 20,
+                  child: Center(
+                    child: AutoSizeText(
+                      getVoteCountForWord(data, answer),
+                      maxLines: 1,
+                      minFontSize: 5,
+                      style: TextStyle(
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      possibleAnswerColumn.add(SizedBox(height: 5));
+      if (possibleAnswerColumn.length > 10) {
+        possibleAnswerColumns.add(Column(children: possibleAnswerColumn));
+        possibleAnswerColumns.add(SizedBox(width: 5));
+        possibleAnswerColumn = [SizedBox(height: 5)];
+      }
+    });
+    if (possibleAnswerColumn.length > 1) {
+      possibleAnswerColumns.add(Column(children: possibleAnswerColumn));
+    }
+
+    int maxAnswers = data['rules']['numAnswersPerPlayer'];
+    int numSubmitted = data['player${playerIndex}Answers'].length;
+
+    List<Widget> playerStatuses = [];
+    data['playerIds'].asMap().forEach((i, playerId) {
+      int playerVotes = 0;
+      data['player${i}Votes'].forEach((word, votes) {
+        playerVotes += votes;
+      });
+      bool playerDoneVoting = data['player${i}DoneVoting'];
+      playerStatuses.add(AutoSizeText(
+        '${data['playerNames'][playerId]}:  $playerVotes votes',
+        maxLines: 1,
+        style: TextStyle(
+          fontSize: 16,
+          decoration: !playerDoneVoting
+              ? TextDecoration.none
+              : TextDecoration.lineThrough,
+          color: !playerDoneVoting
+              ? Theme.of(context).highlightColor
+              : Colors.grey,
+        ),
+      ));
+    });
+
+    int numAnswers = 0;
+    data['playerIds'].asMap().forEach((i, playerId) {
+      data['player${i}Answers'].forEach((answer) {
+        numAnswers += 1;
+      });
+    });
+
+    int numVotes = 0;
+    data['player${playerIndex}Votes'].forEach((word, votes) {
+      numVotes += votes;
+    });
+
     return Column(
       children: [
         Text(
@@ -359,65 +571,264 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
           ),
         ),
         SizedBox(height: 20),
+        numSubmitted >= maxAnswers
+            ? Container()
+            : Column(
+                children: [
+                  Text(
+                    'Enter suggestions here! (${maxAnswers - numSubmitted} submission' +
+                        (maxAnswers - numSubmitted == 0 ? 's' : '') +
+                        ' available)',
+                    style: TextStyle(
+                      color: Colors.grey,
+                    ),
+                  ),
+                  SizedBox(height: 5),
+                  TextField(
+                    controller: answerCollectionController,
+                    decoration: InputDecoration(
+                      contentPadding: EdgeInsets.fromLTRB(10, 0, 10, 0),
+                      border: OutlineInputBorder(),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 10),
+                  RaisedGradientButton(
+                    height: 30,
+                    width: 150,
+                    onPressed: () {
+                      submitAnswer(data);
+                    },
+                    child: Text(
+                      submittingWord
+                          ? 'Submitting...'
+                          : 'Submit (or hit enter)',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                      ),
+                    ),
+                    gradient: LinearGradient(
+                        colors: submittingWord
+                            ? [
+                                Colors.grey,
+                                Colors.grey,
+                              ]
+                            : [
+                                Theme.of(context).primaryColor,
+                                Theme.of(context).accentColor
+                              ]),
+                  ),
+                  SizedBox(height: 20),
+                ],
+              ),
+        numAnswers >= 4
+            ? Column(
+                children: [
+                  Text(
+                    'Vote here! (Need at least 10 votes)',
+                    style: TextStyle(
+                      color: Colors.grey,
+                    ),
+                  ),
+                  SizedBox(height: 5),
+                  Container(
+                    height: 200,
+                    width: width * 0.9,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(5),
+                      border: Border.all(
+                        color: Colors.grey,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: possibleAnswerColumns,
+                    ),
+                  ),
+                  numVotes < 10 || data['player${playerIndex}DoneVoting']
+                      ? Container()
+                      : Column(
+                          children: [
+                            SizedBox(height: 10),
+                            RaisedGradientButton(
+                              height: 30,
+                              width: 120,
+                              onPressed: () {
+                                doneVoting(data);
+                              },
+                              child: Text(
+                                'Done voting',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              gradient: LinearGradient(
+                                  colors: submittingWord
+                                      ? [
+                                          Colors.grey,
+                                          Colors.grey,
+                                        ]
+                                      : [
+                                          Theme.of(context).primaryColor,
+                                          Theme.of(context).accentColor
+                                        ]),
+                            ),
+                          ],
+                        ),
+                ],
+              )
+            : Text('Waiting on at least 4 answers...'),
+        data['player${playerIndex}DoneVoting']
+            ? Column(
+                children: [
+                  SizedBox(height: 20),
+                  Text(
+                    'Who to heckle:',
+                    style: TextStyle(
+                      fontSize: 18,
+                    ),
+                  ),
+                  PageBreak(width: 110),
+                  Column(children: playerStatuses),
+                  SizedBox(height: 30),
+                  data['answerCollectionQuestionIndex'] !=
+                          data['playerIds'].length *
+                                  data['rules']['numQuestionsPerPlayer'] -
+                              1
+                      ? Container()
+                      : Text(
+                          '(next up is club selection!)',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey,
+                          ),
+                        ),
+                ],
+              )
+            : Container(),
+      ],
+    );
+  }
+
+  submitClubSelection(data) async {
+    var playerIndex = data['playerIds'].indexOf(widget.userId);
+    String selectedAnswer = data['selectedAnswers'][selectedTileIndex];
+    data['clubMembership'][selectedAnswer].add(widget.userId);
+    data['player${playerIndex}ClubSelected'] = true;
+    data = await T.transact(data);
+
+    // check if all players have selected a club
+    // if so, move to next question or, if done, to roundSummary
+    setState(() {});
+  }
+
+  clubSelectionBoard(data) {
+    int currentPlayer = (data['answerCollectionQuestionIndex'] ~/ 2);
+    String currentQuestion = data['player${currentPlayer}Questions']
+        [data['answerCollectionQuestionIndex'] % 2];
+    return Column(
+      children: [
         Text(
-          'Enter suggestion here!',
+          currentQuestion,
+          style: TextStyle(fontSize: 26),
+        ),
+        SizedBox(height: 10),
+        Text(
+          'Choose your club below!',
           style: TextStyle(
+            fontSize: 12,
             color: Colors.grey,
           ),
         ),
-        SizedBox(height: 5),
-        TextField(
-          controller: questionCollectionController,
-          decoration: InputDecoration(
-            contentPadding: EdgeInsets.fromLTRB(10, 0, 10, 0),
-            border: OutlineInputBorder(),
-          ),
-          textAlign: TextAlign.center,
+        SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ClubSelectionTile(
+                  callback: () {
+                    HapticFeedback.vibrate();
+                    selectedTileIndex = 0;
+                    setState(() {});
+                  },
+                  answer: data['finalAnswers']
+                      [data['clubSelectionQuestionIndex'].toString()][0],
+                  selected: selectedTileIndex == 0,
+                ),
+                SizedBox(height: 10),
+                ClubSelectionTile(
+                  callback: () {
+                    HapticFeedback.vibrate();
+                    selectedTileIndex = 1;
+                    setState(() {});
+                  },
+                  answer: data['finalAnswers']
+                      [data['clubSelectionQuestionIndex'].toString()][1],
+                  selected: selectedTileIndex == 1,
+                ),
+              ],
+            ),
+            SizedBox(width: 10),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ClubSelectionTile(
+                  callback: () {
+                    HapticFeedback.vibrate();
+                    selectedTileIndex = 2;
+                    setState(() {});
+                  },
+                  answer: data['finalAnswers']
+                      [data['clubSelectionQuestionIndex'].toString()][2],
+                  selected: selectedTileIndex == 2,
+                ),
+                SizedBox(height: 10),
+                ClubSelectionTile(
+                  callback: () {
+                    HapticFeedback.vibrate();
+                    selectedTileIndex = 3;
+                    setState(() {});
+                  },
+                  answer: data['finalAnswers']
+                      [data['clubSelectionQuestionIndex'].toString()][3],
+                  selected: selectedTileIndex == 3,
+                ),
+              ],
+            ),
+          ],
         ),
         SizedBox(height: 10),
         RaisedGradientButton(
-          height: 30,
-          width: 150,
+          height: 40,
+          width: 180,
           onPressed: () {
-            submitAnswer(data);
+            submitClubSelection(data);
           },
           child: Text(
             submittingWord ? 'Submitting...' : 'Submit (or hit enter)',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 14,
+              fontSize: 16,
             ),
           ),
           gradient: LinearGradient(
-              colors: submittingWord
-                  ? [
-                      Colors.grey,
-                      Colors.grey,
-                    ]
-                  : [
-                      Theme.of(context).primaryColor,
-                      Theme.of(context).accentColor
-                    ]),
-        ),
-        SizedBox(height: 20),
-        Text(
-          'Vote here!',
-          style: TextStyle(
-            color: Colors.grey,
+            colors: submittingWord
+                ? [
+                    Colors.grey,
+                    Colors.grey,
+                  ]
+                : [
+                    Theme.of(context).primaryColor,
+                    Theme.of(context).accentColor
+                  ],
           ),
-        ),
-        SizedBox(height: 5),
-        Container(
-          height: 200,
-          width: width * 0.9,
-          decoration: basicBoxDecoration(),
         ),
       ],
     );
-  }
-
-  answerSubmissionBoard(data) {
-    return Text('Answer Submission');
   }
 
   roundSummaryBoard(data) {
@@ -440,13 +851,14 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
       case 'answerCollection':
         return 'Answer Collection';
         break;
-      case 'answerSubmission':
-        return 'Answer Submission';
+      case 'clubSelection':
+        return 'Club Selection';
         break;
       case 'wouldYouRather':
         return 'Would You Rather';
         break;
     }
+    return 'error';
   }
 
   getGameboard(data) {
@@ -456,8 +868,8 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
       board = questionCollectionBoard(data);
     } else if (data['phase'] == 'answerCollection') {
       board = answerCollectionBoard(data);
-    } else if (data['phase'] == 'answerSubmission') {
-      board = answerSubmissionBoard(data);
+    } else if (data['phase'] == 'clubSelection') {
+      board = clubSelectionBoard(data);
     } else if (data['phase'] == 'roundSummary') {
       board = roundSummaryBoard(data);
     } else if (data['phase'] == 'wouldYouRather') {
@@ -472,12 +884,21 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
             children: [
               Container(
                 decoration: basicBoxDecoration(),
-                padding: EdgeInsets.all(10),
-                child: Text(
-                  phaseInEnglish(data),
-                  style: TextStyle(
-                    fontSize: 20,
-                  ),
+                padding: EdgeInsets.fromLTRB(15, 10, 15, 10),
+                child: Column(
+                  children: [
+                    Text(
+                      'Phase:',
+                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
+                    SizedBox(height: 5),
+                    Text(
+                      phaseInEnglish(data),
+                      style: TextStyle(
+                        fontSize: 20,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               SizedBox(width: 20),

@@ -10,9 +10,11 @@ class Transactor {
     await _firestore.runTransaction((transaction) async {
       DocumentReference postRef =
           _firestore.collection('sessions').doc(sessionId);
-      // DocumentSnapshot snapshot = await transaction.get(postRef);
       transaction.set(postRef, newData);
     });
+    await Future.delayed(Duration(milliseconds: 10));
+    return (await _firestore.collection('sessions').doc(sessionId).get())
+        .data();
   }
 
   transactItem(itemName, item) async {
@@ -122,15 +124,49 @@ class Transactor {
         .data();
   }
 
-  transactInTheClubQuestion(playerId, question) async {
+  transactInTheClubQuestion(playerIndex, question) async {
     await _firestore.runTransaction((transaction) async {
       DocumentReference postRef =
           _firestore.collection('sessions').doc(sessionId);
       DocumentSnapshot snapshot = await transaction.get(postRef);
-      List playerRoundQuestion = snapshot.data()['player${playerId}Questions'];
+      List playerRoundQuestion =
+          snapshot.data()['player${playerIndex}Questions'];
       playerRoundQuestion.add(question);
+      transaction.update(
+          postRef, {'player${playerIndex}Questions': playerRoundQuestion});
+    });
+    await Future.delayed(Duration(milliseconds: 100));
+    return (await _firestore.collection('sessions').doc(sessionId).get())
+        .data();
+  }
+
+  transactInTheClubAnswer(playerIndex, answer) async {
+    await _firestore.runTransaction((transaction) async {
+      DocumentReference postRef =
+          _firestore.collection('sessions').doc(sessionId);
+      DocumentSnapshot snapshot = await transaction.get(postRef);
+      List questionAnswers = snapshot.data()['player${playerIndex}Answers'];
+      questionAnswers.add(answer);
       transaction
-          .update(postRef, {'player${playerId}Questions': playerRoundQuestion});
+          .update(postRef, {'player${playerIndex}Answers': questionAnswers});
+    });
+    await Future.delayed(Duration(milliseconds: 100));
+    return (await _firestore.collection('sessions').doc(sessionId).get())
+        .data();
+  }
+
+  transactInTheClubVote(playerIndex, word) async {
+    await _firestore.runTransaction((transaction) async {
+      DocumentReference postRef =
+          _firestore.collection('sessions').doc(sessionId);
+      DocumentSnapshot snapshot = await transaction.get(postRef);
+      Map votes = snapshot.data()['player${playerIndex}Votes'];
+      if (votes.containsKey(word)) {
+        votes[word] += 1;
+      } else {
+        votes[word] = 1;
+      }
+      transaction.update(postRef, {'player${playerIndex}Votes': votes});
     });
     await Future.delayed(Duration(milliseconds: 100));
     return (await _firestore.collection('sessions').doc(sessionId).get())

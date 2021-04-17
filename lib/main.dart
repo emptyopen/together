@@ -13,18 +13,13 @@ void main() async {
 }
 
 // DONE:
-// samesies: fix submitting.. stuck
-// samesies: new length options
-// the hunt: put turn outside of rules
-// samesies: show word difficulty
-// the hunt: rules edit dialog not working (scroll, toggle location)
 
 // next up:
 // new game: "in the club"
-// ready buttons between rounds like samesies
-// players vote for a category: "people", "objects", "places", "concepts"
-// everyone has to answer the prompt like "name a president"
-// whoever is in the majority is "in the club", gets "popularity" equal to the number of people in the club
+// make submit for clubSelection 100% robust
+// ensure 3 answers is avoided somehow (3 players with 1 answer each not allowed. check before starting lobby players * answers > 4)
+// submit status for different submits
+// don't allow similar submissions for questions and answers, with error
 // awards at the end: "networking machine", "outside the box thinker"
 
 // TODO:
