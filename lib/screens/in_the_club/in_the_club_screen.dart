@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
@@ -41,11 +43,15 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
   bool submittingWord = false;
   int randomIndex = 0;
   int selectedTileIndex;
+  String submitAnswerError;
+  String submitQuestionError;
 
   @override
   void initState() {
     super.initState();
     T = Transactor(sessionId: widget.sessionId);
+    var random = Random();
+    randomIndex = random.nextInt(inTheClubSampleQuestions.length - 1);
     setUpGame();
   }
 
@@ -91,29 +97,6 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
         ));
   }
 
-  playerReady(data) async {
-    data['ready${widget.userId}'] = true;
-
-    data = await T.transactInTheClubReady(widget.userId);
-
-    // if all players are ready, start the timer
-    bool allReady = true;
-    data['playerIds'].forEach((v) {
-      if (!data['ready$v']) {
-        allReady = false;
-      }
-    });
-    if (allReady) {
-      // clear previous results
-      data['teams'].asMap().forEach((i, v) {
-        data['teams'][i]['results'] = [];
-      });
-      data['expirationTime'] = DateTime.now()
-          .add(Duration(seconds: data['rules']['roundTimeLimit']));
-    }
-    T.transact(data);
-  }
-
   getScoreboard(data) {
     return TogetherScrollView(
       child: Center(
@@ -146,6 +129,24 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
       finalQuestion += '?';
     }
     finalQuestion = finalQuestion.inCaps;
+
+    // check that question doesn't already exist
+    bool similarAnswerExists = false;
+    data['playerIds'].asMap().forEach((i, playerId) {
+      data['player${i}Questions'].forEach((otherQuestion) {
+        if (StringSimilarity.compareTwoStrings(finalQuestion, otherQuestion) >
+            0.7) {
+          similarAnswerExists = true;
+        }
+      });
+    });
+    if (similarAnswerExists) {
+      submitQuestionError = 'Someone has already submitted a similar question!';
+      setState(() {});
+      return;
+    }
+    submitQuestionError = null;
+    setState(() {});
 
     var playerIndex = data['playerIds'].indexOf(widget.userId);
     // submit
@@ -254,6 +255,12 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
         SizedBox(height: 5),
         TextField(
           controller: questionCollectionController,
+          textInputAction: TextInputAction.send,
+          onSubmitted: submittingWord
+              ? null
+              : (s) {
+                  submitQuestion(data);
+                },
           decoration: InputDecoration(
             contentPadding: EdgeInsets.fromLTRB(10, 0, 10, 0),
             border: OutlineInputBorder(),
@@ -287,6 +294,20 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
                   ],
           ),
         ),
+        submitQuestionError != null
+            ? Column(
+                children: [
+                  SizedBox(height: 5),
+                  Text(
+                    submitQuestionError,
+                    style: TextStyle(
+                      color: Colors.red,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              )
+            : Container(),
         data['player${playerIndex}Questions'].length > 0
             ? SizedBox(height: 15)
             : Container(),
@@ -310,7 +331,25 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
     HapticFeedback.vibrate();
     String answer = answerCollectionController.text;
 
+    // close keyboard
+    closeKeyboardIfOpen(context);
+
     // ensure similar answer doesn't already exist
+    bool similarAnswerExists = false;
+    data['playerIds'].asMap().forEach((i, playerId) {
+      data['player${i}Answers'].forEach((otherAnswer) {
+        if (StringSimilarity.compareTwoStrings(answer, otherAnswer) > 0.7) {
+          similarAnswerExists = true;
+        }
+      });
+    });
+    if (similarAnswerExists) {
+      submitAnswerError = 'Someone has already submitted a similar answer!';
+      setState(() {});
+      return;
+    }
+    submitAnswerError = null;
+    setState(() {});
 
     var playerIndex = data['playerIds'].indexOf(widget.userId);
     // submit
@@ -403,18 +442,17 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
         if (playerIndexForWord != highestVoterForWord) {
           data['player${playerIndexForWord}Points'] += 2;
         }
-        // save answers
-        data['clubMembership'] = {};
-        bestAnswers.forEach((bestAnswer) {
-          data['clubMembership'][bestAnswer] = [];
-        });
-        data['finalAnswers'][data['finalAnswers'].length().toString()] =
-            bestAnswers;
       });
+      // save answers
+      // TODO: randomize here
+      data['finalAnswers'][data['finalAnswers'].length.toString()] =
+          bestAnswers;
+      print('uhhh');
       // next question, or move to answer submission
       if (data['answerCollectionQuestionIndex'] <
           data['playerIds'].length * data['rules']['numQuestionsPerPlayer'] -
               1) {
+        print('a');
         // next question
         data['answerCollectionQuestionIndex'] += 1;
         // reset answers, votes, doneVoting
@@ -424,7 +462,13 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
           data['player${i}DoneVoting'] = false;
         });
       } else {
+        print('b');
         data['phase'] = 'clubSelection';
+        // initialize club membership to first question group
+        data['clubMembership'] = {};
+        data['finalAnswers']['0'].forEach((answer) {
+          data['clubMembership'][answer] = [];
+        });
       }
       data = await T.transact(data);
     }
@@ -434,9 +478,11 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
   answerCollectionBoard(data) {
     var width = MediaQuery.of(context).size.width;
     var playerIndex = data['playerIds'].indexOf(widget.userId);
-    int currentPlayer = (data['answerCollectionQuestionIndex'] ~/ 2);
-    String currentQuestion = data['player${currentPlayer}Questions']
-        [data['answerCollectionQuestionIndex'] % 2];
+    int currentPlayer = (data['answerCollectionQuestionIndex'] ~/
+        data['rules']['numQuestionsPerPlayer']);
+    String currentQuestion = data['player${currentPlayer}Questions'][
+        data['answerCollectionQuestionIndex'] %
+            data['rules']['numQuestionsPerPlayer']];
 
     // possible answers. for each player, append all answers
     // to do: use shared seed to randomize order of players?
@@ -586,6 +632,12 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
                   SizedBox(height: 5),
                   TextField(
                     controller: answerCollectionController,
+                    textInputAction: TextInputAction.send,
+                    onSubmitted: submittingWord
+                        ? null
+                        : (s) {
+                            submitAnswer(data);
+                          },
                     decoration: InputDecoration(
                       contentPadding: EdgeInsets.fromLTRB(10, 0, 10, 0),
                       border: OutlineInputBorder(),
@@ -619,6 +671,20 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
                                 Theme.of(context).accentColor
                               ]),
                   ),
+                  submitAnswerError != null
+                      ? Column(
+                          children: [
+                            SizedBox(height: 5),
+                            Text(
+                              submitAnswerError,
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        )
+                      : Container(),
                   SizedBox(height: 20),
                 ],
               ),
@@ -626,7 +692,7 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
             ? Column(
                 children: [
                   Text(
-                    'Vote here! (Need at least 10 votes)',
+                    'Tap answers to vote! (Need at least 10 votes)',
                     style: TextStyle(
                       color: Colors.grey,
                     ),
@@ -712,22 +778,164 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
     );
   }
 
+  playerJoinedClub(data, playerId) {
+    bool playerJoinedClub = false;
+    data['clubMembership'].forEach((answer, members) {
+      if (members.contains(playerId)) {
+        playerJoinedClub = true;
+      }
+    });
+    return playerJoinedClub;
+  }
+
   submitClubSelection(data) async {
     var playerIndex = data['playerIds'].indexOf(widget.userId);
-    String selectedAnswer = data['selectedAnswers'][selectedTileIndex];
+    String selectedAnswer = data['finalAnswers']
+        [data['clubSelectionQuestionIndex'].toString()][selectedTileIndex];
     data['clubMembership'][selectedAnswer].add(widget.userId);
     data['player${playerIndex}ClubSelected'] = true;
     data = await T.transact(data);
-
-    // check if all players have selected a club
-    // if so, move to next question or, if done, to roundSummary
     setState(() {});
+
+    // check if all players have submitted club selection, if so add points
+    bool allPlayersJoinedClub = true;
+    data['playerIds'].asMap().forEach((i, playerId) {
+      if (!playerJoinedClub(data, playerId)) {
+        allPlayersJoinedClub = false;
+      }
+    });
+    if (allPlayersJoinedClub) {
+      int maxClubMembers = 0;
+      data['clubMembership'].forEach((answer, members) {
+        if (members.length > maxClubMembers) {
+          maxClubMembers = members.length;
+        }
+      });
+      data['clubMembership'].forEach((answer, members) {
+        if (members.length == maxClubMembers) {
+          members.forEach((member) {
+            int memberIndex = data['playerIds'].indexOf(member);
+            data['player${memberIndex}Points'] += members.length + 1;
+          });
+        } else {
+          members.forEach((member) {
+            int memberIndex = data['playerIds'].indexOf(member);
+            data['player${memberIndex}Points'] += members.length;
+          });
+        }
+      });
+    }
+    data = await T.transact(data);
+  }
+
+  playerReady(data) async {
+    HapticFeedback.vibrate();
+    var playerIndex = data['playerIds'].indexOf(widget.userId);
+    data['player${playerIndex}Ready'] = true;
+    data = await T.transact(data);
+
+    // check if all players are ready
+    bool allPlayersReady = true;
+    data['playerIds'].asMap().forEach((i, playerId) {
+      if (!data['player${i}Ready']) {
+        allPlayersReady = false;
+      }
+    });
+    int numQuestions = data['finalAnswers'].length;
+    if (allPlayersReady) {
+      if (data['clubSelectionQuestionIndex'] < numQuestions - 1) {
+        data['clubSelectionQuestionIndex'] += 1;
+        // reset values
+        selectedTileIndex = null;
+        data['playerIds'].asMap().forEach((i, playerId) {
+          data['player${i}Ready'] = false;
+        });
+        data['clubMembership'] = {};
+        data['finalAnswers'][data['clubSelectionQuestionIndex'].toString()]
+            .forEach((answer) {
+          data['clubMembership'][answer] = [];
+        });
+      } else {
+        if (data['rules']['numWouldYouRather'] > 0) {
+          data['phase'] = 'wouldYouRather';
+          data['wouldYouRatherQuestionIndex'] = 0;
+          // initialize club membership
+          selectedTileIndex = null;
+          data['playerIds'].asMap().forEach((i, playerId) {
+            data['player${i}Ready'] = false;
+          });
+          data['clubMembership'] = {};
+          data['wouldYouRatherQuestions']['0'].forEach((answer) {
+            data['clubMembership'][answer] = [];
+          });
+        } else {
+          data['phase'] = 'scoreboard';
+        }
+      }
+      data = await T.transact(data);
+    }
   }
 
   clubSelectionBoard(data) {
-    int currentPlayer = (data['answerCollectionQuestionIndex'] ~/ 2);
-    String currentQuestion = data['player${currentPlayer}Questions']
-        [data['answerCollectionQuestionIndex'] % 2];
+    var playerIndex = data['playerIds'].indexOf(widget.userId);
+    int currentPlayer = (data['clubSelectionQuestionIndex'] ~/
+        data['rules']['numQuestionsPerPlayer']);
+    String currentQuestion = data['player${currentPlayer}Questions'][
+        data['clubSelectionQuestionIndex'] %
+            data['rules']['numQuestionsPerPlayer']];
+
+    List<Widget> playerStatuses = [];
+    data['playerIds'].asMap().forEach((i, playerId) {
+      playerStatuses.add(AutoSizeText(
+        '${data['playerNames'][playerId]}:  ' +
+            (playerJoinedClub(data, playerId)
+                ? 'joined a club'
+                : 'looking at clubs'),
+        maxLines: 1,
+        style: TextStyle(
+          fontSize: 16,
+          decoration: !playerJoinedClub(data, playerId)
+              ? TextDecoration.none
+              : TextDecoration.lineThrough,
+          color: !playerJoinedClub(data, playerId)
+              ? Theme.of(context).highlightColor
+              : Colors.grey,
+        ),
+      ));
+    });
+
+    // check if all players have selected a club
+    // if not, move to next question or, if done, to roundSummary
+    bool allPlayersJoinedClub = true;
+    data['playerIds'].asMap().forEach((i, playerId) {
+      if (!playerJoinedClub(data, playerId)) {
+        allPlayersJoinedClub = false;
+      }
+    });
+
+    int maxClubMembers = 0;
+    data['clubMembership'].forEach((answer, members) {
+      if (members.length > maxClubMembers) {
+        maxClubMembers = members.length;
+      }
+    });
+
+    List<Widget> playerReadyStatuses = [];
+    data['playerIds'].asMap().forEach((i, v) {
+      playerReadyStatuses.add(
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(data['playerNames'][v]),
+            SizedBox(width: 5),
+            data['player${i}Ready']
+                ? Icon(MdiIcons.checkBoxOutline, color: Colors.green)
+                : Icon(MdiIcons.checkboxBlank, color: Colors.grey),
+          ],
+        ),
+      );
+    });
+
     return Column(
       children: [
         Text(
@@ -735,14 +943,20 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
           style: TextStyle(fontSize: 26),
         ),
         SizedBox(height: 10),
-        Text(
-          'Choose your club below!',
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey,
-          ),
-        ),
-        SizedBox(height: 10),
+        allPlayersJoinedClub
+            ? Container()
+            : Column(
+                children: [
+                  Text(
+                    'Choose your club below!',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                ],
+              ),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -750,22 +964,42 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 ClubSelectionTile(
-                  callback: () {
-                    HapticFeedback.vibrate();
-                    selectedTileIndex = 0;
-                    setState(() {});
-                  },
+                  data: data,
+                  callback: playerJoinedClub(data, widget.userId)
+                      ? () {}
+                      : () {
+                          HapticFeedback.vibrate();
+                          selectedTileIndex = 0;
+                          setState(() {});
+                        },
+                  showMembers: allPlayersJoinedClub,
+                  members: data['clubMembership'][data['finalAnswers']
+                      [data['clubSelectionQuestionIndex'].toString()][0]],
+                  isTheClub: maxClubMembers ==
+                      data['clubMembership'][data['finalAnswers'][
+                              data['clubSelectionQuestionIndex'].toString()][0]]
+                          .length,
                   answer: data['finalAnswers']
                       [data['clubSelectionQuestionIndex'].toString()][0],
                   selected: selectedTileIndex == 0,
                 ),
                 SizedBox(height: 10),
                 ClubSelectionTile(
-                  callback: () {
-                    HapticFeedback.vibrate();
-                    selectedTileIndex = 1;
-                    setState(() {});
-                  },
+                  data: data,
+                  callback: playerJoinedClub(data, widget.userId)
+                      ? () {}
+                      : () {
+                          HapticFeedback.vibrate();
+                          selectedTileIndex = 1;
+                          setState(() {});
+                        },
+                  showMembers: allPlayersJoinedClub,
+                  members: data['clubMembership'][data['finalAnswers']
+                      [data['clubSelectionQuestionIndex'].toString()][1]],
+                  isTheClub: maxClubMembers ==
+                      data['clubMembership'][data['finalAnswers'][
+                              data['clubSelectionQuestionIndex'].toString()][1]]
+                          .length,
                   answer: data['finalAnswers']
                       [data['clubSelectionQuestionIndex'].toString()][1],
                   selected: selectedTileIndex == 1,
@@ -777,22 +1011,42 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 ClubSelectionTile(
-                  callback: () {
-                    HapticFeedback.vibrate();
-                    selectedTileIndex = 2;
-                    setState(() {});
-                  },
+                  data: data,
+                  callback: playerJoinedClub(data, widget.userId)
+                      ? () {}
+                      : () {
+                          HapticFeedback.vibrate();
+                          selectedTileIndex = 2;
+                          setState(() {});
+                        },
+                  showMembers: allPlayersJoinedClub,
+                  members: data['clubMembership'][data['finalAnswers']
+                      [data['clubSelectionQuestionIndex'].toString()][2]],
+                  isTheClub: maxClubMembers ==
+                      data['clubMembership'][data['finalAnswers'][
+                              data['clubSelectionQuestionIndex'].toString()][2]]
+                          .length,
                   answer: data['finalAnswers']
                       [data['clubSelectionQuestionIndex'].toString()][2],
                   selected: selectedTileIndex == 2,
                 ),
                 SizedBox(height: 10),
                 ClubSelectionTile(
-                  callback: () {
-                    HapticFeedback.vibrate();
-                    selectedTileIndex = 3;
-                    setState(() {});
-                  },
+                  data: data,
+                  callback: playerJoinedClub(data, widget.userId)
+                      ? () {}
+                      : () {
+                          HapticFeedback.vibrate();
+                          selectedTileIndex = 3;
+                          setState(() {});
+                        },
+                  showMembers: allPlayersJoinedClub,
+                  members: data['clubMembership'][data['finalAnswers']
+                      [data['clubSelectionQuestionIndex'].toString()][3]],
+                  isTheClub: maxClubMembers ==
+                      data['clubMembership'][data['finalAnswers'][
+                              data['clubSelectionQuestionIndex'].toString()][3]]
+                          .length,
                   answer: data['finalAnswers']
                       [data['clubSelectionQuestionIndex'].toString()][3],
                   selected: selectedTileIndex == 3,
@@ -801,46 +1055,542 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
             ),
           ],
         ),
-        SizedBox(height: 10),
-        RaisedGradientButton(
-          height: 40,
-          width: 180,
-          onPressed: () {
-            submitClubSelection(data);
-          },
-          child: Text(
-            submittingWord ? 'Submitting...' : 'Submit (or hit enter)',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-            ),
-          ),
-          gradient: LinearGradient(
-            colors: submittingWord
-                ? [
-                    Colors.grey,
-                    Colors.grey,
-                  ]
-                : [
-                    Theme.of(context).primaryColor,
-                    Theme.of(context).accentColor
-                  ],
-          ),
-        ),
+        allPlayersJoinedClub
+            ? Column(
+                children: [
+                  SizedBox(height: 30),
+                  Container(
+                    decoration: BoxDecoration(
+                      border:
+                          Border.all(color: Theme.of(context).highlightColor),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    padding: EdgeInsets.all(5),
+                    child: Column(
+                      children: [
+                        SizedBox(height: 10),
+                        Text(data['clubSelectionQuestionIndex'] !=
+                                data['playerIds'].length *
+                                        data['rules']['numQuestionsPerPlayer'] -
+                                    1
+                            ? 'Ready for next question:'
+                            : data['rules']['numWouldYouRather'] == 0
+                                ? 'Ready for scoreboard:'
+                                : 'Ready for "would you rather":'),
+                        SizedBox(height: 5),
+                        PageBreak(width: 100),
+                        Column(children: playerReadyStatuses),
+                        SizedBox(height: 10),
+                        RaisedGradientButton(
+                          height: 30,
+                          width: 110,
+                          onPressed: () {
+                            playerReady(data);
+                          },
+                          child: Text(
+                            'Ready',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                            ),
+                          ),
+                          gradient: LinearGradient(
+                            colors: data['player${playerIndex}Ready']
+                                ? [
+                                    Colors.grey,
+                                    Colors.grey,
+                                  ]
+                                : [
+                                    Theme.of(context).primaryColor,
+                                    Theme.of(context).accentColor
+                                  ],
+                          ),
+                        ),
+                        SizedBox(height: 10),
+                      ],
+                    ),
+                  ),
+                ],
+              )
+            : playerJoinedClub(data, widget.userId)
+                ? Column(
+                    children: [
+                      SizedBox(height: 20),
+                      Text(
+                        'Who to heckle:',
+                        style: TextStyle(
+                          fontSize: 18,
+                        ),
+                      ),
+                      PageBreak(width: 110),
+                      Column(children: playerStatuses),
+                    ],
+                  )
+                : Column(
+                    children: [
+                      SizedBox(height: 10),
+                      RaisedGradientButton(
+                        height: 40,
+                        width: 120,
+                        onPressed: selectedTileIndex == null
+                            ? () {}
+                            : () {
+                                submitClubSelection(data);
+                              },
+                        child: Text(
+                          submittingWord ? 'Submitting...' : 'Submit',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                          ),
+                        ),
+                        gradient: LinearGradient(
+                          colors: selectedTileIndex == null || submittingWord
+                              ? [
+                                  Colors.grey,
+                                  Colors.grey,
+                                ]
+                              : [
+                                  Theme.of(context).primaryColor,
+                                  Theme.of(context).accentColor
+                                ],
+                        ),
+                      ),
+                    ],
+                  ),
       ],
     );
   }
 
-  roundSummaryBoard(data) {
-    return Text('Round Summary');
+  submitClubSelectionWouldYouRather(data) async {
+    var playerIndex = data['playerIds'].indexOf(widget.userId);
+    String selectedAnswer = data['wouldYouRatherQuestions']
+        [data['wouldYouRatherQuestionIndex'].toString()][selectedTileIndex];
+    data['clubMembership'][selectedAnswer].add(widget.userId);
+    data['player${playerIndex}ClubSelected'] = true;
+    data = await T.transact(data);
+    setState(() {});
+
+    // check if all players have submitted club selection, if so add points
+    bool allPlayersJoinedClub = true;
+    data['playerIds'].asMap().forEach((i, playerId) {
+      if (!playerJoinedClub(data, playerId)) {
+        allPlayersJoinedClub = false;
+      }
+    });
+    if (allPlayersJoinedClub) {
+      int maxClubMembers = 0;
+      data['clubMembership'].forEach((answer, members) {
+        if (members.length > maxClubMembers) {
+          maxClubMembers = members.length;
+        }
+      });
+      data['clubMembership'].forEach((answer, members) {
+        if (members.length == maxClubMembers) {
+          members.forEach((member) {
+            int memberIndex = data['playerIds'].indexOf(member);
+            data['player${memberIndex}Points'] += (members.length + 1) * 2;
+          });
+        } else {
+          members.forEach((member) {
+            int memberIndex = data['playerIds'].indexOf(member);
+            data['player${memberIndex}Points'] += members.length * 2;
+          });
+        }
+      });
+    }
+    data = await T.transact(data);
+  }
+
+  playerReadyWouldYouRather(data) async {
+    HapticFeedback.vibrate();
+    var playerIndex = data['playerIds'].indexOf(widget.userId);
+    data['player${playerIndex}Ready'] = true;
+    data = await T.transact(data);
+
+    // check if all players are ready
+    bool allPlayersReady = true;
+    data['playerIds'].asMap().forEach((i, playerId) {
+      if (!data['player${i}Ready']) {
+        allPlayersReady = false;
+      }
+    });
+    if (allPlayersReady) {
+      if (data['wouldYouRatherQuestionIndex'] <
+          data['rules']['numWouldYouRather'] - 1) {
+        data['wouldYouRatherQuestionIndex'] += 1;
+        // reset values
+        selectedTileIndex = null;
+        data['playerIds'].asMap().forEach((i, playerId) {
+          data['player${i}Ready'] = false;
+        });
+        data['clubMembership'] = {};
+        data['wouldYouRatherQuestions']
+                [data['wouldYouRatherQuestionIndex'].toString()]
+            .forEach((answer) {
+          data['clubMembership'][answer] = [];
+        });
+      } else {
+        data['phase'] = 'scoreboard';
+      }
+      data = await T.transact(data);
+    }
   }
 
   wouldYouRatherBoard(data) {
-    return Text('Would You Rather');
+    var playerIndex = data['playerIds'].indexOf(widget.userId);
+
+    List<Widget> playerStatuses = [];
+    data['playerIds'].asMap().forEach((i, playerId) {
+      playerStatuses.add(AutoSizeText(
+        '${data['playerNames'][playerId]}:  ' +
+            (playerJoinedClub(data, playerId)
+                ? 'joined a club'
+                : 'looking at clubs'),
+        maxLines: 1,
+        style: TextStyle(
+          fontSize: 16,
+          decoration: !playerJoinedClub(data, playerId)
+              ? TextDecoration.none
+              : TextDecoration.lineThrough,
+          color: !playerJoinedClub(data, playerId)
+              ? Theme.of(context).highlightColor
+              : Colors.grey,
+        ),
+      ));
+    });
+
+    // check if all players have selected a club
+    // if not, move to next question or, if done, to roundSummary
+    bool allPlayersJoinedClub = true;
+    data['playerIds'].asMap().forEach((i, playerId) {
+      if (!playerJoinedClub(data, playerId)) {
+        allPlayersJoinedClub = false;
+      }
+    });
+
+    int maxClubMembers = 0;
+    data['clubMembership'].forEach((answer, members) {
+      if (members.length > maxClubMembers) {
+        maxClubMembers = members.length;
+      }
+    });
+
+    List<Widget> playerReadyStatuses = [];
+    data['playerIds'].asMap().forEach((i, v) {
+      playerReadyStatuses.add(
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(data['playerNames'][v]),
+            SizedBox(width: 5),
+            data['player${i}Ready']
+                ? Icon(MdiIcons.checkBoxOutline, color: Colors.green)
+                : Icon(MdiIcons.checkboxBlank, color: Colors.grey),
+          ],
+        ),
+      );
+    });
+
+    var wouldYouRatherRoundQuestions = data['wouldYouRatherQuestions']
+        [data['wouldYouRatherQuestionIndex'].toString()];
+
+    return Column(
+      children: [
+        Text(
+          'Would You Rather:',
+          style: TextStyle(fontSize: 26),
+        ),
+        SizedBox(height: 10),
+        allPlayersJoinedClub
+            ? Container()
+            : Column(
+                children: [
+                  Text(
+                    'Choose your club below!',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                ],
+              ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ClubSelectionTile(
+                  data: data,
+                  isWouldYouRather: true,
+                  callback: playerJoinedClub(data, widget.userId)
+                      ? () {}
+                      : () {
+                          HapticFeedback.vibrate();
+                          selectedTileIndex = 0;
+                          setState(() {});
+                        },
+                  showMembers: allPlayersJoinedClub,
+                  members: data['clubMembership']
+                      [wouldYouRatherRoundQuestions[0]],
+                  isTheClub: maxClubMembers ==
+                      data['clubMembership'][wouldYouRatherRoundQuestions[0]]
+                          .length,
+                  answer: wouldYouRatherRoundQuestions[0],
+                  selected: selectedTileIndex == 0,
+                ),
+                SizedBox(height: 10),
+                ClubSelectionTile(
+                  data: data,
+                  isWouldYouRather: true,
+                  callback: playerJoinedClub(data, widget.userId)
+                      ? () {}
+                      : () {
+                          HapticFeedback.vibrate();
+                          selectedTileIndex = 1;
+                          setState(() {});
+                        },
+                  showMembers: allPlayersJoinedClub,
+                  members: data['clubMembership']
+                      [wouldYouRatherRoundQuestions[1]],
+                  isTheClub: maxClubMembers ==
+                      data['clubMembership'][wouldYouRatherRoundQuestions[1]]
+                          .length,
+                  answer: wouldYouRatherRoundQuestions[1],
+                  selected: selectedTileIndex == 1,
+                ),
+              ],
+            ),
+            SizedBox(width: 10),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ClubSelectionTile(
+                  data: data,
+                  isWouldYouRather: true,
+                  callback: playerJoinedClub(data, widget.userId)
+                      ? () {}
+                      : () {
+                          HapticFeedback.vibrate();
+                          selectedTileIndex = 2;
+                          setState(() {});
+                        },
+                  showMembers: allPlayersJoinedClub,
+                  members: data['clubMembership']
+                      [wouldYouRatherRoundQuestions[2]],
+                  isTheClub: maxClubMembers ==
+                      data['clubMembership'][wouldYouRatherRoundQuestions[2]]
+                          .length,
+                  answer: wouldYouRatherRoundQuestions[2],
+                  selected: selectedTileIndex == 2,
+                ),
+                SizedBox(height: 10),
+                ClubSelectionTile(
+                  data: data,
+                  isWouldYouRather: true,
+                  callback: playerJoinedClub(data, widget.userId)
+                      ? () {}
+                      : () {
+                          HapticFeedback.vibrate();
+                          selectedTileIndex = 3;
+                          setState(() {});
+                        },
+                  showMembers: allPlayersJoinedClub,
+                  members: data['clubMembership']
+                      [wouldYouRatherRoundQuestions[3]],
+                  isTheClub: maxClubMembers ==
+                      data['clubMembership'][wouldYouRatherRoundQuestions[3]]
+                          .length,
+                  answer: wouldYouRatherRoundQuestions[3],
+                  selected: selectedTileIndex == 3,
+                ),
+              ],
+            ),
+          ],
+        ),
+        allPlayersJoinedClub
+            ? Column(
+                children: [
+                  SizedBox(height: 30),
+                  Container(
+                    decoration: BoxDecoration(
+                      border:
+                          Border.all(color: Theme.of(context).highlightColor),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    padding: EdgeInsets.all(5),
+                    child: Column(
+                      children: [
+                        SizedBox(height: 10),
+                        Text(data['wouldYouRatherQuestionIndex'] !=
+                                data['rules']['numWouldYouRather'] - 1
+                            ? 'Ready for next question:'
+                            : 'Ready for scoreboard:'),
+                        SizedBox(height: 5),
+                        PageBreak(width: 100),
+                        Column(children: playerReadyStatuses),
+                        SizedBox(height: 10),
+                        RaisedGradientButton(
+                          height: 30,
+                          width: 110,
+                          onPressed: () {
+                            playerReadyWouldYouRather(data);
+                          },
+                          child: Text(
+                            'Ready',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                            ),
+                          ),
+                          gradient: LinearGradient(
+                            colors: data['player${playerIndex}Ready']
+                                ? [
+                                    Colors.grey,
+                                    Colors.grey,
+                                  ]
+                                : [
+                                    Theme.of(context).primaryColor,
+                                    Theme.of(context).accentColor
+                                  ],
+                          ),
+                        ),
+                        SizedBox(height: 10),
+                      ],
+                    ),
+                  ),
+                ],
+              )
+            : playerJoinedClub(data, widget.userId)
+                ? Column(
+                    children: [
+                      SizedBox(height: 20),
+                      Text(
+                        'Who to heckle:',
+                        style: TextStyle(
+                          fontSize: 18,
+                        ),
+                      ),
+                      PageBreak(width: 110),
+                      Column(children: playerStatuses),
+                    ],
+                  )
+                : Column(
+                    children: [
+                      SizedBox(height: 10),
+                      RaisedGradientButton(
+                        height: 40,
+                        width: 120,
+                        onPressed: selectedTileIndex == null
+                            ? () {}
+                            : () {
+                                submitClubSelectionWouldYouRather(data);
+                              },
+                        child: Text(
+                          submittingWord ? 'Submitting...' : 'Submit',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                          ),
+                        ),
+                        gradient: LinearGradient(
+                          colors: selectedTileIndex == null || submittingWord
+                              ? [
+                                  Colors.grey,
+                                  Colors.grey,
+                                ]
+                              : [
+                                  Theme.of(context).primaryColor,
+                                  Theme.of(context).accentColor
+                                ],
+                        ),
+                      ),
+                    ],
+                  ),
+      ],
+    );
   }
 
   scoreboard(data) {
-    return Text('Scoreboard');
+    List<Widget> scores = [];
+    int highestScore = 0;
+    List<String> bestPlayers = [];
+    data['playerIds'].asMap().forEach((i, playerId) {
+      scores.add(
+        Text(
+          '${data['playerNames'][playerId]}: ${data['player${i}Points']} pts',
+          style: TextStyle(
+            fontSize: 18,
+            color: Colors.grey,
+          ),
+        ),
+      );
+      if (data['player${i}Points'] > highestScore) {
+        highestScore = data['player${i}Points'];
+        bestPlayers = [data['playerNames'][playerId]];
+      } else if (data['player${i}Points'] == highestScore) {
+        bestPlayers.add(data['playerNames'][playerId]);
+      }
+    });
+    List<Widget> winnerNames = [];
+    bestPlayers.forEach((name) {
+      winnerNames.add(
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              MdiIcons.emoticonCoolOutline,
+              size: 34,
+            ),
+            SizedBox(width: 10),
+            Text(
+              name,
+              style: TextStyle(
+                fontSize: 32,
+              ),
+            ),
+            SizedBox(width: 10),
+            Icon(
+              MdiIcons.emoticonCoolOutline,
+              size: 34,
+            ),
+          ],
+        ),
+      );
+    });
+
+    return Column(
+      children: [
+        Text(
+          'Thanks for playing!',
+          style: TextStyle(
+            fontSize: 18,
+            color: Colors.grey,
+          ),
+        ),
+        SizedBox(height: 15),
+        Text(
+          bestPlayers.length == 1
+              ? 'The club master is:'
+              : 'The club masters are:',
+          style: TextStyle(fontSize: 20),
+        ),
+        SizedBox(height: 20),
+        Column(children: winnerNames),
+        SizedBox(height: 25),
+        Text(
+          'The final scores were:',
+          style: TextStyle(
+            fontSize: 18,
+            color: Colors.grey,
+          ),
+        ),
+        SizedBox(height: 10),
+        Column(children: scores),
+      ],
+    );
   }
 
   phaseInEnglish(data) {
@@ -857,6 +1607,9 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
       case 'wouldYouRather':
         return 'Would You Rather';
         break;
+      case 'scoreboard':
+        return 'Scoreboard';
+        break;
     }
     return 'error';
   }
@@ -870,15 +1623,13 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
       board = answerCollectionBoard(data);
     } else if (data['phase'] == 'clubSelection') {
       board = clubSelectionBoard(data);
-    } else if (data['phase'] == 'roundSummary') {
-      board = roundSummaryBoard(data);
     } else if (data['phase'] == 'wouldYouRather') {
       board = wouldYouRatherBoard(data);
     }
     return SingleChildScrollView(
       child: Column(
         children: [
-          SizedBox(height: 30),
+          SizedBox(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -906,10 +1657,11 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
             ],
           ),
           // internal board
-          SizedBox(height: 30),
+          SizedBox(height: 20),
           Container(
             width: width * 0.9,
-            decoration: basicBoxDecoration(),
+            decoration: basicBoxDecoration(
+                color: data['phase'] == 'scoreboard' ? null : null),
             padding: EdgeInsets.all(20),
             child: board,
           ),
@@ -929,13 +1681,13 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
     );
   }
 
-  basicBoxDecoration() {
+  basicBoxDecoration({color}) {
     return BoxDecoration(
       borderRadius: BorderRadius.circular(5),
       border: Border.all(
         color: Theme.of(context).highlightColor,
       ),
-      color: Theme.of(context).dialogBackgroundColor,
+      color: color == null ? Theme.of(context).dialogBackgroundColor : color,
     );
   }
 

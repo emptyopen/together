@@ -16,10 +16,10 @@ void main() async {
 
 // next up:
 // new game: "in the club"
+// add points in categories (selected answer & club points)
+// show all phases progress (grey for prev/next)
 // make submit for clubSelection 100% robust
-// ensure 3 answers is avoided somehow (3 players with 1 answer each not allowed. check before starting lobby players * answers > 4)
-// submit status for different submits
-// don't allow similar submissions for questions and answers, with error
+// submitting... status for different submits
 // awards at the end: "networking machine", "outside the box thinker"
 
 // TODO:

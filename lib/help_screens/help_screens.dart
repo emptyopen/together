@@ -178,8 +178,9 @@ class InTheClubScreenHelp extends StatelessWidget {
       information: [
         '    The point of this game is to be as popular as possible.\n\n    There is a question & answers portion of the game, and then '
             'an optional "Would You Rather" portion of the game.',
-        '    For the first phase of the game, players are asked to submit questions. They can really be any questions, although keep in mind '
-            'that the answers will eventually end up in a multiple choice format.\n\n    In the next phase, the questions will be iterated on, '
+        '    For the first phase of the game, players are asked to submit questions. They can really be any questions, but they probably should '
+            'be subjective. Keep in mind '
+            'that the answers will eventually end up in a multiple choice format!\n\n    In the next phase, the questions will be iterated on, '
             'and all players can submit answers and vote on all answers. Selected answers are worth 2 points to the submitter. '
             'You can vote for your own answers, but if you vote for your answer more than '
             'anyone else did, you won\'t get points for it!',

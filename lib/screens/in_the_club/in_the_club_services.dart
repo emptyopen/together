@@ -23,13 +23,13 @@ List inTheClubWouldYouRather = [
   [
     'Win \$1,000,000',
     'Your body becomes 5 years younger',
-    'You get a random house in the US state of your choice',
-    'Two weeks per year you get a free vacation to Hawaii (everything free)'
+    'Get two random houses in the US state of your choice',
+    'You get a free vacation to Hawaii once per year (everything free for two weeks)'
   ],
   [
     'Go without your phone for a week',
     'Go without toilet paper for a week',
-    'No brushing teeth for a week',
+    'No brushing teeth or showering for a week',
     'Eat only bread and butter for a week',
   ],
   [
@@ -41,8 +41,8 @@ List inTheClubWouldYouRather = [
   [
     'Eat a small tub of yogurt with ketchup mixed in',
     'Eat a steak covered in milk',
-    'Drink a large cup of coffee with several raw scallops inside',
-    'Eat a tiramisu that has a layer of wasabi',
+    'Drink a three large cups of coffee with mustard and several raw scallops',
+    'Eat a large tiramisu that has a layer of wasabi',
   ],
 ];
 

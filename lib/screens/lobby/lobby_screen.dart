@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:string_similarity/string_similarity.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:together/screens/in_the_club/in_the_club_screen.dart';
+import 'package:together/screens/in_the_club/in_the_club_services.dart';
 
 import '../../components/buttons.dart';
 import '../../components/misc.dart';
@@ -934,6 +935,14 @@ class _LobbyScreenState extends State<LobbyScreen> {
       return;
     }
 
+    // must have at least 4 answers per question
+    if (data['playerIds'].length * data['rules']['numAnswersPerPlayer'] < 4) {
+      setState(() {
+        startError = 'numPlayers x numAnswersPerPlayer must be at least 4';
+      });
+      return;
+    }
+
     // clear error if we are good to start
     setState(() {
       startError = '';
@@ -946,12 +955,21 @@ class _LobbyScreenState extends State<LobbyScreen> {
       data['player${i}Votes'] = {};
       data['player${i}DoneVoting'] = false;
       data['player${i}Points'] = 0;
-      data['player${i}ClubSelected'] = false;
+      data['player${i}Ready'] = false;
     });
+
+    List randomizedWouldYouRather = inTheClubWouldYouRather;
+    randomizedWouldYouRather.shuffle();
+    data['wouldYouRatherQuestions'] = {};
+    for (int i = 0; i < data['rules']['numWouldYouRather']; i++) {
+      data['wouldYouRatherQuestions'][i.toString()] =
+          randomizedWouldYouRather[i];
+    }
 
     data['phase'] = 'questionCollection';
     data['answerCollectionQuestionIndex'] = 0;
     data['clubSelectionQuestionIndex'] = 0;
+    data['wouldYouRatherQuestionIndex'] = 0;
     data['finalAnswers'] = {};
     data['clubMembership'] = {};
 
