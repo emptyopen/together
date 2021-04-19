@@ -44,6 +44,54 @@ List inTheClubWouldYouRather = [
     'Drink a three large cups of coffee with mustard and several raw scallops',
     'Eat a large tiramisu that has a layer of wasabi',
   ],
+  [
+    'Find an abandoned, semi-fresh bouquet of roses on the ground',
+    'Find a scarf of your favorite color on the ground',
+    'Find a dog leash on the ground',
+    'Find a used but functional frisbee on the ground',
+  ],
+  [
+    'Be able to jump from the exactly the twelfth floor of a building safely',
+    'Be able to clean your hairbrush with a wink',
+    'You can adjust how tan you are by how hard you slap your own face',
+    'As long as you are moonwalking, your neighbors can\'t see you'
+  ],
+  [
+    'Know the name of a stranger\'s pet, once per day',
+    'You get 1 cent in your bank account every 40 miles you walk',
+    'There is one less cloud in the sky per day above you',
+    'You can conjure the number of cars that you\'ve seen in the past week',
+  ],
+  [
+    'Stub your toe',
+    'Lose \$10 dollars from your bank account',
+    'Drop the next scoop of icecream you get on the ground',
+    'For one hour, no matter what you drink you still feel thirsty',
+  ],
+  [
+    'Find out your significant other accidentally killed someone and was proven innocent',
+    'Find out you live next to a serial killer',
+    'Find out your only sibling was adopted and they don\'t know',
+    'Find out your building was built on an old cemetery',
+  ],
+  [
+    'Find out someone was previously killed in your bedroom',
+    'Find out your car doesn\'t fit in your garage',
+    'Find out your roof is leaking',
+    'Find out your neighbors just got two new dogs that like to howl',
+  ],
+  [
+    'You get a small promotion',
+    'You get a free vacation to Thailand',
+    'You get twelve free house cleanings',
+    'Your most annoying neighbor moves out',
+  ],
+  [
+    'The next five times you try to take a selfie with a celebrity, your battery dies',
+    'An amazing restaurant opens up on your street two days before you move out of state',
+    'You become allergic to your second favorite dessert for one year',
+    'Loud construction starts up next door for two months'
+  ],
 ];
 
 allPlayersAreReady(data) {
