@@ -15,7 +15,16 @@ void main() async {
 // DONE:
 
 // next up:
-// new game: "in the club"
+// SCREENS ARE NOT UPDATING ACROSS DEVICES
+// show submitted answers for sanity
+// "choose your club" font size bigger
+// other votes are showing up?? on other screens
+// make answers fill tile until members are shown
+// make min votes 10?
+// alternate color of club based on darkmode
+// dark mode selection is bad
+// weird visual selection of 1st tile even when selecting others
+// extra:::
 // add points in categories (selected answer & club points)
 // show all phases progress (grey for prev/next)
 // make submit for clubSelection 100% robust

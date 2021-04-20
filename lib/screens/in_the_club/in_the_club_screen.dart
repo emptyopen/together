@@ -45,6 +45,7 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
   int selectedTileIndex;
   String submitAnswerError;
   String submitQuestionError;
+  int minNumVotes = 5;
 
   @override
   void initState() {
@@ -125,6 +126,7 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
     String finalQuestion = questionCollectionController.text;
 
     // clean input
+    finalQuestion = finalQuestion.trim();
     if (!finalQuestion.endsWith('?')) {
       finalQuestion += '?';
     }
@@ -238,19 +240,31 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
       );
     }
 
+    int questionsRemaining = data['rules']['numQuestionsPerPlayer'] -
+        data['player${playerIndex}Questions'].length;
+
     return Column(
       children: [
         Text(
-          'Give us a question:',
+          'Compose a question!',
           style: TextStyle(
             fontSize: 22,
           ),
         ),
+        SizedBox(height: 5),
         Text(
-          '${data['player${playerIndex}Questions'].length}/${data['rules']['numQuestionsPerPlayer']} submitted',
+          'The question should be subjective, and should have at least 4 answers.',
+          textAlign: TextAlign.center,
           style: TextStyle(
+            fontSize: 16,
             color: Colors.grey,
           ),
+        ),
+        SizedBox(height: 5),
+        Text(
+          'You can submit $questionsRemaining more question' +
+              (questionsRemaining > 1 ? 's' : '') +
+              '.',
         ),
         SizedBox(height: 5),
         TextField(
@@ -334,6 +348,9 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
     // close keyboard
     closeKeyboardIfOpen(context);
 
+    // clean input
+    answer = answer.trim();
+
     // ensure similar answer doesn't already exist
     bool similarAnswerExists = false;
     data['playerIds'].asMap().forEach((i, playerId) {
@@ -360,7 +377,7 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
     // check if all players are done, if so set phase to answerCollection
     bool allPlayersDone = true;
     data['playerIds'].asMap().forEach((i, playerId) {
-      if (data['player${i}Votes'].length < 10) {
+      if (data['player${i}Votes'].length < minNumVotes) {
         allPlayersDone = false;
       }
     });
@@ -409,14 +426,16 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
 
     if (allPlayersDoneVoting) {
       // get four best answers, "random" if tie
+      // init with map of all answers
       Map totalMapping = {};
       data['playerIds'].asMap().forEach((i, playerId) {
+        data['player${i}Answers'].forEach((answer) {
+          totalMapping[answer] = 0;
+        });
+      });
+      data['playerIds'].asMap().forEach((i, playerId) {
         data['player${i}Votes'].forEach((word, votes) {
-          if (totalMapping.containsKey(word)) {
-            totalMapping[word] += votes;
-          } else {
-            totalMapping[word] = votes;
-          }
+          totalMapping[word] += votes;
         });
       });
       var bestAnswers = totalMapping.keys.toList(growable: false)
@@ -447,12 +466,10 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
       // TODO: randomize here
       data['finalAnswers'][data['finalAnswers'].length.toString()] =
           bestAnswers;
-      print('uhhh');
       // next question, or move to answer submission
       if (data['answerCollectionQuestionIndex'] <
           data['playerIds'].length * data['rules']['numQuestionsPerPlayer'] -
               1) {
-        print('a');
         // next question
         data['answerCollectionQuestionIndex'] += 1;
         // reset answers, votes, doneVoting
@@ -462,7 +479,6 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
           data['player${i}DoneVoting'] = false;
         });
       } else {
-        print('b');
         data['phase'] = 'clubSelection';
         // initialize club membership to first question group
         data['clubMembership'] = {};
@@ -484,6 +500,18 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
         data['answerCollectionQuestionIndex'] %
             data['rules']['numQuestionsPerPlayer']];
 
+    int numAnswers = 0;
+    data['playerIds'].asMap().forEach((i, playerId) {
+      data['player${i}Answers'].forEach((answer) {
+        numAnswers += 1;
+      });
+    });
+
+    int numVotes = 0;
+    data['player${playerIndex}Votes'].forEach((word, votes) {
+      numVotes += votes;
+    });
+
     // possible answers. for each player, append all answers
     // to do: use shared seed to randomize order of players?
     List<String> possibleAnswers = [];
@@ -498,7 +526,7 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
     possibleAnswers.forEach((answer) {
       possibleAnswerColumn.add(
         GestureDetector(
-          onTap: data['player${playerIndex}DoneVoting']
+          onTap: data['player${playerIndex}DoneVoting'] || numAnswers < 4
               ? () {}
               : () {
                   submitVote(data, answer);
@@ -509,10 +537,15 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
               border: Border.all(color: Theme.of(context).highlightColor),
               borderRadius: BorderRadius.circular(5),
               gradient: LinearGradient(
-                colors: [
-                  Colors.lightBlue[400].withAlpha(200),
-                  Colors.lightBlue[200].withAlpha(200),
-                ],
+                colors: !data['player${playerIndex}Answers'].contains(answer)
+                    ? [
+                        Colors.lightBlue[400].withAlpha(200),
+                        Colors.lightBlue[200].withAlpha(200),
+                      ]
+                    : [
+                        Colors.purple[400].withAlpha(200),
+                        Colors.purple[200].withAlpha(200),
+                      ],
               ),
             ),
             padding: EdgeInsets.fromLTRB(10, 5, 5, 5),
@@ -542,6 +575,7 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
                       minFontSize: 5,
                       style: TextStyle(
                         fontSize: 11,
+                        color: Colors.black,
                       ),
                     ),
                   ),
@@ -587,18 +621,6 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
       ));
     });
 
-    int numAnswers = 0;
-    data['playerIds'].asMap().forEach((i, playerId) {
-      data['player${i}Answers'].forEach((answer) {
-        numAnswers += 1;
-      });
-    });
-
-    int numVotes = 0;
-    data['player${playerIndex}Votes'].forEach((word, votes) {
-      numVotes += votes;
-    });
-
     return Column(
       children: [
         Text(
@@ -622,9 +644,17 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
             : Column(
                 children: [
                   Text(
-                    'Enter suggestions here! (${maxAnswers - numSubmitted} submission' +
-                        (maxAnswers - numSubmitted == 0 ? 's' : '') +
-                        ' available)',
+                    'Enter your answers here!',
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 18,
+                    ),
+                  ),
+                  SizedBox(height: 5),
+                  Text(
+                    'You can submit up to ${maxAnswers - numSubmitted} more answer' +
+                        (maxAnswers - numSubmitted > 1 ? 's' : '') +
+                        '.',
                     style: TextStyle(
                       color: Colors.grey,
                     ),
@@ -688,64 +718,91 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
                   SizedBox(height: 20),
                 ],
               ),
-        numAnswers >= 4
-            ? Column(
-                children: [
-                  Text(
-                    'Tap answers to vote! (Need at least 10 votes)',
-                    style: TextStyle(
-                      color: Colors.grey,
-                    ),
-                  ),
-                  SizedBox(height: 5),
-                  Container(
-                    height: 200,
-                    width: width * 0.9,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(5),
-                      border: Border.all(
-                        color: Colors.grey,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: possibleAnswerColumns,
-                    ),
-                  ),
-                  numVotes < 10 || data['player${playerIndex}DoneVoting']
-                      ? Container()
-                      : Column(
-                          children: [
-                            SizedBox(height: 10),
-                            RaisedGradientButton(
-                              height: 30,
-                              width: 120,
-                              onPressed: () {
+        Column(
+          children: [
+            Text(
+              'Answers from everybody will show up below.',
+              style: TextStyle(
+                color: Colors.grey,
+              ),
+            ),
+            Text(
+              'Tap answers to vote! Your answers are purple.',
+              style: TextStyle(
+                color: Colors.grey,
+              ),
+            ),
+            SizedBox(height: 5),
+            Text(
+              'You can vote as many times as you like, but if you vote on your own answer more than anyone else did, you won\'t get points for it!',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.grey,
+              ),
+            ),
+            SizedBox(height: 5),
+            numAnswers < 4
+                ? Text(
+                    'We need at least 4 answers before voting can begin!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(),
+                  )
+                : Container(),
+            SizedBox(height: 5),
+            Container(
+              height: 200,
+              width: width * 0.9,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(5),
+                border: Border.all(
+                  color: Colors.grey,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: possibleAnswerColumns,
+              ),
+            ),
+            data['player${playerIndex}DoneVoting']
+                ? Container()
+                : Column(
+                    children: [
+                      SizedBox(height: 10),
+                      numVotes < minNumVotes
+                          ? Text(
+                              'You need to vote at least ${minNumVotes - numVotes} more times!')
+                          : Container(),
+                      SizedBox(height: 10),
+                      RaisedGradientButton(
+                        height: 30,
+                        width: 120,
+                        onPressed: numVotes < minNumVotes
+                            ? () {}
+                            : () {
                                 doneVoting(data);
                               },
-                              child: Text(
-                                'Done voting',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              gradient: LinearGradient(
-                                  colors: submittingWord
-                                      ? [
-                                          Colors.grey,
-                                          Colors.grey,
-                                        ]
-                                      : [
-                                          Theme.of(context).primaryColor,
-                                          Theme.of(context).accentColor
-                                        ]),
-                            ),
-                          ],
+                        child: Text(
+                          'Done voting',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                          ),
                         ),
-                ],
-              )
-            : Text('Waiting on at least 4 answers...'),
+                        gradient: LinearGradient(
+                            colors: submittingWord || numVotes < minNumVotes
+                                ? [
+                                    Colors.grey,
+                                    Colors.grey,
+                                  ]
+                                : [
+                                    Theme.of(context).primaryColor,
+                                    Theme.of(context).accentColor
+                                  ]),
+                      ),
+                    ],
+                  ),
+          ],
+        ),
         data['player${playerIndex}DoneVoting']
             ? Column(
                 children: [
