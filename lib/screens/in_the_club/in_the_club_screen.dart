@@ -68,6 +68,14 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
     });
   }
 
+  checkIfVibrate(data) {
+    bool isNewVibrateData = false;
+
+    if (isNewVibrateData) {
+      HapticFeedback.vibrate();
+    }
+  }
+
   getRoomCode(data) {
     return Container(
         decoration: BoxDecoration(
@@ -167,8 +175,8 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
     if (allPlayersDone) {
       data['phase'] = 'answerCollection';
       data['answerCollectionQuestionIndex'] = 0;
+      await T.transact(data);
     }
-    await T.transact(data);
   }
 
   questionCollectionBoard(data) {
@@ -394,8 +402,8 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
     if (allPlayersDone) {
       data['phase'] = 'answerCollection';
       data['answerCollectionQuestionIndex'] = 0;
+      await T.transact(data);
     }
-    await T.transact(data);
   }
 
   getVoteCountForWord(data, word) {
@@ -415,6 +423,7 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
     var playerIndex = data['playerIds'].indexOf(widget.userId);
     data['player${playerIndex}DoneVoting'] = true;
     data = await T.transact(data);
+    setState(() {});
 
     // check if all players are done voting
     bool allPlayersDoneVoting = true;
@@ -1225,8 +1234,7 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
         [data['wouldYouRatherQuestionIndex'].toString()][selectedTileIndex];
     data['clubMembership'][selectedAnswer].add(widget.userId);
     data['player${playerIndex}ClubSelected'] = true;
-    data = await T.transact(data);
-    setState(() {});
+    // data = await T.transact(data);
 
     // check if all players have submitted club selection, if so add points
     bool allPlayersJoinedClub = true;
@@ -1358,21 +1366,7 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
           'Would You Rather:',
           style: TextStyle(fontSize: 26),
         ),
-        SizedBox(height: 10),
-        allPlayersJoinedClub
-            ? Container()
-            : Column(
-                children: [
-                  Text(
-                    'Choose your club below!',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                ],
-              ),
+        SizedBox(height: 20),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -1591,29 +1585,20 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
         bestPlayers.add(data['playerNames'][playerId]);
       }
     });
+    var width = MediaQuery.of(context).size.width;
     List<Widget> winnerNames = [];
     bestPlayers.forEach((name) {
       winnerNames.add(
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              MdiIcons.emoticonCoolOutline,
-              size: 34,
+        Container(
+          width: width * 0.6,
+          child: AutoSizeText(
+            name,
+            maxLines: 1,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 32,
             ),
-            SizedBox(width: 10),
-            Text(
-              name,
-              style: TextStyle(
-                fontSize: 32,
-              ),
-            ),
-            SizedBox(width: 10),
-            Icon(
-              MdiIcons.emoticonCoolOutline,
-              size: 34,
-            ),
-          ],
+          ),
         ),
       );
     });
@@ -1635,7 +1620,35 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
           style: TextStyle(fontSize: 20),
         ),
         SizedBox(height: 20),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            Icon(
+              MdiIcons.emoticonCoolOutline,
+              size: 34,
+            ),
+            Icon(
+              MdiIcons.emoticonCoolOutline,
+              size: 34,
+            ),
+          ],
+        ),
+        SizedBox(height: 20),
         Column(children: winnerNames),
+        SizedBox(height: 20),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            Icon(
+              MdiIcons.emoticonCoolOutline,
+              size: 34,
+            ),
+            Icon(
+              MdiIcons.emoticonCoolOutline,
+              size: 34,
+            ),
+          ],
+        ),
         SizedBox(height: 25),
         Text(
           'The final scores were:',
@@ -1803,6 +1816,7 @@ class _InTheClubScreenState extends State<InTheClubScreen> {
             body: Container(),
           );
         }
+        checkIfVibrate(data);
         checkIfExit(data, context, widget.sessionId, widget.roomCode);
         return Scaffold(
             key: _scaffoldKey,

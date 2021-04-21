@@ -67,7 +67,7 @@ class _ClubSelectionTileState extends State<ClubSelectionTile> {
                       ? LinearGradient(
                           colors: [
                             Colors.lightGreen,
-                            Colors.lightGreen[200],
+                            Colors.lightGreen[300],
                           ],
                         )
                       : LinearGradient(
@@ -79,8 +79,8 @@ class _ClubSelectionTileState extends State<ClubSelectionTile> {
                   : widget.selected
                       ? LinearGradient(
                           colors: [
-                            Colors.lightBlue[300],
-                            Colors.lightBlue[100],
+                            Colors.lightBlue[400],
+                            Colors.lightBlue[200],
                           ],
                         )
                       : LinearGradient(
@@ -99,7 +99,7 @@ class _ClubSelectionTileState extends State<ClubSelectionTile> {
                         children: [
                             AutoSizeText(
                               widget.answer,
-                              maxLines: widget.isWouldYouRather ? 4 : 3,
+                              maxLines: 3,
                               wrapWords: false,
                               textAlign: TextAlign.center,
                               style: TextStyle(
@@ -116,13 +116,15 @@ class _ClubSelectionTileState extends State<ClubSelectionTile> {
                             ),
                           ])
                     : Center(
-                        child: AutoSizeText(
-                          widget.answer,
-                          maxLines: widget.isWouldYouRather ? 5 : 3,
-                          wrapWords: false,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 22,
+                        child: Container(
+                          padding: EdgeInsets.fromLTRB(0, 50, 0, 50),
+                          child: AutoSizeText(
+                            widget.answer,
+                            wrapWords: false,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 200,
+                            ),
                           ),
                         ),
                       ),
@@ -139,7 +141,7 @@ class _ClubSelectionTileState extends State<ClubSelectionTile> {
                           ),
                           padding: EdgeInsets.fromLTRB(4, 2, 4, 4),
                           child: Shimmer.fromColors(
-                            period: Duration(seconds: 6),
+                            period: Duration(seconds: 2),
                             baseColor: Colors.grey,
                             highlightColor: Colors.white,
                             child: Row(
@@ -185,7 +187,7 @@ class _ClubSelectionTileState extends State<ClubSelectionTile> {
                           padding: EdgeInsets.fromLTRB(8, 4, 8, 4),
                           child: widget.isTheClub
                               ? Shimmer.fromColors(
-                                  period: Duration(seconds: 6),
+                                  period: Duration(seconds: 2),
                                   baseColor: Colors.grey,
                                   highlightColor: Colors.white,
                                   child: Text(
@@ -220,9 +222,9 @@ class _ClubSelectionTileState extends State<ClubSelectionTile> {
             width: width * 0.36,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(15),
-              color: clubMembers.length > 2
+              color: widget.members.length > 0 || !widget.showMembers
                   ? Colors.white.withAlpha(0)
-                  : Colors.grey.withAlpha(160),
+                  : Colors.grey.withAlpha(120),
             ),
           ),
         ],
