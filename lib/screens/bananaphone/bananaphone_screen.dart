@@ -1136,7 +1136,6 @@ class _BananaphoneScreenState extends State<BananaphoneScreen> {
     var expectedSum = data['playerIds'].length *
         (data['rules']['numDrawDescribe'] == 2 ? 4 : 6) *
         (data['round'] + 1);
-    print('sum: $sum, expected sum: $expectedSum');
     if (sum >= expectedSum) {
       // if so, check if there is another round
       // new round = increment round and reset all submissions

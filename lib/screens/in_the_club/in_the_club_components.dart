@@ -1,6 +1,5 @@
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:together/components/misc.dart';
 import 'package:together/constants/values.dart';
@@ -51,7 +50,7 @@ class _ClubSelectionTileState extends State<ClubSelectionTile> {
         children: [
           Container(
             height: height * 0.3,
-            width: width * 0.36,
+            width: width * 0.38,
             decoration: BoxDecoration(
               border: Border.all(
                 color: Theme.of(context).highlightColor,
@@ -90,7 +89,7 @@ class _ClubSelectionTileState extends State<ClubSelectionTile> {
                           ],
                         ),
             ),
-            padding: EdgeInsets.fromLTRB(10, 0, 10, 0),
+            padding: EdgeInsets.fromLTRB(20, 0, 20, 0),
             child: Stack(
               children: [
                 widget.showMembers
@@ -219,7 +218,7 @@ class _ClubSelectionTileState extends State<ClubSelectionTile> {
           ),
           Container(
             height: height * 0.3,
-            width: width * 0.36,
+            width: width * 0.38,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(15),
               color: widget.members.length > 0 || !widget.showMembers

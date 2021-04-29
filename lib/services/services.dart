@@ -266,7 +266,6 @@ getDefaultRules(String gameName) {
     case 'In The Club':
       addRules = {
         'numQuestionsPerPlayer': 1,
-        'numAnswersPerPlayer': 2,
         'numWouldYouRather': 1,
       };
       break;

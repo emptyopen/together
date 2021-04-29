@@ -1,17 +1,92 @@
-List inTheClubSampleQuestions = [
-  'What is the most important room in the house?',
-  'What is the most important part of the body?',
-  'Which decade has the worst music?',
-  'Which is the least important part of the body',
-  'What is the ugliest fruit?',
-  'Which is the most uncomfortable medical procedure?',
-  'What is the most interesting color?',
-  'What is the most difficult high school class?',
-  'What is the spiciest word?',
-  'What is the best car?',
-  'Which celebrity has the biggest eyes?',
-  'Which city is the easiest to live in?',
-];
+Map inTheClubQuestions = {
+  'What is the most important room in the house?': [
+    'Bedroom',
+    'Bathroom',
+    'Kitchen',
+    'Garage',
+  ],
+  'What is the most important part of the body?': [
+    'Heart',
+    'Brain',
+    'Bones',
+    'Lungs',
+  ],
+  'Which decade has the worst music?': [
+    '70s',
+    '80s',
+    '90s',
+    '00s',
+    '10s',
+  ],
+  'Which is the least important part of the body': [
+    'Eyebrows',
+    'Appendix',
+    'Tip of nose',
+    'Earlobe',
+  ],
+  'What is the ugliest fruit?': [
+    'Pineapple',
+    'Mango',
+    'Grape',
+    'Orange',
+    'Apple',
+    'Banana',
+    'Blueberry',
+    'Kiwi',
+  ],
+  'Which is the most uncomfortable medical procedure?': [
+    'Rectal exam',
+    'Acupuncture',
+  ],
+  'What is the most interesting color?': [
+    'blue',
+    'red',
+    'yellow',
+    'orange',
+    'purple',
+    'green',
+    'pink',
+  ],
+  'What is the most difficult high school class?': [
+    'Calculus',
+    'Statistics',
+    'Chemistry',
+    'Biology',
+    'History',
+  ],
+  'What is the spiciest word?': [
+    'Lava',
+    'Red',
+    'Spickety',
+    'Burn',
+  ],
+  'Which celebrity has the biggest eyes?': [
+    'Mila Kunis',
+    'Aziz Ansari',
+    'George Clooney',
+    'Angelina Jolie',
+  ],
+  'Which city is the easiest to live in?': [
+    'NYC',
+    'Los Angeles',
+    'San Francisco',
+    'Dallas',
+    'Miami',
+    'Boston',
+  ],
+  'What probably weighs the most?': [
+    '9 adult lions',
+    '4000 staplers',
+    '1 million paper clips',
+    '1 Honda Civic',
+  ],
+  'What is the most important word?': [
+    "the",
+    "and",
+    "I",
+    "but",
+  ],
+};
 
 List inTheClubWouldYouRather = [
   [
@@ -60,7 +135,7 @@ List inTheClubWouldYouRather = [
     'Know the name of a stranger\'s pet, once per day',
     'You get 1 cent in your bank account every 40 miles you walk',
     'There is one less cloud in the sky per day above you',
-    'You can conjure the number of cars that you\'ve seen in the past week',
+    'Know the number of cars that you\'ve seen in the past week',
   ],
   [
     'Stub your toe',
@@ -69,16 +144,10 @@ List inTheClubWouldYouRather = [
     'For one hour, no matter what you drink you still feel thirsty',
   ],
   [
-    'Find out your significant other accidentally killed someone and was proven innocent',
-    'Find out you live next to a serial killer',
-    'Find out your only sibling was adopted and they don\'t know',
-    'Find out your building was built on an old cemetery',
-  ],
-  [
     'Find out someone was previously killed in your bedroom',
     'Find out your car doesn\'t fit in your garage',
-    'Find out your roof is leaking',
-    'Find out your neighbors just got two new dogs that like to howl',
+    'Find out your roof is leaking and needs to be replaced completely',
+    'Find out your neighbors just got three new dogs that love to howl',
   ],
   [
     'You get a small promotion',
@@ -92,6 +161,66 @@ List inTheClubWouldYouRather = [
     'You become allergic to your second favorite dessert for one year',
     'Loud construction starts up next door for two months'
   ],
+  [
+    'Instead of yellow, you see brown',
+    'Instead of pink, you see brown',
+    'Instead of orange, you see grey',
+    'Instead of purple, you see grey',
+  ],
+  [
+    'Static electricity doesn\'t discharge when you touch a door handle in your house',
+    'You command a spider to leave your house twice a year',
+    'You become an expert at fixing the top right corner of picture frames',
+    'Every time you wash the dishes, there is a 0.01% chance it will all instantly be done'
+  ],
+  [
+    'Know whenever you get a disease, and what type it is',
+    'Know if you\'ll ever regret a purchase of \$5000 or less',
+    'Know how to get the best possible deal for traveling',
+    'Know the recipe for anything',
+  ],
+  [
+    'All your clothes must have Disney characters on them',
+    'Any building you live in must be painted in a Disney theme on the outside',
+    'Any building you live in must be painted in a Disney theme on the inside',
+    'Your car must have a giant Disney plushie fastened on top',
+  ],
+  [
+    'Get a forehead tattoo of a tooth',
+    'Get a forehead tattoo of a cartoon nose',
+    'Get a forehead tattoo of a teacup',
+    'Get a forehead tattoo of an arrow pointing up and to the left'
+  ],
+  [
+    'Get a forehead tattoo of the word "YO"',
+    'Get a forehead tattoo of the word "HI"',
+    'Get a forehead tattoo of the word "MONGOLIA"',
+    'Get a forehead tattoo of the word "DOOR"',
+  ],
+  [
+    'Live without umbrellas',
+    'Live without paintings',
+    'Live without headphones',
+    'Live without houseplants',
+  ],
+  [
+    'Live without Youtube',
+    'Live without Netflix',
+    'Live without social media',
+    'Live without Spotify',
+  ],
+  [
+    'Live without cutting boards',
+    'Live without oven mitts',
+    'Live without a microwave',
+    'Live without measuring cups',
+  ],
+  [
+    'In your next conversation, you have to ask "Why?" ten times',
+    'In your next conversation, you have to ask "How?" ten times',
+    'In your next conversation, you have to ask "Who?" ten times',
+    'In your next conversation, you have to ask "What?" ten times',
+  ],
 ];
 
 allPlayersAreReady(data) {
@@ -102,4 +231,14 @@ allPlayersAreReady(data) {
     }
   });
   return allReady;
+}
+
+List getQuestions(data) {
+  List<Map> questions = [];
+  data['playerIds'].asMap().forEach((i, playerId) {
+    data['player${i}Questions'].forEach((question, answers) {
+      questions.add({question: answers});
+    });
+  });
+  return questions;
 }

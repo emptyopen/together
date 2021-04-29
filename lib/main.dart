@@ -15,11 +15,17 @@ void main() async {
 // DONE:
 
 // next up:
+// fix "READY" button, freaking out
+// jump straight to in the club
+// question collection includes four answers for the question
 // add points in categories (selected answer & club points)
 // show all phases progress (grey for prev/next)
 // make submit for clubSelection 100% robust
 // submitting... status for different submits
 // awards at the end: "networking machine", "outside the box thinker"
+//
+// bananaphone:
+// voting system is terrible
 
 // TODO:
 // samesies: submit looks like success but fails to record anything (overwrite during transact?)

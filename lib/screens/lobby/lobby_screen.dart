@@ -935,14 +935,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
       return;
     }
 
-    // must have at least 4 answers per question
-    if (data['playerIds'].length * data['rules']['numAnswersPerPlayer'] < 4) {
-      setState(() {
-        startError = 'numPlayers x numAnswersPerPlayer must be at least 4';
-      });
-      return;
-    }
-
     // clear error if we are good to start
     setState(() {
       startError = '';
@@ -950,10 +942,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
     // init arrays
     data['playerIds'].asMap().forEach((i, playerId) {
-      data['player${i}Questions'] = [];
-      data['player${i}Answers'] = [];
+      data['player${i}Questions'] = {};
       data['player${i}Votes'] = {};
-      data['player${i}DoneVoting'] = false;
       data['player${i}Points'] = 0;
       data['player${i}Ready'] = false;
     });
@@ -967,7 +957,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
     }
 
     data['phase'] = 'questionCollection';
-    data['answerCollectionQuestionIndex'] = 0;
     data['clubSelectionQuestionIndex'] = 0;
     data['wouldYouRatherQuestionIndex'] = 0;
     data['finalAnswers'] = {};
@@ -1493,17 +1482,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
               ),
             ]),
             SizedBox(height: 5),
-            RulesContainer(rules: <Widget>[
-              Text(
-                'Answers per player:',
-                style: TextStyle(fontSize: 14),
-              ),
-              Text(
-                rules['numAnswersPerPlayer'].toString(),
-                style: TextStyle(fontSize: 18),
-              ),
-            ]),
-            SizedBox(height: 5),
             RulesContainer(
               rules: <Widget>[
                 Text(
@@ -1531,7 +1509,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
     teams.asMap().forEach((i, v) {
       List<Widget> playerWidgets = [];
       v['players'].forEach((playerId) {
-        // print('adding future for $playerId');
         playerWidgets.add(FutureBuilder(
             future: FirebaseFirestore.instance
                 .collection('users')

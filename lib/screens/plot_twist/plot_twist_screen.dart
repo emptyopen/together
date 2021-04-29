@@ -450,14 +450,12 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
   setCharacter(data) async {
     // save character
     if (characterSelection == 'create') {
-      print('saving custom character');
       data['characters'][widget.userId] = {
         'name': createCharacterNameController.text,
         'age': createCharacterAgeController.text,
         'description': createCharacterDescriptionController.text,
       };
     } else if (characterSelection == 'sample0') {
-      print('saving 0');
       var sampleCharacterNames = data['sampleCharacters'][widget.userId];
       var sampleCharacter = exampleCharacters[sampleCharacterNames[0]];
       data['characters'][widget.userId] = {
@@ -466,7 +464,6 @@ class _PlotTwistScreenState extends State<PlotTwistScreen> {
         'description': sampleCharacter['description'],
       };
     } else {
-      print('saving 1');
       var sampleCharacterNames = data['sampleCharacters'][widget.userId];
       var sampleCharacter = exampleCharacters[sampleCharacterNames[1]];
       data['characters'][widget.userId] = {

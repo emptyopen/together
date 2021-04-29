@@ -243,8 +243,6 @@ getLevelList(data) {
 incrementLevel(data) async {
   List levelList = getLevelList(data);
   int currentLevelIndex = levelList.indexWhere((x) => x == data['level']);
-  print(
-      'incrementing: $currentLevelIndex || ${levelList.length - 1} || $levelList}');
   if (currentLevelIndex >= (levelList.length - 1)) {
     data['state'] = 'scoreboard';
     print('setting beatFinalLevel true');
