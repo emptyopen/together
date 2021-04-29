@@ -221,6 +221,12 @@ List inTheClubWouldYouRather = [
     'In your next conversation, you have to ask "Who?" ten times',
     'In your next conversation, you have to ask "What?" ten times',
   ],
+  [
+    'Have the last name "Zrzyxzerqzqq"',
+    'Have the last name "Noshnoshnoshnosh"',
+    'Have the last name "Dumb"',
+    'Have the last name "Laundrydetergent"',
+  ],
 ];
 
 allPlayersAreReady(data) {
