@@ -15,7 +15,6 @@ void main() async {
 // DONE:
 
 // next up:
-// fix "READY" button, freaking out
 // jump straight to in the club
 // question collection includes four answers for the question
 // add points in categories (selected answer & club points)
