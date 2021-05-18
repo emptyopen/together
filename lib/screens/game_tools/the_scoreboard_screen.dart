@@ -544,7 +544,6 @@ class _TheScoreboardScreenState extends State<TheScoreboardScreen> {
       teamNames.asMap().forEach((i, v) {
         var tempMatch = StringSimilarity.compareTwoStrings(
             sanitizeTeamName(v), sanitizeTeamName(teamReference));
-        print('$v $teamReference $tempMatch');
         if (tempMatch > match) {
           match = tempMatch;
           bestMatchIndex = i;

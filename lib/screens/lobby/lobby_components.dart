@@ -519,14 +519,6 @@ class _EditRulesDialogState extends State<EditRulesDialog> {
                 SizedBox(height: 20),
                 EditRulesDropdown(
                   data: data,
-                  title: 'Answers per player:',
-                  rule: 'numAnswersPerPlayer',
-                  updateRules: updateRules,
-                  choices: [1, 2, 3],
-                ),
-                SizedBox(height: 20),
-                EditRulesDropdown(
-                  data: data,
                   title: 'Number of "would you rather" questions:',
                   rule: 'numWouldYouRather',
                   updateRules: updateRules,

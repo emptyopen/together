@@ -49,7 +49,6 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
       try {
         if (_isLoginForm) {
           userId = await widget.auth.signIn(_email, _password);
-          print('Signed in: $userId');
         } else {
           userId = await widget.auth.signUp(_email, _password, _displayName);
           //widget.auth.sendEmailVerification();
@@ -60,7 +59,6 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
             'name': _displayName,
             'createdAt': DateTime.now(),
           });
-          print('Signed up user: $userId $_displayName');
           userId = await widget.auth.signIn(_email, _password);
         }
         setState(() {

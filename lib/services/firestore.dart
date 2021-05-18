@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:together/screens/in_the_club/in_the_club_services.dart';
 
 class Transactor {
   Transactor({this.sessionId});
@@ -124,52 +125,107 @@ class Transactor {
         .data();
   }
 
-  transactInTheClubQuestion(playerIndex, question) async {
+  transactInTheClubQuestion(playerIndex, question, answers) async {
     await _firestore.runTransaction((transaction) async {
       DocumentReference postRef =
           _firestore.collection('sessions').doc(sessionId);
       DocumentSnapshot snapshot = await transaction.get(postRef);
-      List playerRoundQuestion =
-          snapshot.data()['player${playerIndex}Questions'];
-      playerRoundQuestion.add(question);
-      transaction.update(
-          postRef, {'player${playerIndex}Questions': playerRoundQuestion});
-    });
-    await Future.delayed(Duration(milliseconds: 100));
-    return (await _firestore.collection('sessions').doc(sessionId).get())
-        .data();
-  }
+      Map data = snapshot.data();
+      Map playerQuestions = data['player${playerIndex}Questions'];
+      String phase = data['phase'];
+      playerQuestions[question] = answers;
 
-  transactInTheClubAnswer(playerIndex, answer) async {
-    await _firestore.runTransaction((transaction) async {
-      DocumentReference postRef =
-          _firestore.collection('sessions').doc(sessionId);
-      DocumentSnapshot snapshot = await transaction.get(postRef);
-      List questionAnswers = snapshot.data()['player${playerIndex}Answers'];
-      questionAnswers.add(answer);
-      transaction
-          .update(postRef, {'player${playerIndex}Answers': questionAnswers});
-    });
-    await Future.delayed(Duration(milliseconds: 100));
-    return (await _firestore.collection('sessions').doc(sessionId).get())
-        .data();
-  }
-
-  transactInTheClubVote(playerIndex, word) async {
-    await _firestore.runTransaction((transaction) async {
-      DocumentReference postRef =
-          _firestore.collection('sessions').doc(sessionId);
-      DocumentSnapshot snapshot = await transaction.get(postRef);
-      Map votes = snapshot.data()['player${playerIndex}Votes'];
-      if (votes.containsKey(word)) {
-        votes[word] += 1;
-      } else {
-        votes[word] = 1;
+      // check if all players are done, if so set phase to clubSelection
+      bool allPlayersDone = true;
+      data['playerIds'].asMap().forEach((i, playerId) {
+        if (i != playerIndex &&
+            data['player${i}Questions'].length <
+                data['rules']['numQuestionsPerPlayer']) {
+          allPlayersDone = false;
+        }
+      });
+      Map clubMembership = {};
+      if (allPlayersDone) {
+        // check if question collection round is at max
+        phase = 'clubSelection';
+        getQuestions(data)[data['clubSelectionQuestionIndex']]
+            .values
+            .toList()[0]
+            .forEach((answer) {
+          clubMembership[answer] = [];
+        });
       }
-      transaction.update(postRef, {'player${playerIndex}Votes': votes});
+      transaction.update(postRef, {
+        'player${playerIndex}Questions': playerQuestions,
+        'phase': phase,
+        'clubMembership': clubMembership,
+      });
     });
-    await Future.delayed(Duration(milliseconds: 100));
-    return (await _firestore.collection('sessions').doc(sessionId).get())
-        .data();
+  }
+
+  transactInTheClubPlayerReady(playerIndex) async {
+    await _firestore.runTransaction((transaction) async {
+      DocumentReference postRef =
+          _firestore.collection('sessions').doc(sessionId);
+
+      DocumentSnapshot snapshot = await transaction.get(postRef);
+      Map data = snapshot.data();
+
+      data['player${playerIndex}Ready'] = true;
+
+      // check if all players are ready
+      bool allPlayersReady = true;
+      data['playerIds'].asMap().forEach((i, playerId) {
+        if (!data['player${i}Ready']) {
+          allPlayersReady = false;
+        }
+      });
+      int numQuestions = getQuestions(data).length;
+      if (allPlayersReady) {
+        if (data['clubSelectionQuestionIndex'] < numQuestions - 1) {
+          data['clubSelectionQuestionIndex'] += 1;
+          // reset values
+          data['playerIds'].asMap().forEach((i, playerId) {
+            data['player${i}Ready'] = false;
+          });
+          data['clubMembership'] = {};
+          getQuestions(data)[data['clubSelectionQuestionIndex']]
+              .values
+              .toList()[0]
+              .forEach((answer) {
+            data['clubMembership'][answer] = [];
+          });
+        } else {
+          if (data['rules']['numWouldYouRather'] > 0) {
+            data['phase'] = 'wouldYouRather';
+            data['wouldYouRatherQuestionIndex'] = 0;
+            // initialize club membership
+            data['playerIds'].asMap().forEach((i, playerId) {
+              data['player${i}Ready'] = false;
+            });
+            data['clubMembership'] = {};
+            data['wouldYouRatherQuestions']['0'].forEach((answer) {
+              data['clubMembership'][answer] = [];
+            });
+          } else {
+            data['phase'] = 'scoreboard';
+          }
+        }
+      }
+
+      Map<String, dynamic> updateTerms = {
+        'phase': data['phase'],
+        'clubMembership': data['clubMembership'],
+        'clubSelectionQuestionIndex': data['clubSelectionQuestionIndex'],
+      };
+
+      data['playerIds'].asMap().forEach((i, playerId) {
+        updateTerms['player${i}Ready'] = data['player${i}Ready'];
+      });
+
+      print('tra: $updateTerms');
+
+      transaction.update(postRef, updateTerms);
+    });
   }
 }

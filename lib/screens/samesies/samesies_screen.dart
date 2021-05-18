@@ -108,7 +108,6 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
     int mediumCutoffIndex = levelList.indexWhere((x) => x.contains('medium'));
     int hardCutoffIndex = levelList.indexWhere((x) => x.contains('hard'));
     int expertCutoffIndex = levelList.indexWhere((x) => x.contains('expert'));
-    // print('$mediumCutoffIndex, $hardCutoffIndex, $expertCutoffIndex');
     for (int i = 1; i < levelList.length + 1; i++) {
       // line
       if (i > 1) {
@@ -818,12 +817,8 @@ class _SamesiesScreenState extends State<SamesiesScreen> {
       score += result['score'];
     });
     if (score >= requiredScoreForLevel(data)) {
-      print(
-          'score $score passes required score ${requiredScoreForLevel(data)}');
     } else {
       passes = false;
-      print(
-          'score $score does not pass required score ${requiredScoreForLevel(data)}');
     }
 
     if (passes) {

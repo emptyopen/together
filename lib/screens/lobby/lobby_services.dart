@@ -99,7 +99,6 @@ addPlayer(data, playerId, T) async {
     });
   }
   if (isFull) {
-    print('was full, adding team');
     data['teams'].add({
       'players': [playerId]
     });

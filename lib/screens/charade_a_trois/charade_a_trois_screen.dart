@@ -117,7 +117,6 @@ class _CharadeATroisScreenState extends State<CharadeATroisScreen> {
   judgmentComplete(data) async {
     // if time is expired, turn should be updated
     if (data['temporaryExpirationTime'] == null) {
-      print('turn');
       updateTurn(data);
     }
   }

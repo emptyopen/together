@@ -892,7 +892,6 @@ class _QuickStartButtonState extends State<QuickStartButton> {
             setState(() {
               pressed = true;
             });
-            print('yo');
             createGame(context, widget.gameName, '', false, unpress);
           },
           child: Container(

@@ -109,7 +109,6 @@ class _AbstractScreenState extends State<AbstractScreen> {
 
   updateTurn(data) async {
     if (data['state'] == 'complete') {
-      print('game is over, not updating');
       return;
     }
 
@@ -386,7 +385,6 @@ class _AbstractScreenState extends State<AbstractScreen> {
         winningTeams.add('purple');
       }
       winningTeams.removeWhere((item) => item == userTeam);
-      print('winners by black card are: $winningTeams');
       data['deathCard'] = true;
     }
 
@@ -405,7 +403,6 @@ class _AbstractScreenState extends State<AbstractScreen> {
       // determine winner if there is a tie
       if (winningTeams.length > 1) {
         // TODO: tiebreaker
-        print('resolving tie with amount of time spent');
       } else {
         print('not a tie');
       }
@@ -429,7 +426,6 @@ class _AbstractScreenState extends State<AbstractScreen> {
     if (isBadCard ||
         (data['turn'] == 'green' && greenGotAll) ||
         (data['turn'] == 'orange' && orangeGotAll)) {
-      print('bad card, switching turns');
       updateTurn(data);
     }
   }
@@ -437,7 +433,6 @@ class _AbstractScreenState extends State<AbstractScreen> {
   flipCard(data, int x, int y) async {
     // check if game is over
     if (data['state'] == 'complete') {
-      print('game is over!');
       return;
     }
 
