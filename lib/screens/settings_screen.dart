@@ -1,3 +1,4 @@
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -325,8 +326,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ),
                   SizedBox(height: 30),
                   Container(
-                    height: 40,
-                    width: 140,
+                    height: 50,
+                    width: 180,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(15),
                       border:
@@ -342,10 +343,12 @@ class _SettingsScreenState extends State<SettingsScreen>
                             .repeated, // repeats the gradient over the canvas
                       ),
                     ),
+                    padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
                     child: Center(
                       child: InkWell(
-                        child: Text(
+                        child: AutoSizeText(
                           'Give Matt coffee money!',
+                          maxLines: 1,
                           style: TextStyle(
                             color: Colors.black,
                             fontSize: 16,
